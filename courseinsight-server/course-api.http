@@ -3,7 +3,7 @@ POST http://localhost:8080/api/courses
 Content-Type: application/json
 
 {
-  "code": "CS101",
+  "code": "CS103",
   "name": "Java程序设计",
   "teacherName": "张老师",
   "description": "Java基础课程"
