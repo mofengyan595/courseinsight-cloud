@@ -1,0 +1,32 @@
+### 新增课程
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "code": "CS101",
+  "name": "Java程序设计",
+  "teacherName": "张老师",
+  "description": "Java基础课程"
+}
+
+### 课程名称为空
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "code": "CS102",
+  "name": "",
+  "teacherName": "李老师",
+  "description": "参数校验测试"
+}
+
+### 重复课程代码
+POST http://localhost:8080/api/courses
+Content-Type: application/json
+
+{
+  "code": "CS101",
+  "name": "重复课程",
+  "teacherName": "王老师",
+  "description": "测试课程代码唯一约束"
+}
