@@ -1,3 +1,9 @@
 spring:
   application:
     name: courseinsight-server
+
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3307/courseinsight?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
