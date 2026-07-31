@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @TableName("course")
@@ -19,4 +21,6 @@ public class Course {
     private String teacherName;
     private String description;
     private Integer status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

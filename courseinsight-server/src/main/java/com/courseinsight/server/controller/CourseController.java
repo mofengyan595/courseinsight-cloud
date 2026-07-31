@@ -2,6 +2,7 @@ package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
 import com.courseinsight.server.dto.CourseCreateRequest;
+import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.service.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,5 +24,10 @@ public class CourseController {
             @Valid @RequestBody CourseCreateRequest request) {
         Long courseId = courseService.create(request);
         return ApiResponse.success(courseId);
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<CourseDetailResponse> getById(@PathVariable Long id) {
+        return ApiResponse.success(courseService.getById(id));
     }
 }

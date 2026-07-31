@@ -30,3 +30,9 @@ Content-Type: application/json
   "teacherName": "王老师",
   "description": "测试课程代码唯一约束"
 }
+
+### 查询课程详情
+GET http://localhost:8080/api/courses/1
+
+### 查询不存在的课程
+GET http://localhost:8080/api/courses/999999

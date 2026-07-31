@@ -30,4 +30,10 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleDuplicateKey(DuplicateKeyException exception) {
         return ApiResponse.error(HttpStatus.CONFLICT.value(), "课程代码已存在");
     }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleNotFound(ResourceNotFoundException exception) {
+        return ApiResponse.error(HttpStatus.NOT_FOUND.value(), exception.getMessage());
+    }
 }

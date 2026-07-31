@@ -1,6 +1,8 @@
 package com.courseinsight.server.controller;
 
+import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
+import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.CourseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +13,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -86,6 +91,43 @@ class CourseControllerTests {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(409))
                 .andExpect(jsonPath("$.message").value("课程代码已存在"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void shouldGetCourseById() throws Exception {
+        CourseDetailResponse response = new CourseDetailResponse(
+                1L,
+                "CS101",
+                "Java程序设计",
+                "张老师",
+                "Java基础课程",
+                1,
+                LocalDateTime.of(2026, 7, 31, 10, 0),
+                LocalDateTime.of(2026, 7, 31, 10, 0)
+        );
+        given(courseService.getById(1L)).willReturn(response);
+
+        mockMvc.perform(get("/api/courses/{id}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.message").value("success"))
+                .andExpect(jsonPath("$.data.id").value(1))
+                .andExpect(jsonPath("$.data.code").value("CS101"))
+                .andExpect(jsonPath("$.data.name").value("Java程序设计"))
+                .andExpect(jsonPath("$.data.teacherName").value("张老师"))
+                .andExpect(jsonPath("$.data.status").value(1));
+    }
+
+    @Test
+    void shouldReturnNotFoundForMissingCourse() throws Exception {
+        given(courseService.getById(999999L))
+                .willThrow(new ResourceNotFoundException("课程不存在"));
+
+        mockMvc.perform(get("/api/courses/{id}", 999999L))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404))
+                .andExpect(jsonPath("$.message").value("课程不存在"))
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
 }
