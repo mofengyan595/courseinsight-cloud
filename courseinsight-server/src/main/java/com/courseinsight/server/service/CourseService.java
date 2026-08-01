@@ -2,6 +2,8 @@ package com.courseinsight.server.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.courseinsight.server.cache.CourseCacheLookup;
+import com.courseinsight.server.cache.CourseDetailCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseCreateRequest;
 import com.courseinsight.server.dto.CourseDetailResponse;
@@ -18,9 +20,11 @@ import java.util.List;
 public class CourseService {
 
     private final CourseMapper courseMapper;
+    private final CourseDetailCache courseDetailCache;
 
-    public CourseService(CourseMapper courseMapper) {
+    public CourseService(CourseMapper courseMapper, CourseDetailCache courseDetailCache) {
         this.courseMapper = courseMapper;
+        this.courseDetailCache = courseDetailCache;
     }
 
     @Transactional
@@ -38,11 +42,23 @@ public class CourseService {
 
     @Transactional(readOnly = true)
     public CourseDetailResponse getById(Long id) {
+        CourseCacheLookup cacheLookup = courseDetailCache.get(id);
+        if (cacheLookup.hit()) {
+            if (cacheLookup.course() == null) {
+                throw new ResourceNotFoundException("课程不存在");
+            }
+            return cacheLookup.course();
+        }
+
         Course course = courseMapper.selectById(id);
         if (course == null) {
+            courseDetailCache.putNotFound(id);
             throw new ResourceNotFoundException("课程不存在");
         }
-        return CourseDetailResponse.from(course);
+
+        CourseDetailResponse response = CourseDetailResponse.from(course);
+        courseDetailCache.put(id, response);
+        return response;
     }
 
     @Transactional(readOnly = true)

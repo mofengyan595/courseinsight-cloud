@@ -2,6 +2,8 @@ package com.courseinsight.server.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.courseinsight.server.cache.CourseCacheLookup;
+import com.courseinsight.server.cache.CourseDetailCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.dto.CoursePageQuery;
@@ -21,6 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class CourseServiceTests {
@@ -28,12 +32,16 @@ class CourseServiceTests {
     @Mock
     private CourseMapper courseMapper;
 
+    @Mock
+    private CourseDetailCache courseDetailCache;
+
     @InjectMocks
     private CourseService courseService;
 
     @Test
     void shouldGetCourseById() {
         Course course = createCourse();
+        given(courseDetailCache.get(1L)).willReturn(CourseCacheLookup.miss());
         given(courseMapper.selectById(1L)).willReturn(course);
 
         CourseDetailResponse response = courseService.getById(1L);
@@ -42,15 +50,40 @@ class CourseServiceTests {
         assertThat(response.code()).isEqualTo("CS101");
         assertThat(response.name()).isEqualTo("Java程序设计");
         assertThat(response.teacherName()).isEqualTo("张老师");
+        verify(courseDetailCache).put(1L, response);
     }
 
     @Test
     void shouldThrowWhenCourseDoesNotExist() {
+        given(courseDetailCache.get(999999L)).willReturn(CourseCacheLookup.miss());
         given(courseMapper.selectById(999999L)).willReturn(null);
 
         assertThatThrownBy(() -> courseService.getById(999999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("课程不存在");
+        verify(courseDetailCache).putNotFound(999999L);
+    }
+
+    @Test
+    void shouldReturnCachedCourseWithoutQueryingDatabase() {
+        CourseDetailResponse cachedCourse = CourseDetailResponse.from(createCourse());
+        given(courseDetailCache.get(1L)).willReturn(CourseCacheLookup.found(cachedCourse));
+
+        CourseDetailResponse response = courseService.getById(1L);
+
+        assertThat(response).isSameAs(cachedCourse);
+        verifyNoInteractions(courseMapper);
+    }
+
+    @Test
+    void shouldReturnNotFoundFromNullCacheWithoutQueryingDatabase() {
+        given(courseDetailCache.get(999999L)).willReturn(CourseCacheLookup.notFound());
+
+        assertThatThrownBy(() -> courseService.getById(999999L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("课程不存在");
+
+        verifyNoInteractions(courseMapper);
     }
 
     @Test
