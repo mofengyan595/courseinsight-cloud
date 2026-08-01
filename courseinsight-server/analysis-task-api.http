@@ -1,0 +1,5 @@
+### 根据评价ID查询分析任务
+GET http://localhost:8080/api/comments/5/analysis-task
+
+### 查询不存在的分析任务
+GET http://localhost:8080/api/comments/999999/analysis-task
