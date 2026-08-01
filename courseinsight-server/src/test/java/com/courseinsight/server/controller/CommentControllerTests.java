@@ -1,5 +1,8 @@
 package com.courseinsight.server.controller;
 
+import com.courseinsight.server.common.PageResponse;
+import com.courseinsight.server.dto.CommentDetailResponse;
+import com.courseinsight.server.dto.CommentPageQuery;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.CommentService;
@@ -11,10 +14,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -79,5 +86,44 @@ class CommentControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("课程不存在"));
+    }
+
+    @Test
+    void shouldPageComments() throws Exception {
+        CommentDetailResponse comment = new CommentDetailResponse(
+                10L,
+                1L,
+                "课程讲解清晰",
+                5,
+                1,
+                LocalDateTime.of(2026, 8, 1, 10, 0),
+                LocalDateTime.of(2026, 8, 1, 10, 0)
+        );
+        given(commentService.page(eq(1L), any(CommentPageQuery.class)))
+                .willReturn(new PageResponse<>(1, 10, 1, 1, List.of(comment)));
+
+        mockMvc.perform(get("/api/courses/{courseId}/comments", 1L)
+                        .param("page", "1")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.size").value(10))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.totalPages").value(1))
+                .andExpect(jsonPath("$.data.items[0].id").value(10))
+                .andExpect(jsonPath("$.data.items[0].courseId").value(1))
+                .andExpect(jsonPath("$.data.items[0].rating").value(5));
+    }
+
+    @Test
+    void shouldRejectInvalidPageParameters() throws Exception {
+        mockMvc.perform(get("/api/courses/{courseId}/comments", 1L)
+                        .param("page", "0")
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        verifyNoInteractions(commentService);
     }
 }

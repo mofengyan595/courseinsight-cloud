@@ -1,10 +1,15 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
+import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
+import com.courseinsight.server.dto.CommentDetailResponse;
+import com.courseinsight.server.dto.CommentPageQuery;
 import com.courseinsight.server.service.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,5 +33,12 @@ public class CommentController {
             @PathVariable Long courseId,
             @Valid @RequestBody CommentCreateRequest request) {
         return ApiResponse.success(commentService.create(courseId, request));
+    }
+
+    @GetMapping
+    public ApiResponse<PageResponse<CommentDetailResponse>> page(
+            @PathVariable Long courseId,
+            @Valid @ModelAttribute CommentPageQuery query) {
+        return ApiResponse.success(commentService.page(courseId, query));
     }
 }

@@ -1,6 +1,11 @@
 package com.courseinsight.server.service;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
+import com.courseinsight.server.dto.CommentDetailResponse;
+import com.courseinsight.server.dto.CommentPageQuery;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.CourseComment;
 import com.courseinsight.server.exception.ResourceNotFoundException;
@@ -12,6 +17,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -72,5 +80,58 @@ class CommentServiceTests {
                 .hasMessage("课程不存在");
 
         verifyNoInteractions(courseCommentMapper);
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void shouldPageCommentsForExistingCourse() {
+        Course course = new Course();
+        course.setId(1L);
+        given(courseMapper.selectById(1L)).willReturn(course);
+
+        Page<CourseComment> mapperResult = new Page<>(1, 10, 1);
+        mapperResult.setRecords(List.of(createComment()));
+        given(courseCommentMapper.selectPage(any(Page.class), any(Wrapper.class)))
+                .willReturn(mapperResult);
+
+        PageResponse<CommentDetailResponse> response = commentService.page(
+                1L,
+                new CommentPageQuery(1, 10)
+        );
+
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(10);
+        assertThat(response.total()).isEqualTo(1);
+        assertThat(response.totalPages()).isEqualTo(1);
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().get(0).id()).isEqualTo(10L);
+        assertThat(response.items().get(0).courseId()).isEqualTo(1L);
+        assertThat(response.items().get(0).content()).isEqualTo("课程讲解清晰");
+    }
+
+    @Test
+    void shouldRejectPageForMissingCourse() {
+        given(courseMapper.selectById(999999L)).willReturn(null);
+
+        assertThatThrownBy(() -> commentService.page(
+                999999L,
+                new CommentPageQuery(1, 10)
+        ))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("课程不存在");
+
+        verifyNoInteractions(courseCommentMapper);
+    }
+
+    private CourseComment createComment() {
+        CourseComment comment = new CourseComment();
+        comment.setId(10L);
+        comment.setCourseId(1L);
+        comment.setContent("课程讲解清晰");
+        comment.setRating(5);
+        comment.setStatus(1);
+        comment.setCreatedAt(LocalDateTime.of(2026, 8, 1, 10, 0));
+        comment.setUpdatedAt(LocalDateTime.of(2026, 8, 1, 10, 0));
+        return comment;
     }
 }

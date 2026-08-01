@@ -33,3 +33,12 @@ Content-Type: application/json
   "content": "课程评价",
   "rating": 4
 }
+
+### 分页查询课程评价
+GET http://localhost:8080/api/courses/1/comments?page=1&size=10
+
+### 使用默认分页参数
+GET http://localhost:8080/api/courses/1/comments
+
+### 非法分页参数
+GET http://localhost:8080/api/courses/1/comments?page=0&size=101
