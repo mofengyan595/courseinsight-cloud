@@ -6,24 +6,33 @@ import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
 import com.courseinsight.server.dto.CommentPageQuery;
+import com.courseinsight.server.entity.AnalysisTask;
+import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.CourseComment;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.mapper.CourseMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CommentService {
 
     private final CourseMapper courseMapper;
     private final CourseCommentMapper courseCommentMapper;
+    private final AnalysisTaskMapper analysisTaskMapper;
 
-    public CommentService(CourseMapper courseMapper, CourseCommentMapper courseCommentMapper) {
+    public CommentService(
+            CourseMapper courseMapper,
+            CourseCommentMapper courseCommentMapper,
+            AnalysisTaskMapper analysisTaskMapper) {
         this.courseMapper = courseMapper;
         this.courseCommentMapper = courseCommentMapper;
+        this.analysisTaskMapper = analysisTaskMapper;
     }
 
     @Transactional
@@ -37,6 +46,15 @@ public class CommentService {
         comment.setStatus(1);
 
         courseCommentMapper.insert(comment);
+
+        AnalysisTask task = new AnalysisTask();
+        task.setTaskNo(UUID.randomUUID().toString().replace("-", ""));
+        task.setCommentId(comment.getId());
+        task.setCourseId(courseId);
+        task.setStatus(AnalysisTaskStatus.WAITING.name());
+        task.setRetryCount(0);
+        analysisTaskMapper.insert(task);
+
         return comment.getId();
     }
 

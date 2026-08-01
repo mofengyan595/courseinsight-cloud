@@ -1,4 +1,4 @@
-### 新增课程评价
+### 新增课程评价，同时创建WAITING分析任务
 POST http://localhost:8080/api/courses/1/comments
 Content-Type: application/json
 

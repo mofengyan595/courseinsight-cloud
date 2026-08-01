@@ -6,9 +6,12 @@ import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
 import com.courseinsight.server.dto.CommentPageQuery;
+import com.courseinsight.server.entity.AnalysisTask;
+import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.CourseComment;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.mapper.CourseMapper;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,9 @@ class CommentServiceTests {
     @Mock
     private CourseCommentMapper courseCommentMapper;
 
+    @Mock
+    private AnalysisTaskMapper analysisTaskMapper;
+
     @InjectMocks
     private CommentService commentService;
 
@@ -51,6 +57,7 @@ class CommentServiceTests {
                     comment.setId(10L);
                     return 1;
                 });
+        given(analysisTaskMapper.insert(any(AnalysisTask.class))).willReturn(1);
 
         Long commentId = commentService.create(
                 1L,
@@ -66,6 +73,15 @@ class CommentServiceTests {
         assertThat(savedComment.getContent()).isEqualTo("课程讲解清晰");
         assertThat(savedComment.getRating()).isEqualTo(5);
         assertThat(savedComment.getStatus()).isEqualTo(1);
+
+        ArgumentCaptor<AnalysisTask> taskCaptor = ArgumentCaptor.forClass(AnalysisTask.class);
+        verify(analysisTaskMapper).insert(taskCaptor.capture());
+        AnalysisTask savedTask = taskCaptor.getValue();
+        assertThat(savedTask.getTaskNo()).hasSize(32);
+        assertThat(savedTask.getCommentId()).isEqualTo(10L);
+        assertThat(savedTask.getCourseId()).isEqualTo(1L);
+        assertThat(savedTask.getStatus()).isEqualTo(AnalysisTaskStatus.WAITING.name());
+        assertThat(savedTask.getRetryCount()).isZero();
     }
 
     @Test
@@ -79,7 +95,7 @@ class CommentServiceTests {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("课程不存在");
 
-        verifyNoInteractions(courseCommentMapper);
+        verifyNoInteractions(courseCommentMapper, analysisTaskMapper);
     }
 
     @Test
