@@ -1,0 +1,35 @@
+### 新增课程评价
+POST http://localhost:8080/api/courses/1/comments
+Content-Type: application/json
+
+{
+  "content": "课程讲解清晰，示例很实用",
+  "rating": 5
+}
+
+### 评价内容为空
+POST http://localhost:8080/api/courses/1/comments
+Content-Type: application/json
+
+{
+  "content": "",
+  "rating": 5
+}
+
+### 评分超出范围
+POST http://localhost:8080/api/courses/1/comments
+Content-Type: application/json
+
+{
+  "content": "课程评价",
+  "rating": 6
+}
+
+### 对不存在的课程提交评价
+POST http://localhost:8080/api/courses/999999/comments
+Content-Type: application/json
+
+{
+  "content": "课程评价",
+  "rating": 4
+}
