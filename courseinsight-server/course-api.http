@@ -36,3 +36,12 @@ GET http://localhost:8080/api/courses/1
 
 ### 查询不存在的课程
 GET http://localhost:8080/api/courses/999999
+
+### 分页查询课程
+GET http://localhost:8080/api/courses?page=1&size=10&keyword=Java
+
+### 使用默认分页参数
+GET http://localhost:8080/api/courses
+
+### 非法分页参数
+GET http://localhost:8080/api/courses?page=0&size=101

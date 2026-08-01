@@ -1,6 +1,8 @@
 package com.courseinsight.server.controller;
 
+import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseDetailResponse;
+import com.courseinsight.server.dto.CoursePageQuery;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.CourseService;
@@ -14,6 +16,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -129,5 +132,44 @@ class CourseControllerTests {
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("课程不存在"))
                 .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void shouldListCourses() throws Exception {
+        CourseDetailResponse course = new CourseDetailResponse(
+                1L,
+                "CS101",
+                "Java程序设计",
+                "张老师",
+                "Java基础课程",
+                1,
+                LocalDateTime.of(2026, 7, 31, 10, 0),
+                LocalDateTime.of(2026, 7, 31, 10, 0)
+        );
+        given(courseService.page(any(CoursePageQuery.class)))
+                .willReturn(new PageResponse<>(1, 10, 1, 1, List.of(course)));
+
+        mockMvc.perform(get("/api/courses")
+                        .param("page", "1")
+                        .param("size", "10")
+                        .param("keyword", "Java"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.page").value(1))
+                .andExpect(jsonPath("$.data.size").value(10))
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.totalPages").value(1))
+                .andExpect(jsonPath("$.data.items[0].code").value("CS101"));
+    }
+
+    @Test
+    void shouldRejectInvalidPageParameters() throws Exception {
+        mockMvc.perform(get("/api/courses")
+                        .param("page", "0")
+                        .param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        verifyNoInteractions(courseService);
     }
 }

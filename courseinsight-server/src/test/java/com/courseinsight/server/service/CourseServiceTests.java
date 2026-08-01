@@ -1,6 +1,10 @@
 package com.courseinsight.server.service;
 
+import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseDetailResponse;
+import com.courseinsight.server.dto.CoursePageQuery;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.CourseMapper;
@@ -11,9 +15,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +51,27 @@ class CourseServiceTests {
         assertThatThrownBy(() -> courseService.getById(999999L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("课程不存在");
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void shouldPageCourses() {
+        Page<Course> mapperResult = new Page<>(1, 10, 1);
+        mapperResult.setRecords(List.of(createCourse()));
+        given(courseMapper.selectPage(any(Page.class), any(Wrapper.class)))
+                .willReturn(mapperResult);
+
+        PageResponse<CourseDetailResponse> response = courseService.page(
+                new CoursePageQuery(1, 10, "Java")
+        );
+
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(10);
+        assertThat(response.total()).isEqualTo(1);
+        assertThat(response.totalPages()).isEqualTo(1);
+        assertThat(response.items()).singleElement()
+                .extracting(CourseDetailResponse::code)
+                .isEqualTo("CS101");
     }
 
     private Course createCourse() {
