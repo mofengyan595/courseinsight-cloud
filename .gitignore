@@ -3,3 +3,8 @@
 .env
 .env.local
 
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+courseinsight-ai-service/models/bert_model_final/model.safetensors

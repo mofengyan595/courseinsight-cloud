@@ -49,6 +49,38 @@ services:
       retries: 10
       start_period: 10s
 
+  ai-service:
+    build:
+      context: ./courseinsight-ai-service
+    container_name: courseinsight-ai-service
+    restart: unless-stopped
+    environment:
+      SENTIMENT_BACKEND: ${SENTIMENT_BACKEND:-AUTO}
+      BERT_MODEL_PATH: ${BERT_MODEL_PATH:-models/bert_model_final}
+      BERT_DEVICE: ${BERT_DEVICE:-AUTO}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://chat.ecnu.edu.cn/open/api/v1}
+      LLM_MODEL: ${LLM_MODEL:-ecnu-plus}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-20}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+      LLM_TOP_P: ${LLM_TOP_P:-0.9}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-1024}
+      LLM_RETRIES: ${LLM_RETRIES:-2}
+    ports:
+      - "127.0.0.1:${AI_SERVICE_PORT:-8001}:8000"
+    volumes:
+      - ./courseinsight-ai-service/models/bert_model_final:/app/models/bert_model_final:ro
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
 volumes:
   mysql_data:
   redis_data:

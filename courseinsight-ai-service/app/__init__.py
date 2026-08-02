@@ -1,0 +1,1 @@
+"""CourseInsight AI service package."""
