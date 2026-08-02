@@ -36,4 +36,16 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleNotFound(ResourceNotFoundException exception) {
         return ApiResponse.error(HttpStatus.NOT_FOUND.value(), exception.getMessage());
     }
+
+    @ExceptionHandler(AnalysisTaskConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleTaskConflict(AnalysisTaskConflictException exception) {
+        return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
+    }
+
+    @ExceptionHandler(AiServiceException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    public ApiResponse<Void> handleAiService(AiServiceException exception) {
+        return ApiResponse.error(HttpStatus.BAD_GATEWAY.value(), exception.getMessage());
+    }
 }

@@ -14,3 +14,9 @@ spring:
       port: ${REDIS_PORT:6380}
       connect-timeout: 2s
       timeout: 2s
+
+courseinsight:
+  ai-service:
+    base-url: ${AI_SERVICE_BASE_URL:http://127.0.0.1:8001}
+    connect-timeout: 2s
+    read-timeout: 90s
