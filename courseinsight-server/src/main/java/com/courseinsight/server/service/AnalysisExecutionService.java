@@ -7,6 +7,7 @@ import com.courseinsight.server.dto.AnalysisExecutionResponse;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.CourseComment;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.AnalysisTaskConflictException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
@@ -23,20 +24,41 @@ public class AnalysisExecutionService {
     private final CourseCommentMapper courseCommentMapper;
     private final AiAnalysisClient aiAnalysisClient;
     private final AnalysisResultPersistenceService persistenceService;
+    private final CourseManagementAccessService managementAccessService;
 
     public AnalysisExecutionService(
             AnalysisTaskMapper analysisTaskMapper,
             CourseCommentMapper courseCommentMapper,
             AiAnalysisClient aiAnalysisClient,
-            AnalysisResultPersistenceService persistenceService) {
+            AnalysisResultPersistenceService persistenceService,
+            CourseManagementAccessService managementAccessService) {
         this.analysisTaskMapper = analysisTaskMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.aiAnalysisClient = aiAnalysisClient;
         this.persistenceService = persistenceService;
+        this.managementAccessService = managementAccessService;
     }
 
     public AnalysisExecutionResponse execute(Long taskId) {
         AnalysisTask task = requireTask(taskId);
+        return executeTask(task);
+    }
+
+    public AnalysisExecutionResponse executeForUser(
+            Long taskId,
+            Long currentUserId,
+            UserRole currentRole) {
+        AnalysisTask task = requireTask(taskId);
+        managementAccessService.assertCanManage(
+                task.getCourseId(),
+                currentUserId,
+                currentRole
+        );
+        return executeTask(task);
+    }
+
+    private AnalysisExecutionResponse executeTask(AnalysisTask task) {
+        Long taskId = task.getId();
         if (AnalysisTaskStatus.SUCCESS.name().equals(task.getStatus())) {
             return persistenceService.getSuccessResult(taskId);
         }

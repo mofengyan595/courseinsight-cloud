@@ -2,6 +2,8 @@ package com.courseinsight.server.service;
 
 import com.courseinsight.server.dto.AnalysisTaskEnqueueResponse;
 import com.courseinsight.server.entity.AnalysisTask;
+import com.courseinsight.server.entity.UserRole;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.exception.AnalysisTaskConflictException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
@@ -30,6 +32,9 @@ class AnalysisTaskEnqueueServiceTests {
     @Mock
     private AnalysisTaskMessageProducer messageProducer;
 
+    @Mock
+    private CourseManagementAccessService managementAccessService;
+
     @InjectMocks
     private AnalysisTaskEnqueueService enqueueService;
 
@@ -39,7 +44,11 @@ class AnalysisTaskEnqueueServiceTests {
         given(analysisTaskMapper.selectById(6L)).willReturn(task);
         given(messageProducer.send(any(AnalysisTaskCreatedEvent.class))).willReturn("message-1");
 
-        AnalysisTaskEnqueueResponse response = enqueueService.enqueue(6L);
+        AnalysisTaskEnqueueResponse response = enqueueService.enqueue(
+                6L,
+                11L,
+                UserRole.TEACHER
+        );
 
         ArgumentCaptor<AnalysisTaskCreatedEvent> eventCaptor =
                 ArgumentCaptor.forClass(AnalysisTaskCreatedEvent.class);
@@ -51,13 +60,22 @@ class AnalysisTaskEnqueueServiceTests {
         assertThat(event.eventType()).isEqualTo(AnalysisTaskCreatedEvent.EVENT_TYPE);
         assertThat(response.messageId()).isEqualTo("message-1");
         assertThat(response.eventId()).isEqualTo(event.eventId());
+        verify(managementAccessService).assertCanManage(
+                14L,
+                11L,
+                UserRole.TEACHER
+        );
     }
 
     @Test
     void shouldRejectCompletedTask() {
         given(analysisTaskMapper.selectById(6L)).willReturn(createTask("SUCCESS"));
 
-        assertThatThrownBy(() -> enqueueService.enqueue(6L))
+        assertThatThrownBy(() -> enqueueService.enqueue(
+                6L,
+                11L,
+                UserRole.TEACHER
+        ))
                 .isInstanceOf(AnalysisTaskConflictException.class)
                 .hasMessage("分析任务已经完成，无需重复入队");
         verifyNoInteractions(messageProducer);
@@ -67,9 +85,33 @@ class AnalysisTaskEnqueueServiceTests {
     void shouldRejectMissingTask() {
         given(analysisTaskMapper.selectById(999L)).willReturn(null);
 
-        assertThatThrownBy(() -> enqueueService.enqueue(999L))
+        assertThatThrownBy(() -> enqueueService.enqueue(
+                999L,
+                11L,
+                UserRole.TEACHER
+        ))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("分析任务不存在");
+        verifyNoInteractions(messageProducer);
+    }
+
+    @Test
+    void shouldRejectTaskFromAnotherTeachersCourse() {
+        given(analysisTaskMapper.selectById(6L)).willReturn(createTask("WAITING"));
+        org.mockito.BDDMockito.willThrow(
+                new CourseAccessDeniedException("无权管理其他教师的课程")
+        ).given(managementAccessService).assertCanManage(
+                14L,
+                12L,
+                UserRole.TEACHER
+        );
+
+        assertThatThrownBy(() -> enqueueService.enqueue(
+                6L,
+                12L,
+                UserRole.TEACHER
+        )).isInstanceOf(CourseAccessDeniedException.class);
+
         verifyNoInteractions(messageProducer);
     }
 

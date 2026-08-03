@@ -6,14 +6,17 @@ import com.courseinsight.server.cache.CourseCacheLookup;
 import com.courseinsight.server.cache.CourseDetailCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseDetailResponse;
+import com.courseinsight.server.dto.CourseCreateRequest;
 import com.courseinsight.server.dto.CoursePageQuery;
 import com.courseinsight.server.dto.CourseUpdateRequest;
 import com.courseinsight.server.entity.Course;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.CourseMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -36,15 +39,48 @@ class CourseServiceTests {
     @Mock
     private CourseDetailCache courseDetailCache;
 
+    @Mock
+    private CourseManagementAccessService managementAccessService;
+
     @InjectMocks
     private CourseService courseService;
 
     @Test
+    void shouldBindCreatedCourseToCurrentUser() {
+        given(courseMapper.insert(any(Course.class))).willAnswer(invocation -> {
+            Course course = invocation.getArgument(0);
+            course.setId(3L);
+            return 1;
+        });
+
+        Long courseId = courseService.create(
+                11L,
+                new CourseCreateRequest(
+                        "CS103",
+                        "Java程序设计",
+                        "张老师",
+                        "Java基础课程"
+                )
+        );
+
+        ArgumentCaptor<Course> captor = ArgumentCaptor.forClass(Course.class);
+        verify(courseMapper).insert(captor.capture());
+        assertThat(courseId).isEqualTo(3L);
+        assertThat(captor.getValue().getOwnerUserId()).isEqualTo(11L);
+    }
+
+    @Test
     void shouldUpdateCourseAndEvictCache() {
-        given(courseMapper.selectById(1L)).willReturn(createCourse());
+        given(managementAccessService.requireManageableCourse(
+                1L,
+                11L,
+                UserRole.TEACHER
+        )).willReturn(createCourse());
         given(courseMapper.updateById(any(Course.class))).willReturn(1);
 
         Long courseId = courseService.update(
+                11L,
+                UserRole.TEACHER,
                 1L,
                 new CourseUpdateRequest(
                         "CS101",
@@ -61,9 +97,15 @@ class CourseServiceTests {
 
     @Test
     void shouldRejectUpdateWhenCourseDoesNotExist() {
-        given(courseMapper.selectById(999999L)).willReturn(null);
+        given(managementAccessService.requireManageableCourse(
+                999999L,
+                11L,
+                UserRole.TEACHER
+        )).willThrow(new ResourceNotFoundException("课程不存在"));
 
         assertThatThrownBy(() -> courseService.update(
+                11L,
+                UserRole.TEACHER,
                 999999L,
                 new CourseUpdateRequest("CS999", "不存在", "测试教师", null, 1)
         )).isInstanceOf(ResourceNotFoundException.class)
@@ -147,6 +189,7 @@ class CourseServiceTests {
         course.setCode("CS101");
         course.setName("Java程序设计");
         course.setTeacherName("张老师");
+        course.setOwnerUserId(11L);
         course.setDescription("Java基础课程");
         course.setStatus(1);
         course.setCreatedAt(LocalDateTime.of(2026, 7, 31, 10, 0));

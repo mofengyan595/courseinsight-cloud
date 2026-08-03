@@ -27,4 +27,31 @@ class CourseSchemaTests {
 
         assertEquals(1, tableCount);
     }
+
+    @Test
+    void courseTableHasOwnerAndManagementIndex() {
+        Integer columnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'course'
+                  AND column_name = 'owner_user_id'
+                """,
+                Integer.class
+        );
+        Integer indexCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'course'
+                  AND index_name = 'idx_course_owner_status'
+                """,
+                Integer.class
+        );
+
+        assertEquals(1, columnCount);
+        assertEquals(2, indexCount);
+    }
 }

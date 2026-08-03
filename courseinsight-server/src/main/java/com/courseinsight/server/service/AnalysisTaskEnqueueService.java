@@ -3,6 +3,7 @@ package com.courseinsight.server.service;
 import com.courseinsight.server.dto.AnalysisTaskEnqueueResponse;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.AnalysisTaskStatus;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.AnalysisTaskConflictException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
@@ -18,19 +19,30 @@ public class AnalysisTaskEnqueueService {
 
     private final AnalysisTaskMapper analysisTaskMapper;
     private final AnalysisTaskMessageProducer messageProducer;
+    private final CourseManagementAccessService managementAccessService;
 
     public AnalysisTaskEnqueueService(
             AnalysisTaskMapper analysisTaskMapper,
-            AnalysisTaskMessageProducer messageProducer) {
+            AnalysisTaskMessageProducer messageProducer,
+            CourseManagementAccessService managementAccessService) {
         this.analysisTaskMapper = analysisTaskMapper;
         this.messageProducer = messageProducer;
+        this.managementAccessService = managementAccessService;
     }
 
-    public AnalysisTaskEnqueueResponse enqueue(Long taskId) {
+    public AnalysisTaskEnqueueResponse enqueue(
+            Long taskId,
+            Long currentUserId,
+            UserRole currentRole) {
         AnalysisTask task = analysisTaskMapper.selectById(taskId);
         if (task == null) {
             throw new ResourceNotFoundException("分析任务不存在");
         }
+        managementAccessService.assertCanManage(
+                task.getCourseId(),
+                currentUserId,
+                currentRole
+        );
         if (AnalysisTaskStatus.SUCCESS.name().equals(task.getStatus())) {
             throw new AnalysisTaskConflictException("分析任务已经完成，无需重复入队");
         }

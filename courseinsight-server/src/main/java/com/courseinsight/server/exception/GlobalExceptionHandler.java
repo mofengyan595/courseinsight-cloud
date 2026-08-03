@@ -75,6 +75,12 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
     }
 
+    @ExceptionHandler(CourseAccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<Void> handleCourseAccessDenied(CourseAccessDeniedException exception) {
+        return ApiResponse.error(HttpStatus.FORBIDDEN.value(), exception.getMessage());
+    }
+
     @ExceptionHandler(AiServiceException.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ApiResponse<Void> handleAiService(AiServiceException exception) {

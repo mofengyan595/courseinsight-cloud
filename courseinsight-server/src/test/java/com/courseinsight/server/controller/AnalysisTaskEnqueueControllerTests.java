@@ -1,6 +1,7 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.dto.AnalysisTaskEnqueueResponse;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.MessageQueueException;
 import com.courseinsight.server.service.AnalysisTaskEnqueueService;
@@ -11,6 +12,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.List;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -35,9 +41,10 @@ class AnalysisTaskEnqueueControllerTests {
     void shouldAcceptTaskForAsyncAnalysis() throws Exception {
         AnalysisTaskEnqueueResponse response =
                 new AnalysisTaskEnqueueResponse("event-1", 6L, 13L, "message-1");
-        given(enqueueService.enqueue(6L)).willReturn(response);
+        given(enqueueService.enqueue(6L, 11L, UserRole.TEACHER)).willReturn(response);
 
-        mockMvc.perform(post("/api/analysis-tasks/{taskId}/enqueue", 6L))
+        mockMvc.perform(post("/api/analysis-tasks/{taskId}/enqueue", 6L)
+                        .principal(teacherAuthentication()))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.eventId").value("event-1"))
@@ -47,12 +54,21 @@ class AnalysisTaskEnqueueControllerTests {
 
     @Test
     void shouldReturnServiceUnavailableWhenMessageCannotBeSent() throws Exception {
-        given(enqueueService.enqueue(6L))
+        given(enqueueService.enqueue(6L, 11L, UserRole.TEACHER))
                 .willThrow(new MessageQueueException("RocketMQ 暂时不可用，分析任务未入队"));
 
-        mockMvc.perform(post("/api/analysis-tasks/{taskId}/enqueue", 6L))
+        mockMvc.perform(post("/api/analysis-tasks/{taskId}/enqueue", 6L)
+                        .principal(teacherAuthentication()))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value(503))
                 .andExpect(jsonPath("$.message").value("RocketMQ 暂时不可用，分析任务未入队"));
+    }
+
+    private Authentication teacherAuthentication() {
+        return UsernamePasswordAuthenticationToken.authenticated(
+                "11",
+                "N/A",
+                List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))
+        );
     }
 }

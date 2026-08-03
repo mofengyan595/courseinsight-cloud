@@ -19,6 +19,7 @@ public class Course {
     private String code;
     private String name;
     private String teacherName;
+    private Long ownerUserId;
     private String description;
     private Integer status;
     private LocalDateTime createdAt;

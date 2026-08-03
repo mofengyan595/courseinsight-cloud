@@ -10,6 +10,7 @@ import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.dto.CoursePageQuery;
 import com.courseinsight.server.dto.CourseUpdateRequest;
 import com.courseinsight.server.entity.Course;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.CourseMapper;
 import org.springframework.stereotype.Service;
@@ -24,18 +25,24 @@ public class CourseService {
 
     private final CourseMapper courseMapper;
     private final CourseDetailCache courseDetailCache;
+    private final CourseManagementAccessService managementAccessService;
 
-    public CourseService(CourseMapper courseMapper, CourseDetailCache courseDetailCache) {
+    public CourseService(
+            CourseMapper courseMapper,
+            CourseDetailCache courseDetailCache,
+            CourseManagementAccessService managementAccessService) {
         this.courseMapper = courseMapper;
         this.courseDetailCache = courseDetailCache;
+        this.managementAccessService = managementAccessService;
     }
 
     @Transactional
-    public Long create(CourseCreateRequest request) {
+    public Long create(Long currentUserId, CourseCreateRequest request) {
         Course course = new Course();
         course.setCode(request.code());
         course.setName(request.name());
         course.setTeacherName(request.teacherName());
+        course.setOwnerUserId(currentUserId);
         course.setDescription(request.description());
         course.setStatus(1);
 
@@ -45,10 +52,16 @@ public class CourseService {
     }
 
     @Transactional
-    public Long update(Long id, CourseUpdateRequest request) {
-        if (courseMapper.selectById(id) == null) {
-            throw new ResourceNotFoundException("课程不存在");
-        }
+    public Long update(
+            Long currentUserId,
+            UserRole currentRole,
+            Long id,
+            CourseUpdateRequest request) {
+        managementAccessService.requireManageableCourse(
+                id,
+                currentUserId,
+                currentRole
+        );
 
         Course course = new Course();
         course.setId(id);

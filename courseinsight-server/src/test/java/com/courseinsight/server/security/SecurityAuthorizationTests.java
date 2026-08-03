@@ -158,7 +158,7 @@ class SecurityAuthorizationTests {
     void shouldAllowTeacherToCreateCourse() throws Exception {
         given(jwtDecoder.decode("teacher-token"))
                 .willReturn(jwt("teacher-token", "TEACHER"));
-        given(courseService.create(any())).willReturn(99L);
+        given(courseService.create(eq(1L), any())).willReturn(99L);
 
         mockMvc.perform(post("/api/courses")
                         .header("Authorization", "Bearer teacher-token")
@@ -167,6 +167,8 @@ class SecurityAuthorizationTests {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").value(99));
+
+        verify(courseService).create(eq(1L), any());
     }
 
     @Test

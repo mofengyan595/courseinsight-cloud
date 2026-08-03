@@ -5,6 +5,8 @@ import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.dto.CoursePageQuery;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.service.CourseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,6 +25,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -41,9 +47,10 @@ class CourseControllerTests {
 
     @Test
     void shouldCreateCourse() throws Exception {
-        given(courseService.create(any())).willReturn(3L);
+        given(courseService.create(eq(11L), any())).willReturn(3L);
 
         mockMvc.perform(post("/api/courses")
+                        .principal(authentication(11L, UserRole.TEACHER))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -61,9 +68,15 @@ class CourseControllerTests {
 
     @Test
     void shouldUpdateCourse() throws Exception {
-        given(courseService.update(any(), any())).willReturn(1L);
+        given(courseService.update(
+                eq(11L),
+                eq(UserRole.TEACHER),
+                eq(1L),
+                any()
+        )).willReturn(1L);
 
         mockMvc.perform(put("/api/courses/{id}", 1L)
+                        .principal(authentication(11L, UserRole.TEACHER))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -82,6 +95,7 @@ class CourseControllerTests {
     @Test
     void shouldRejectInvalidCourseStatusOnUpdate() throws Exception {
         mockMvc.perform(put("/api/courses/{id}", 1L)
+                        .principal(authentication(11L, UserRole.TEACHER))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -101,6 +115,7 @@ class CourseControllerTests {
     @Test
     void shouldRejectBlankCourseName() throws Exception {
         mockMvc.perform(post("/api/courses")
+                        .principal(authentication(11L, UserRole.TEACHER))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -120,10 +135,11 @@ class CourseControllerTests {
 
     @Test
     void shouldReturnConflictForDuplicateCourseCode() throws Exception {
-        given(courseService.create(any()))
+        given(courseService.create(eq(11L), any()))
                 .willThrow(new DuplicateKeyException("duplicate course code"));
 
         mockMvc.perform(post("/api/courses")
+                        .principal(authentication(11L, UserRole.TEACHER))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -137,6 +153,32 @@ class CourseControllerTests {
                 .andExpect(jsonPath("$.code").value(409))
                 .andExpect(jsonPath("$.message").value("课程代码已存在"))
                 .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void shouldReturnForbiddenWhenTeacherUpdatesAnotherCourse() throws Exception {
+        given(courseService.update(
+                eq(12L),
+                eq(UserRole.TEACHER),
+                eq(1L),
+                any()
+        )).willThrow(new CourseAccessDeniedException("无权管理其他教师的课程"));
+
+        mockMvc.perform(put("/api/courses/{id}", 1L)
+                        .principal(authentication(12L, UserRole.TEACHER))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "code": "CS101",
+                                  "name": "Java高级程序设计",
+                                  "teacherName": "李老师",
+                                  "description": "Java进阶课程",
+                                  "status": 1
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403))
+                .andExpect(jsonPath("$.message").value("无权管理其他教师的课程"));
     }
 
     @Test
@@ -213,5 +255,13 @@ class CourseControllerTests {
                 .andExpect(jsonPath("$.code").value(400));
 
         verifyNoInteractions(courseService);
+    }
+
+    private Authentication authentication(Long userId, UserRole role) {
+        return UsernamePasswordAuthenticationToken.authenticated(
+                userId.toString(),
+                "N/A",
+                List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))
+        );
     }
 }
