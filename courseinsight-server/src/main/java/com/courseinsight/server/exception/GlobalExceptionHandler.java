@@ -38,6 +38,12 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
     }
 
+    @ExceptionHandler(DuplicateCommentException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleDuplicateComment(DuplicateCommentException exception) {
+        return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public ApiResponse<Void> handleInvalidCredentials(

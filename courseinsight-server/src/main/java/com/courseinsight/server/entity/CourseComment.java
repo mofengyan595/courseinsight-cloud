@@ -1,6 +1,7 @@
 package com.courseinsight.server.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Getter;
@@ -17,8 +18,13 @@ public class CourseComment {
     private Long id;
 
     private Long courseId;
+    private Long userId;
     private String content;
     private Integer rating;
+
+    @TableField("is_anonymous")
+    private Boolean anonymous;
+
     private Integer status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

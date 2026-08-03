@@ -27,4 +27,32 @@ class CommentSchemaTests {
 
         assertEquals(1, tableCount);
     }
+
+    @Test
+    void courseCommentTracksAnonymousUserOwnership() {
+        Integer ownershipColumnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'course_comment'
+                  AND column_name IN ('user_id', 'is_anonymous')
+                """,
+                Integer.class
+        );
+        Integer uniqueIndexColumnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'course_comment'
+                  AND index_name = 'uk_comment_course_user'
+                  AND non_unique = 0
+                """,
+                Integer.class
+        );
+
+        assertEquals(2, ownershipColumnCount);
+        assertEquals(2, uniqueIndexColumnCount);
+    }
 }

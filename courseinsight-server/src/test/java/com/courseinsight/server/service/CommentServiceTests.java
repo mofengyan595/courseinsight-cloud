@@ -12,6 +12,7 @@ import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.CourseComment;
+import com.courseinsight.server.exception.DuplicateCommentException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
@@ -23,6 +24,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DuplicateKeyException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -73,6 +75,7 @@ class CommentServiceTests {
 
         Long commentId = commentService.create(
                 1L,
+                7L,
                 new CommentCreateRequest("课程讲解清晰", 5)
         );
 
@@ -82,8 +85,10 @@ class CommentServiceTests {
         verify(courseCommentMapper).insert(captor.capture());
         CourseComment savedComment = captor.getValue();
         assertThat(savedComment.getCourseId()).isEqualTo(1L);
+        assertThat(savedComment.getUserId()).isEqualTo(7L);
         assertThat(savedComment.getContent()).isEqualTo("课程讲解清晰");
         assertThat(savedComment.getRating()).isEqualTo(5);
+        assertThat(savedComment.getAnonymous()).isTrue();
         assertThat(savedComment.getStatus()).isEqualTo(1);
 
         ArgumentCaptor<AnalysisTask> taskCaptor = ArgumentCaptor.forClass(AnalysisTask.class);
@@ -112,12 +117,32 @@ class CommentServiceTests {
 
         assertThatThrownBy(() -> commentService.create(
                 999999L,
+                7L,
                 new CommentCreateRequest("课程评价", 4)
         ))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("课程不存在");
 
         verifyNoInteractions(courseCommentMapper, analysisTaskMapper, outboxEventMapper);
+    }
+
+    @Test
+    void shouldRejectDuplicateCommentForSameCourseAndUser() {
+        Course course = new Course();
+        course.setId(1L);
+        given(courseMapper.selectById(1L)).willReturn(course);
+        given(courseCommentMapper.insert(any(CourseComment.class)))
+                .willThrow(new DuplicateKeyException("duplicate comment"));
+
+        assertThatThrownBy(() -> commentService.create(
+                1L,
+                7L,
+                new CommentCreateRequest("重复评价", 4)
+        ))
+                .isInstanceOf(DuplicateCommentException.class)
+                .hasMessage("你已经评价过该课程");
+
+        verifyNoInteractions(analysisTaskMapper, outboxEventMapper);
     }
 
     @Test
@@ -145,6 +170,25 @@ class CommentServiceTests {
         assertThat(response.items().get(0).id()).isEqualTo(10L);
         assertThat(response.items().get(0).courseId()).isEqualTo(1L);
         assertThat(response.items().get(0).content()).isEqualTo("课程讲解清晰");
+        assertThat(response.items().get(0).anonymous()).isTrue();
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void shouldPageCommentsForCurrentUser() {
+        Page<CourseComment> mapperResult = new Page<>(1, 10, 1);
+        mapperResult.setRecords(List.of(createComment()));
+        given(courseCommentMapper.selectPage(any(Page.class), any(Wrapper.class)))
+                .willReturn(mapperResult);
+
+        PageResponse<CommentDetailResponse> response = commentService.pageByUser(
+                7L,
+                new CommentPageQuery(1, 10)
+        );
+
+        assertThat(response.total()).isEqualTo(1);
+        assertThat(response.items()).hasSize(1);
+        assertThat(response.items().get(0).id()).isEqualTo(10L);
     }
 
     @Test
@@ -165,8 +209,10 @@ class CommentServiceTests {
         CourseComment comment = new CourseComment();
         comment.setId(10L);
         comment.setCourseId(1L);
+        comment.setUserId(7L);
         comment.setContent("课程讲解清晰");
         comment.setRating(5);
+        comment.setAnonymous(true);
         comment.setStatus(1);
         comment.setCreatedAt(LocalDateTime.of(2026, 8, 1, 10, 0));
         comment.setUpdatedAt(LocalDateTime.of(2026, 8, 1, 10, 0));

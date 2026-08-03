@@ -9,6 +9,7 @@ public record CommentDetailResponse(
         Long courseId,
         String content,
         Integer rating,
+        Boolean anonymous,
         Integer status,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -20,6 +21,7 @@ public record CommentDetailResponse(
                 comment.getCourseId(),
                 comment.getContent(),
                 comment.getRating(),
+                comment.getAnonymous(),
                 comment.getStatus(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt()

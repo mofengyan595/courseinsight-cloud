@@ -2,9 +2,11 @@ package com.courseinsight.server.security;
 
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.config.SecurityConfig;
+import com.courseinsight.server.controller.CommentController;
 import com.courseinsight.server.controller.CourseController;
 import com.courseinsight.server.controller.HealthController;
 import com.courseinsight.server.dto.CoursePageQuery;
+import com.courseinsight.server.service.CommentService;
 import com.courseinsight.server.service.CourseService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -30,9 +33,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = {CourseController.class, HealthController.class})
+@WebMvcTest(controllers = {
+        CourseController.class,
+        CommentController.class,
+        HealthController.class
+})
 @ContextConfiguration(classes = {
         CourseController.class,
+        CommentController.class,
         HealthController.class,
         SecurityConfig.class
 })
@@ -43,6 +51,9 @@ class SecurityAuthorizationTests {
 
     @MockitoBean
     private CourseService courseService;
+
+    @MockitoBean
+    private CommentService commentService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -120,6 +131,27 @@ class SecurityAuthorizationTests {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").value(99));
+    }
+
+    @Test
+    void shouldBindStudentCommentToJwtSubject() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+        given(commentService.create(eq(1L), eq(1L), any())).willReturn(10L);
+
+        mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
+                        .header("Authorization", "Bearer student-token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "content": "课程讲解清晰",
+                                  "rating": 5
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data").value(10));
+
+        verify(commentService).create(eq(1L), eq(1L), any());
     }
 
     private Jwt jwt(String tokenValue, String role) {

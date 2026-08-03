@@ -40,9 +40,10 @@ class CommentControllerTests {
 
     @Test
     void shouldCreateComment() throws Exception {
-        given(commentService.create(eq(1L), any())).willReturn(10L);
+        given(commentService.create(eq(1L), eq(7L), any())).willReturn(10L);
 
         mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
+                        .principal(() -> "7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -59,6 +60,7 @@ class CommentControllerTests {
     @Test
     void shouldRejectInvalidComment() throws Exception {
         mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
+                        .principal(() -> "7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -74,10 +76,11 @@ class CommentControllerTests {
 
     @Test
     void shouldReturnNotFoundWhenCourseDoesNotExist() throws Exception {
-        given(commentService.create(eq(999999L), any()))
+        given(commentService.create(eq(999999L), eq(7L), any()))
                 .willThrow(new ResourceNotFoundException("课程不存在"));
 
         mockMvc.perform(post("/api/courses/{courseId}/comments", 999999L)
+                        .principal(() -> "7")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -97,6 +100,7 @@ class CommentControllerTests {
                 1L,
                 "课程讲解清晰",
                 5,
+                true,
                 1,
                 LocalDateTime.of(2026, 8, 1, 10, 0),
                 LocalDateTime.of(2026, 8, 1, 10, 0)
@@ -115,7 +119,35 @@ class CommentControllerTests {
                 .andExpect(jsonPath("$.data.totalPages").value(1))
                 .andExpect(jsonPath("$.data.items[0].id").value(10))
                 .andExpect(jsonPath("$.data.items[0].courseId").value(1))
-                .andExpect(jsonPath("$.data.items[0].rating").value(5));
+                .andExpect(jsonPath("$.data.items[0].rating").value(5))
+                .andExpect(jsonPath("$.data.items[0].anonymous").value(true))
+                .andExpect(jsonPath("$.data.items[0].userId").doesNotExist())
+                .andExpect(jsonPath("$.data.items[0].username").doesNotExist());
+    }
+
+    @Test
+    void shouldPageCurrentUsersComments() throws Exception {
+        CommentDetailResponse comment = new CommentDetailResponse(
+                10L,
+                1L,
+                "课程讲解清晰",
+                5,
+                true,
+                1,
+                LocalDateTime.of(2026, 8, 1, 10, 0),
+                LocalDateTime.of(2026, 8, 1, 10, 0)
+        );
+        given(commentService.pageByUser(eq(7L), any(CommentPageQuery.class)))
+                .willReturn(new PageResponse<>(1, 10, 1, 1, List.of(comment)));
+
+        mockMvc.perform(get("/api/comments/me")
+                        .principal(() -> "7")
+                        .param("page", "1")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(10))
+                .andExpect(jsonPath("$.data.items[0].anonymous").value(true))
+                .andExpect(jsonPath("$.data.items[0].userId").doesNotExist());
     }
 
     @Test

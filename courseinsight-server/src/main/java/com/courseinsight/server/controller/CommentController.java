@@ -17,8 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.security.Principal;
+
 @RestController
-@RequestMapping("/api/courses/{courseId}/comments")
+@RequestMapping("/api")
 public class CommentController {
 
     private final CommentService commentService;
@@ -27,18 +29,37 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    @PostMapping
+    @PostMapping("/courses/{courseId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Long> create(
             @PathVariable Long courseId,
+            Principal principal,
             @Valid @RequestBody CommentCreateRequest request) {
-        return ApiResponse.success(commentService.create(courseId, request));
+        return ApiResponse.success(commentService.create(
+                courseId,
+                currentUserId(principal),
+                request
+        ));
     }
 
-    @GetMapping
+    @GetMapping("/courses/{courseId}/comments")
     public ApiResponse<PageResponse<CommentDetailResponse>> page(
             @PathVariable Long courseId,
             @Valid @ModelAttribute CommentPageQuery query) {
         return ApiResponse.success(commentService.page(courseId, query));
+    }
+
+    @GetMapping("/comments/me")
+    public ApiResponse<PageResponse<CommentDetailResponse>> myComments(
+            Principal principal,
+            @Valid @ModelAttribute CommentPageQuery query) {
+        return ApiResponse.success(commentService.pageByUser(
+                currentUserId(principal),
+                query
+        ));
+    }
+
+    private Long currentUserId(Principal principal) {
+        return Long.valueOf(principal.getName());
     }
 }

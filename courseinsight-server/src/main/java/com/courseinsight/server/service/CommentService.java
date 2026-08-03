@@ -11,12 +11,14 @@ import com.courseinsight.server.entity.AnalysisOutboxStatus;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.CourseComment;
+import com.courseinsight.server.exception.DuplicateCommentException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.mapper.CourseMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,16 +46,22 @@ public class CommentService {
     }
 
     @Transactional
-    public Long create(Long courseId, CommentCreateRequest request) {
+    public Long create(Long courseId, Long userId, CommentCreateRequest request) {
         requireCourse(courseId);
 
         CourseComment comment = new CourseComment();
         comment.setCourseId(courseId);
+        comment.setUserId(userId);
         comment.setContent(request.content());
         comment.setRating(request.rating());
+        comment.setAnonymous(true);
         comment.setStatus(1);
 
-        courseCommentMapper.insert(comment);
+        try {
+            courseCommentMapper.insert(comment);
+        } catch (DuplicateKeyException exception) {
+            throw new DuplicateCommentException("你已经评价过该课程");
+        }
 
         AnalysisTask task = new AnalysisTask();
         task.setTaskNo(UUID.randomUUID().toString().replace("-", ""));
@@ -90,6 +98,27 @@ public class CommentService {
                 wrapper
         );
 
+        return toPageResponse(result);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<CommentDetailResponse> pageByUser(
+            Long userId,
+            CommentPageQuery query) {
+        LambdaQueryWrapper<CourseComment> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CourseComment::getUserId, userId)
+                .orderByDesc(CourseComment::getCreatedAt)
+                .orderByDesc(CourseComment::getId);
+
+        Page<CourseComment> result = courseCommentMapper.selectPage(
+                new Page<>(query.page(), query.size()),
+                wrapper
+        );
+
+        return toPageResponse(result);
+    }
+
+    private PageResponse<CommentDetailResponse> toPageResponse(Page<CourseComment> result) {
         List<CommentDetailResponse> items = result.getRecords()
                 .stream()
                 .map(CommentDetailResponse::from)

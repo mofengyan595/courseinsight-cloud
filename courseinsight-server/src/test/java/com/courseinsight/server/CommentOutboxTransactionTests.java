@@ -55,6 +55,7 @@ class CommentOutboxTransactionTests {
 
             assertThatThrownBy(() -> commentService.create(
                     courseId,
+                    700002L,
                     new CommentCreateRequest("Outbox 事务回滚测试", 4)
             )).isInstanceOf(DataIntegrityViolationException.class);
 
