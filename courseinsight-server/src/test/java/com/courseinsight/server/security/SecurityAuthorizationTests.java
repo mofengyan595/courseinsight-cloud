@@ -2,10 +2,12 @@ package com.courseinsight.server.security;
 
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.config.SecurityConfig;
+import com.courseinsight.server.controller.AdminUserController;
 import com.courseinsight.server.controller.CommentController;
 import com.courseinsight.server.controller.CourseController;
 import com.courseinsight.server.controller.HealthController;
 import com.courseinsight.server.dto.CoursePageQuery;
+import com.courseinsight.server.service.AdminUserService;
 import com.courseinsight.server.service.CommentService;
 import com.courseinsight.server.service.CourseService;
 import org.junit.jupiter.api.Test;
@@ -35,11 +37,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {
+        AdminUserController.class,
         CourseController.class,
         CommentController.class,
         HealthController.class
 })
 @ContextConfiguration(classes = {
+        AdminUserController.class,
         CourseController.class,
         CommentController.class,
         HealthController.class,
@@ -55,6 +59,9 @@ class SecurityAuthorizationTests {
 
     @MockitoBean
     private CommentService commentService;
+
+    @MockitoBean
+    private AdminUserService adminUserService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -101,6 +108,34 @@ class SecurityAuthorizationTests {
                 .andExpect(jsonPath("$.code").value(0));
 
         verify(courseService).page(any(CoursePageQuery.class));
+    }
+
+    @Test
+    void shouldForbidStudentFromListingUsers() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+
+        mockMvc.perform(get("/api/admin/users")
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        verifyNoInteractions(adminUserService);
+    }
+
+    @Test
+    void shouldAllowAdministratorToListUsers() throws Exception {
+        given(jwtDecoder.decode("admin-token"))
+                .willReturn(jwt("admin-token", "ADMIN"));
+        given(adminUserService.page(any()))
+                .willReturn(new PageResponse<>(1, 10, 0, 0, List.of()));
+
+        mockMvc.perform(get("/api/admin/users")
+                        .header("Authorization", "Bearer admin-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        verify(adminUserService).page(any());
     }
 
     @Test

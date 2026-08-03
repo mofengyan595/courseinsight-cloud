@@ -69,6 +69,12 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
     }
 
+    @ExceptionHandler(UserRoleConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleUserRoleConflict(UserRoleConflictException exception) {
+        return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
+    }
+
     @ExceptionHandler(AiServiceException.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ApiResponse<Void> handleAiService(AiServiceException exception) {
