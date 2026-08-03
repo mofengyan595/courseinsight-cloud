@@ -18,6 +18,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
 
 @SpringBootTest
 class AnalysisExecutionIntegrationTests {
@@ -111,6 +113,44 @@ class AnalysisExecutionIntegrationTests {
             assertThat(taskStatus).isEqualTo("FAILED");
             assertThat(retryCount).isEqualTo(1);
             assertThat(failureReason).isEqualTo("AI 服务调用失败");
+        } finally {
+            deleteTestData(testData);
+        }
+    }
+
+    @Test
+    void shouldReturnExistingResultWhenTaskIsConsumedAgain() {
+        String commentText = "The course is clear and useful.";
+        TestData testData = createWaitingTask(commentText);
+
+        try {
+            given(aiAnalysisClient.analyze(
+                    testData.taskId(),
+                    testData.commentId(),
+                    commentText,
+                    true
+            )).willReturn(createAiResponse(testData.taskId(), testData.commentId()));
+
+            AnalysisExecutionResponse firstResponse =
+                    analysisExecutionService.execute(testData.taskId());
+            AnalysisExecutionResponse duplicateResponse =
+                    analysisExecutionService.execute(testData.taskId());
+
+            assertThat(duplicateResponse.resultId()).isEqualTo(firstResponse.resultId());
+            assertThat(duplicateResponse.status()).isEqualTo("SUCCESS");
+            then(aiAnalysisClient).should(times(1)).analyze(
+                    testData.taskId(),
+                    testData.commentId(),
+                    commentText,
+                    true
+            );
+
+            Integer resultCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM analysis_result WHERE task_id = ?",
+                    Integer.class,
+                    testData.taskId()
+            );
+            assertThat(resultCount).isEqualTo(1);
         } finally {
             deleteTestData(testData);
         }

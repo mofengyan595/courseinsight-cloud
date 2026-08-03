@@ -48,4 +48,10 @@ public class GlobalExceptionHandler {
     public ApiResponse<Void> handleAiService(AiServiceException exception) {
         return ApiResponse.error(HttpStatus.BAD_GATEWAY.value(), exception.getMessage());
     }
+
+    @ExceptionHandler(MessageQueueException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ApiResponse<Void> handleMessageQueue(MessageQueueException exception) {
+        return ApiResponse.error(HttpStatus.SERVICE_UNAVAILABLE.value(), exception.getMessage());
+    }
 }

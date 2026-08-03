@@ -15,8 +15,18 @@ spring:
       connect-timeout: 2s
       timeout: 2s
 
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+  producer:
+    group: courseinsight-analysis-producer
+    send-message-timeout: 5000
+
 courseinsight:
   ai-service:
     base-url: ${AI_SERVICE_BASE_URL:http://127.0.0.1:8001}
     connect-timeout: 2s
     read-timeout: 90s
+  rocketmq:
+    analysis-topic: ${ROCKETMQ_ANALYSIS_TOPIC:courseinsight-analysis}
+    analysis-consumer-group: ${ROCKETMQ_ANALYSIS_CONSUMER_GROUP:courseinsight-analysis-consumer}
+    send-timeout-ms: 5000
