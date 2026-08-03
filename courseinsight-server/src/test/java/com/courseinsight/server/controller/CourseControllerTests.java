@@ -23,6 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -54,6 +55,45 @@ class CourseControllerTests {
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data").value(3));
+    }
+
+    @Test
+    void shouldUpdateCourse() throws Exception {
+        given(courseService.update(any(), any())).willReturn(1L);
+
+        mockMvc.perform(put("/api/courses/{id}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "code": "CS101",
+                                  "name": "Java高级程序设计",
+                                  "teacherName": "李老师",
+                                  "description": "Java进阶课程",
+                                  "status": 1
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data").value(1));
+    }
+
+    @Test
+    void shouldRejectInvalidCourseStatusOnUpdate() throws Exception {
+        mockMvc.perform(put("/api/courses/{id}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "code": "CS101",
+                                  "name": "Java高级程序设计",
+                                  "teacherName": "李老师",
+                                  "description": "Java进阶课程",
+                                  "status": 2
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+
+        verifyNoInteractions(courseService);
     }
 
     @Test

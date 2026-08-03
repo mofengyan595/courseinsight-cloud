@@ -8,11 +8,14 @@ import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseCreateRequest;
 import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.dto.CoursePageQuery;
+import com.courseinsight.server.dto.CourseUpdateRequest;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.CourseMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -37,7 +40,29 @@ public class CourseService {
         course.setStatus(1);
 
         courseMapper.insert(course);
+        evictCacheAfterCommit(course.getId());
         return course.getId();
+    }
+
+    @Transactional
+    public Long update(Long id, CourseUpdateRequest request) {
+        if (courseMapper.selectById(id) == null) {
+            throw new ResourceNotFoundException("课程不存在");
+        }
+
+        Course course = new Course();
+        course.setId(id);
+        course.setCode(request.code());
+        course.setName(request.name());
+        course.setTeacherName(request.teacherName());
+        course.setDescription(request.description());
+        course.setStatus(request.status());
+        if (courseMapper.updateById(course) != 1) {
+            throw new ResourceNotFoundException("课程不存在");
+        }
+
+        evictCacheAfterCommit(id);
+        return id;
     }
 
     @Transactional(readOnly = true)
@@ -93,6 +118,23 @@ public class CourseService {
                 result.getTotal(),
                 result.getPages(),
                 items
+        );
+    }
+
+    private void evictCacheAfterCommit(Long courseId) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()
+                || !TransactionSynchronizationManager.isActualTransactionActive()) {
+            courseDetailCache.evict(courseId);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        courseDetailCache.evict(courseId);
+                    }
+                }
         );
     }
 }

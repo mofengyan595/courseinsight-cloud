@@ -32,11 +32,11 @@ class CourseDetailCacheTests {
     void setUp() {
         ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
         courseDetailCache = new CourseDetailCache(redisTemplate, objectMapper);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
     }
 
     @Test
     void shouldReturnMissWhenRedisHasNoValue() {
+        stubValueOperations();
         given(valueOperations.get("course:detail:1")).willReturn(null);
 
         CourseCacheLookup result = courseDetailCache.get(1L);
@@ -47,6 +47,7 @@ class CourseDetailCacheTests {
 
     @Test
     void shouldReadCourseFromRedis() throws Exception {
+        stubValueOperations();
         CourseDetailResponse course = createResponse();
         ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
         given(valueOperations.get("course:detail:1"))
@@ -60,6 +61,7 @@ class CourseDetailCacheTests {
 
     @Test
     void shouldRecognizeCachedNotFoundValue() {
+        stubValueOperations();
         given(valueOperations.get("course:detail:999999"))
                 .willReturn(CourseDetailCache.NULL_VALUE);
 
@@ -71,6 +73,7 @@ class CourseDetailCacheTests {
 
     @Test
     void shouldWriteCourseWithTtl() {
+        stubValueOperations();
         CourseDetailResponse course = createResponse();
 
         courseDetailCache.put(1L, course);
@@ -86,6 +89,7 @@ class CourseDetailCacheTests {
 
     @Test
     void shouldWriteNotFoundValueWithShortTtl() {
+        stubValueOperations();
         courseDetailCache.putNotFound(999999L);
 
         verify(valueOperations).set(
@@ -93,6 +97,17 @@ class CourseDetailCacheTests {
                 CourseDetailCache.NULL_VALUE,
                 CourseDetailCache.NULL_TTL
         );
+    }
+
+    @Test
+    void shouldEvictCourseCache() {
+        courseDetailCache.evict(1L);
+
+        verify(redisTemplate).delete("course:detail:1");
+    }
+
+    private void stubValueOperations() {
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
     }
 
     private CourseDetailResponse createResponse() {

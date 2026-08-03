@@ -68,6 +68,10 @@ public class CourseDetailCache {
         }
     }
 
+    public void evict(Long courseId) {
+        deleteQuietly(buildKey(courseId));
+    }
+
     private String buildKey(Long courseId) {
         return KEY_PREFIX + courseId;
     }
@@ -76,7 +80,7 @@ public class CourseDetailCache {
         try {
             redisTemplate.delete(key);
         } catch (RuntimeException exception) {
-            LOGGER.warn("Failed to delete invalid Redis key={}", key, exception);
+            LOGGER.warn("Failed to delete Redis key={}", key, exception);
         }
     }
 }

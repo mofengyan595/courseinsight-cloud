@@ -7,6 +7,7 @@ import com.courseinsight.server.cache.CourseDetailCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.dto.CoursePageQuery;
+import com.courseinsight.server.dto.CourseUpdateRequest;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.CourseMapper;
@@ -37,6 +38,39 @@ class CourseServiceTests {
 
     @InjectMocks
     private CourseService courseService;
+
+    @Test
+    void shouldUpdateCourseAndEvictCache() {
+        given(courseMapper.selectById(1L)).willReturn(createCourse());
+        given(courseMapper.updateById(any(Course.class))).willReturn(1);
+
+        Long courseId = courseService.update(
+                1L,
+                new CourseUpdateRequest(
+                        "CS101",
+                        "Java高级程序设计",
+                        "李老师",
+                        "Java进阶课程",
+                        1
+                )
+        );
+
+        assertThat(courseId).isEqualTo(1L);
+        verify(courseDetailCache).evict(1L);
+    }
+
+    @Test
+    void shouldRejectUpdateWhenCourseDoesNotExist() {
+        given(courseMapper.selectById(999999L)).willReturn(null);
+
+        assertThatThrownBy(() -> courseService.update(
+                999999L,
+                new CourseUpdateRequest("CS999", "不存在", "测试教师", null, 1)
+        )).isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("课程不存在");
+
+        verifyNoInteractions(courseDetailCache);
+    }
 
     @Test
     void shouldGetCourseById() {

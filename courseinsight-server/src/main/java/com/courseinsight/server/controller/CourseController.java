@@ -5,6 +5,7 @@ import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseCreateRequest;
 import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.dto.CoursePageQuery;
+import com.courseinsight.server.dto.CourseUpdateRequest;
 import com.courseinsight.server.service.CourseService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,13 @@ public class CourseController {
             @Valid @RequestBody CourseCreateRequest request) {
         Long courseId = courseService.create(request);
         return ApiResponse.success(courseId);
+    }
+
+    @PutMapping("/{id}")
+    public ApiResponse<Long> update(
+            @PathVariable Long id,
+            @Valid @RequestBody CourseUpdateRequest request) {
+        return ApiResponse.success(courseService.update(id, request));
     }
 
     @GetMapping("/{id}")
