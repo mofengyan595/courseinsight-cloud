@@ -5,11 +5,15 @@ import com.courseinsight.server.config.SecurityConfig;
 import com.courseinsight.server.controller.AdminUserController;
 import com.courseinsight.server.controller.CommentController;
 import com.courseinsight.server.controller.CourseController;
+import com.courseinsight.server.controller.CourseAnalyticsController;
 import com.courseinsight.server.controller.HealthController;
 import com.courseinsight.server.dto.CoursePageQuery;
+import com.courseinsight.server.dto.CourseAnalyticsSummaryResponse;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.service.AdminUserService;
 import com.courseinsight.server.service.CommentService;
 import com.courseinsight.server.service.CourseService;
+import com.courseinsight.server.service.CourseAnalyticsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -22,6 +26,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -38,12 +43,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = {
         AdminUserController.class,
+        CourseAnalyticsController.class,
         CourseController.class,
         CommentController.class,
         HealthController.class
 })
 @ContextConfiguration(classes = {
         AdminUserController.class,
+        CourseAnalyticsController.class,
         CourseController.class,
         CommentController.class,
         HealthController.class,
@@ -56,6 +63,9 @@ class SecurityAuthorizationTests {
 
     @MockitoBean
     private CourseService courseService;
+
+    @MockitoBean
+    private CourseAnalyticsService courseAnalyticsService;
 
     @MockitoBean
     private CommentService commentService;
@@ -108,6 +118,34 @@ class SecurityAuthorizationTests {
                 .andExpect(jsonPath("$.code").value(0));
 
         verify(courseService).page(any(CoursePageQuery.class));
+    }
+
+    @Test
+    void shouldForbidStudentFromViewingCourseAnalytics() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+
+        mockMvc.perform(get("/api/courses/{courseId}/analytics/summary", 14L)
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        verifyNoInteractions(courseAnalyticsService);
+    }
+
+    @Test
+    void shouldAllowTeacherToViewCourseAnalyticsEndpoint() throws Exception {
+        given(jwtDecoder.decode("teacher-token"))
+                .willReturn(jwt("teacher-token", "TEACHER"));
+        given(courseAnalyticsService.getSummary(14L, 1L, UserRole.TEACHER))
+                .willReturn(emptySummary(14L));
+
+        mockMvc.perform(get("/api/courses/{courseId}/analytics/summary", 14L)
+                        .header("Authorization", "Bearer teacher-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        verify(courseAnalyticsService).getSummary(14L, 1L, UserRole.TEACHER);
     }
 
     @Test
@@ -239,5 +277,26 @@ class SecurityAuthorizationTests {
                   "description": "Security authorization test"
                 }
                 """;
+    }
+
+    private CourseAnalyticsSummaryResponse emptySummary(Long courseId) {
+        return new CourseAnalyticsSummaryResponse(
+                courseId,
+                0,
+                new BigDecimal("0.00"),
+                new CourseAnalyticsSummaryResponse.TaskSummary(
+                        0, 0, 0, 0, 0, new BigDecimal("0.00")
+                ),
+                new CourseAnalyticsSummaryResponse.SentimentSummary(
+                        0,
+                        0,
+                        0,
+                        0,
+                        new BigDecimal("0.00"),
+                        new BigDecimal("0.00"),
+                        new BigDecimal("0.00")
+                ),
+                new CourseAnalyticsSummaryResponse.RiskSummary(0, 0, 0, 0)
+        );
     }
 }

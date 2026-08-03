@@ -54,6 +54,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/courses/**")
                         .hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/courses/*/analytics/summary"
+                        ).hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/analysis-tasks/*/execute",
                                 "/api/analysis-tasks/*/enqueue"
