@@ -21,7 +21,10 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -148,6 +151,31 @@ class CommentControllerTests {
                 .andExpect(jsonPath("$.data.items[0].id").value(10))
                 .andExpect(jsonPath("$.data.items[0].anonymous").value(true))
                 .andExpect(jsonPath("$.data.items[0].userId").doesNotExist());
+    }
+
+    @Test
+    void shouldDeleteCurrentUsersComment() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}", 10L)
+                        .principal(() -> "7"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.message").value("success"))
+                .andExpect(jsonPath("$.data").doesNotExist());
+
+        verify(commentService).delete(10L, 7L);
+    }
+
+    @Test
+    void shouldHideWhetherCommentBelongsToAnotherUser() throws Exception {
+        willThrow(new ResourceNotFoundException("评价不存在"))
+                .given(commentService)
+                .delete(10L, 7L);
+
+        mockMvc.perform(delete("/api/comments/{commentId}", 10L)
+                        .principal(() -> "7"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404))
+                .andExpect(jsonPath("$.message").value("评价不存在"));
     }
 
     @Test

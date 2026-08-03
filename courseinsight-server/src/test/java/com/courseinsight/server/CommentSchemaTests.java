@@ -40,19 +40,42 @@ class CommentSchemaTests {
                 """,
                 Integer.class
         );
-        Integer uniqueIndexColumnCount = jdbcTemplate.queryForObject(
+        Integer activeUniqueIndexColumnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'course_comment'
+                  AND index_name = 'uk_comment_course_active_user'
+                  AND non_unique = 0
+                """,
+                Integer.class
+        );
+        Integer generatedColumnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'course_comment'
+                  AND column_name = 'active_user_id'
+                  AND extra LIKE '%STORED GENERATED%'
+                """,
+                Integer.class
+        );
+        Integer retiredIndexCount = jdbcTemplate.queryForObject(
                 """
                 SELECT COUNT(*)
                 FROM information_schema.statistics
                 WHERE table_schema = DATABASE()
                   AND table_name = 'course_comment'
                   AND index_name = 'uk_comment_course_user'
-                  AND non_unique = 0
                 """,
                 Integer.class
         );
 
         assertEquals(2, ownershipColumnCount);
-        assertEquals(2, uniqueIndexColumnCount);
+        assertEquals(2, activeUniqueIndexColumnCount);
+        assertEquals(1, generatedColumnCount);
+        assertEquals(0, retiredIndexCount);
     }
 }

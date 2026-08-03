@@ -8,6 +8,7 @@ import com.courseinsight.server.dto.CommentPageQuery;
 import com.courseinsight.server.service.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -57,6 +58,14 @@ public class CommentController {
                 currentUserId(principal),
                 query
         ));
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    public ApiResponse<Void> delete(
+            @PathVariable Long commentId,
+            Principal principal) {
+        commentService.delete(commentId, currentUserId(principal));
+        return ApiResponse.success(null);
     }
 
     private Long currentUserId(Principal principal) {

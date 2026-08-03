@@ -1,6 +1,7 @@
 package com.courseinsight.server.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
@@ -90,6 +91,7 @@ public class CommentService {
 
         LambdaQueryWrapper<CourseComment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CourseComment::getCourseId, courseId)
+                .eq(CourseComment::getStatus, 1)
                 .orderByDesc(CourseComment::getCreatedAt)
                 .orderByDesc(CourseComment::getId);
 
@@ -107,6 +109,7 @@ public class CommentService {
             CommentPageQuery query) {
         LambdaQueryWrapper<CourseComment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CourseComment::getUserId, userId)
+                .eq(CourseComment::getStatus, 1)
                 .orderByDesc(CourseComment::getCreatedAt)
                 .orderByDesc(CourseComment::getId);
 
@@ -116,6 +119,21 @@ public class CommentService {
         );
 
         return toPageResponse(result);
+    }
+
+    @Transactional
+    public void delete(Long commentId, Long userId) {
+        CourseComment update = new CourseComment();
+        update.setStatus(0);
+
+        LambdaUpdateWrapper<CourseComment> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(CourseComment::getId, commentId)
+                .eq(CourseComment::getUserId, userId)
+                .eq(CourseComment::getStatus, 1);
+
+        if (courseCommentMapper.update(update, wrapper) != 1) {
+            throw new ResourceNotFoundException("评价不存在");
+        }
     }
 
     private PageResponse<CommentDetailResponse> toPageResponse(Page<CourseComment> result) {

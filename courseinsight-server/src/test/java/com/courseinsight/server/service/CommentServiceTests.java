@@ -192,6 +192,39 @@ class CommentServiceTests {
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void shouldSoftDeleteOnlyCurrentUsersActiveComment() {
+        given(courseCommentMapper.update(
+                any(CourseComment.class),
+                any(Wrapper.class)
+        )).willReturn(1);
+
+        commentService.delete(10L, 7L);
+
+        ArgumentCaptor<CourseComment> updateCaptor =
+                ArgumentCaptor.forClass(CourseComment.class);
+        verify(courseCommentMapper).update(
+                updateCaptor.capture(),
+                any(Wrapper.class)
+        );
+
+        assertThat(updateCaptor.getValue().getStatus()).isZero();
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void shouldRejectDeletingMissingOrOtherUsersComment() {
+        given(courseCommentMapper.update(
+                any(CourseComment.class),
+                any(Wrapper.class)
+        )).willReturn(0);
+
+        assertThatThrownBy(() -> commentService.delete(10L, 7L))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("评价不存在");
+    }
+
+    @Test
     void shouldRejectPageForMissingCourse() {
         given(courseMapper.selectById(999999L)).willReturn(null);
 

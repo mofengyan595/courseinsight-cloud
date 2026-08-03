@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -152,6 +153,28 @@ class SecurityAuthorizationTests {
                 .andExpect(jsonPath("$.data").value(10));
 
         verify(commentService).create(eq(1L), eq(1L), any());
+    }
+
+    @Test
+    void shouldRejectDeletingCommentWithoutToken() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}", 10L))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401));
+
+        verifyNoInteractions(commentService);
+    }
+
+    @Test
+    void shouldBindCommentDeletionToJwtSubject() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+
+        mockMvc.perform(delete("/api/comments/{commentId}", 10L)
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        verify(commentService).delete(10L, 1L);
     }
 
     private Jwt jwt(String tokenValue, String role) {
