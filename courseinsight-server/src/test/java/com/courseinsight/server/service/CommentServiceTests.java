@@ -6,11 +6,14 @@ import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
 import com.courseinsight.server.dto.CommentPageQuery;
+import com.courseinsight.server.entity.AnalysisOutboxEvent;
+import com.courseinsight.server.entity.AnalysisOutboxStatus;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.CourseComment;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.mapper.CourseMapper;
@@ -43,6 +46,9 @@ class CommentServiceTests {
     @Mock
     private AnalysisTaskMapper analysisTaskMapper;
 
+    @Mock
+    private AnalysisOutboxEventMapper outboxEventMapper;
+
     @InjectMocks
     private CommentService commentService;
 
@@ -57,7 +63,13 @@ class CommentServiceTests {
                     comment.setId(10L);
                     return 1;
                 });
-        given(analysisTaskMapper.insert(any(AnalysisTask.class))).willReturn(1);
+        given(analysisTaskMapper.insert(any(AnalysisTask.class)))
+                .willAnswer(invocation -> {
+                    AnalysisTask task = invocation.getArgument(0);
+                    task.setId(20L);
+                    return 1;
+                });
+        given(outboxEventMapper.insert(any(AnalysisOutboxEvent.class))).willReturn(1);
 
         Long commentId = commentService.create(
                 1L,
@@ -82,6 +94,16 @@ class CommentServiceTests {
         assertThat(savedTask.getCourseId()).isEqualTo(1L);
         assertThat(savedTask.getStatus()).isEqualTo(AnalysisTaskStatus.WAITING.name());
         assertThat(savedTask.getRetryCount()).isZero();
+
+        ArgumentCaptor<AnalysisOutboxEvent> outboxCaptor =
+                ArgumentCaptor.forClass(AnalysisOutboxEvent.class);
+        verify(outboxEventMapper).insert(outboxCaptor.capture());
+        AnalysisOutboxEvent savedEvent = outboxCaptor.getValue();
+        assertThat(savedEvent.getEventId()).hasSize(32);
+        assertThat(savedEvent.getTaskId()).isEqualTo(20L);
+        assertThat(savedEvent.getCommentId()).isEqualTo(10L);
+        assertThat(savedEvent.getStatus()).isEqualTo(AnalysisOutboxStatus.PENDING.name());
+        assertThat(savedEvent.getRetryCount()).isZero();
     }
 
     @Test
@@ -95,7 +117,7 @@ class CommentServiceTests {
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("课程不存在");
 
-        verifyNoInteractions(courseCommentMapper, analysisTaskMapper);
+        verifyNoInteractions(courseCommentMapper, analysisTaskMapper, outboxEventMapper);
     }
 
     @Test
