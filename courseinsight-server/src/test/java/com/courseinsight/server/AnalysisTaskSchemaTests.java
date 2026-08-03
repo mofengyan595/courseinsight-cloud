@@ -27,4 +27,20 @@ class AnalysisTaskSchemaTests {
 
         assertEquals(1, tableCount);
     }
+
+    @Test
+    void analysisTaskHasDeadLetterMarker() {
+        Integer columnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'analysis_task'
+                  AND column_name = 'dead_lettered_at'
+                """,
+                Integer.class
+        );
+
+        assertEquals(1, columnCount);
+    }
 }

@@ -39,6 +39,7 @@ class AnalysisTaskControllerTests {
                 null,
                 null,
                 null,
+                null,
                 null
         );
         given(analysisTaskService.getByCommentId(10L)).willReturn(response);
@@ -51,7 +52,8 @@ class AnalysisTaskControllerTests {
                 .andExpect(jsonPath("$.data.commentId").value(10))
                 .andExpect(jsonPath("$.data.courseId").value(1))
                 .andExpect(jsonPath("$.data.status").value("WAITING"))
-                .andExpect(jsonPath("$.data.retryCount").value(0));
+                .andExpect(jsonPath("$.data.retryCount").value(0))
+                .andExpect(jsonPath("$.data.deadLetteredAt").doesNotExist());
     }
 
     @Test

@@ -11,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +41,7 @@ class AnalysisTaskServiceTests {
         assertThat(response.courseId()).isEqualTo(1L);
         assertThat(response.status()).isEqualTo("WAITING");
         assertThat(response.retryCount()).isZero();
+        assertThat(response.deadLetteredAt()).isEqualTo(task.getDeadLetteredAt());
     }
 
     @Test
@@ -58,6 +61,7 @@ class AnalysisTaskServiceTests {
         task.setCourseId(1L);
         task.setStatus("WAITING");
         task.setRetryCount(0);
+        task.setDeadLetteredAt(LocalDateTime.of(2026, 8, 3, 12, 0));
         return task;
     }
 }

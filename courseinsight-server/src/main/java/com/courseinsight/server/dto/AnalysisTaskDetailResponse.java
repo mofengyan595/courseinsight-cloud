@@ -14,6 +14,7 @@ public record AnalysisTaskDetailResponse(
         String failureReason,
         LocalDateTime startedAt,
         LocalDateTime completedAt,
+        LocalDateTime deadLetteredAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
@@ -29,6 +30,7 @@ public record AnalysisTaskDetailResponse(
                 task.getFailureReason(),
                 task.getStartedAt(),
                 task.getCompletedAt(),
+                task.getDeadLetteredAt(),
                 task.getCreatedAt(),
                 task.getUpdatedAt()
         );

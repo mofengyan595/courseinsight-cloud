@@ -29,4 +29,6 @@ courseinsight:
   rocketmq:
     analysis-topic: ${ROCKETMQ_ANALYSIS_TOPIC:courseinsight-analysis}
     analysis-consumer-group: ${ROCKETMQ_ANALYSIS_CONSUMER_GROUP:courseinsight-analysis-consumer}
+    analysis-dead-letter-topic: ${ROCKETMQ_ANALYSIS_DLQ_TOPIC:%DLQ%courseinsight-analysis-consumer}
+    analysis-dead-letter-consumer-group: ${ROCKETMQ_ANALYSIS_DLQ_CONSUMER_GROUP:courseinsight-analysis-dlq-consumer}
     send-timeout-ms: 5000

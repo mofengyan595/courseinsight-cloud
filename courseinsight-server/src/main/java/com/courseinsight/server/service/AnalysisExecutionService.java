@@ -82,7 +82,8 @@ public class AnalysisExecutionService {
                 .set(AnalysisTask::getStatus, AnalysisTaskStatus.PROCESSING.name())
                 .set(AnalysisTask::getFailureReason, null)
                 .set(AnalysisTask::getStartedAt, LocalDateTime.now())
-                .set(AnalysisTask::getCompletedAt, null);
+                .set(AnalysisTask::getCompletedAt, null)
+                .set(AnalysisTask::getDeadLetteredAt, null);
 
         if (analysisTaskMapper.update(null, wrapper) != 1) {
             throw new AnalysisTaskConflictException("分析任务已被其他请求处理");

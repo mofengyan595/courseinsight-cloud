@@ -5,6 +5,7 @@ import com.courseinsight.server.client.AiAnalysisResponse;
 import com.courseinsight.server.dto.AnalysisExecutionResponse;
 import com.courseinsight.server.exception.AiServiceException;
 import com.courseinsight.server.service.AnalysisExecutionService;
+import com.courseinsight.server.service.AnalysisTaskDeadLetterService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,6 +27,9 @@ class AnalysisExecutionIntegrationTests {
 
     @Autowired
     private AnalysisExecutionService analysisExecutionService;
+
+    @Autowired
+    private AnalysisTaskDeadLetterService deadLetterService;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
@@ -151,6 +155,38 @@ class AnalysisExecutionIntegrationTests {
                     testData.taskId()
             );
             assertThat(resultCount).isEqualTo(1);
+        } finally {
+            deleteTestData(testData);
+        }
+    }
+
+    @Test
+    void shouldClearDeadLetterMarkerWhenTaskIsRetriedSuccessfully() {
+        String commentText = "The explanation needs more examples.";
+        TestData testData = createWaitingTask(commentText);
+
+        try {
+            assertThat(deadLetterService.markDeadLettered(testData.taskId())).isTrue();
+
+            given(aiAnalysisClient.analyze(
+                    testData.taskId(),
+                    testData.commentId(),
+                    commentText,
+                    true
+            )).willReturn(createAiResponse(testData.taskId(), testData.commentId()));
+
+            AnalysisExecutionResponse response = analysisExecutionService.execute(testData.taskId());
+
+            assertThat(response.status()).isEqualTo("SUCCESS");
+            Integer deadLetterMarkerCount = jdbcTemplate.queryForObject(
+                    """
+                    SELECT COUNT(*) FROM analysis_task
+                    WHERE id = ? AND dead_lettered_at IS NOT NULL
+                    """,
+                    Integer.class,
+                    testData.taskId()
+            );
+            assertThat(deadLetterMarkerCount).isZero();
         } finally {
             deleteTestData(testData);
         }

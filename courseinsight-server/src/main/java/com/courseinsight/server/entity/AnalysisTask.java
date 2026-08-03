@@ -24,6 +24,7 @@ public class AnalysisTask {
     private String failureReason;
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+    private LocalDateTime deadLetteredAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
