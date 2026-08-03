@@ -38,6 +38,19 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiResponse<Void> handleInvalidCredentials(
+            InvalidCredentialsException exception) {
+        return ApiResponse.error(HttpStatus.UNAUTHORIZED.value(), exception.getMessage());
+    }
+
+    @ExceptionHandler(UserDisabledException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiResponse<Void> handleUserDisabled(UserDisabledException exception) {
+        return ApiResponse.error(HttpStatus.FORBIDDEN.value(), exception.getMessage());
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiResponse<Void> handleNotFound(ResourceNotFoundException exception) {

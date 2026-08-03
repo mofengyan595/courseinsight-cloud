@@ -22,6 +22,11 @@ rocketmq:
     send-message-timeout: 5000
 
 courseinsight:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:https://courseinsight.local}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:2h}
   ai-service:
     base-url: ${AI_SERVICE_BASE_URL:http://127.0.0.1:8001}
     connect-timeout: 2s

@@ -1,8 +1,11 @@
 package com.courseinsight.server.controller;
 
+import com.courseinsight.server.dto.UserLoginResponse;
 import com.courseinsight.server.dto.UserRegisterResponse;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
+import com.courseinsight.server.exception.InvalidCredentialsException;
 import com.courseinsight.server.exception.UsernameAlreadyExistsException;
+import com.courseinsight.server.service.UserLoginService;
 import com.courseinsight.server.service.UserRegistrationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +31,9 @@ class AuthControllerTests {
 
     @MockitoBean
     private UserRegistrationService registrationService;
+
+    @MockitoBean
+    private UserLoginService loginService;
 
     @Test
     void shouldRegisterUser() throws Exception {
@@ -92,5 +98,70 @@ class AuthControllerTests {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value(409))
                 .andExpect(jsonPath("$.message").value("用户名已存在"));
+    }
+
+    @Test
+    void shouldLoginUser() throws Exception {
+        given(loginService.login(any()))
+                .willReturn(new UserLoginResponse(
+                        "signed-token",
+                        "Bearer",
+                        7200,
+                        1L,
+                        "student_01",
+                        "测试学生",
+                        "STUDENT"
+                ));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "student_01",
+                                  "password": "password123"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.accessToken").value("signed-token"))
+                .andExpect(jsonPath("$.data.tokenType").value("Bearer"))
+                .andExpect(jsonPath("$.data.expiresIn").value(7200))
+                .andExpect(jsonPath("$.data.userId").value(1))
+                .andExpect(jsonPath("$.data.role").value("STUDENT"));
+    }
+
+    @Test
+    void shouldRejectInvalidCredentials() throws Exception {
+        given(loginService.login(any()))
+                .willThrow(new InvalidCredentialsException("用户名或密码错误"));
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "student_01",
+                                  "password": "wrong-password"
+                                }
+                                """))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(401))
+                .andExpect(jsonPath("$.message").value("用户名或密码错误"));
+    }
+
+    @Test
+    void shouldRejectBlankLoginPassword() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "student_01",
+                                  "password": ""
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.message").value("密码不能为空"));
+
+        verifyNoInteractions(loginService);
     }
 }
