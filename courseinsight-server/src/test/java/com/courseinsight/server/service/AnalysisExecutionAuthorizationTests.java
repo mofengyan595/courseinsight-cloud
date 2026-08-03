@@ -1,5 +1,6 @@
 package com.courseinsight.server.service;
 
+import com.courseinsight.server.cache.CourseAnalyticsCache;
 import com.courseinsight.server.client.AiAnalysisClient;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.UserRole;
@@ -34,6 +35,9 @@ class AnalysisExecutionAuthorizationTests {
 
     @Mock
     private CourseManagementAccessService managementAccessService;
+
+    @Mock
+    private CourseAnalyticsCache courseAnalyticsCache;
 
     @InjectMocks
     private AnalysisExecutionService analysisExecutionService;

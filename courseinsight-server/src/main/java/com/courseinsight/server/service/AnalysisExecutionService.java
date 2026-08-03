@@ -1,6 +1,7 @@
 package com.courseinsight.server.service;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.courseinsight.server.cache.CourseAnalyticsCache;
 import com.courseinsight.server.client.AiAnalysisClient;
 import com.courseinsight.server.client.AiAnalysisResponse;
 import com.courseinsight.server.dto.AnalysisExecutionResponse;
@@ -25,18 +26,21 @@ public class AnalysisExecutionService {
     private final AiAnalysisClient aiAnalysisClient;
     private final AnalysisResultPersistenceService persistenceService;
     private final CourseManagementAccessService managementAccessService;
+    private final CourseAnalyticsCache courseAnalyticsCache;
 
     public AnalysisExecutionService(
             AnalysisTaskMapper analysisTaskMapper,
             CourseCommentMapper courseCommentMapper,
             AiAnalysisClient aiAnalysisClient,
             AnalysisResultPersistenceService persistenceService,
-            CourseManagementAccessService managementAccessService) {
+            CourseManagementAccessService managementAccessService,
+            CourseAnalyticsCache courseAnalyticsCache) {
         this.analysisTaskMapper = analysisTaskMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.aiAnalysisClient = aiAnalysisClient;
         this.persistenceService = persistenceService;
         this.managementAccessService = managementAccessService;
+        this.courseAnalyticsCache = courseAnalyticsCache;
     }
 
     public AnalysisExecutionResponse execute(Long taskId) {
@@ -72,6 +76,7 @@ public class AnalysisExecutionService {
         }
 
         claimTask(taskId);
+        courseAnalyticsCache.evict(task.getCourseId());
         try {
             AiAnalysisResponse response = aiAnalysisClient.analyze(
                     task.getId(),
@@ -81,7 +86,7 @@ public class AnalysisExecutionService {
             );
             return persistenceService.saveSuccess(task, response);
         } catch (RuntimeException exception) {
-            markFailed(taskId, exception);
+            markFailed(taskId, task.getCourseId(), exception);
             throw exception;
         }
     }
@@ -112,7 +117,10 @@ public class AnalysisExecutionService {
         }
     }
 
-    private void markFailed(Long taskId, RuntimeException originalException) {
+    private void markFailed(
+            Long taskId,
+            Long courseId,
+            RuntimeException originalException) {
         String reason = originalException.getMessage();
         if (reason == null || reason.isBlank()) {
             reason = originalException.getClass().getSimpleName();
@@ -130,7 +138,9 @@ public class AnalysisExecutionService {
                 .setSql("retry_count = retry_count + 1");
 
         try {
-            analysisTaskMapper.update(null, wrapper);
+            if (analysisTaskMapper.update(null, wrapper) == 1) {
+                courseAnalyticsCache.evict(courseId);
+            }
         } catch (RuntimeException failureUpdateException) {
             originalException.addSuppressed(failureUpdateException);
         }

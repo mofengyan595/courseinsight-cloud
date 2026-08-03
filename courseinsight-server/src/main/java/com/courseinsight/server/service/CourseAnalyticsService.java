@@ -1,5 +1,7 @@
 package com.courseinsight.server.service;
 
+import com.courseinsight.server.cache.CourseAnalyticsCache;
+import com.courseinsight.server.cache.CourseAnalyticsCacheLookup;
 import com.courseinsight.server.dto.CourseAnalyticsAggregate;
 import com.courseinsight.server.dto.CourseAnalyticsSummaryResponse;
 import com.courseinsight.server.entity.UserRole;
@@ -12,12 +14,15 @@ public class CourseAnalyticsService {
 
     private final CourseManagementAccessService managementAccessService;
     private final CourseAnalyticsMapper courseAnalyticsMapper;
+    private final CourseAnalyticsCache courseAnalyticsCache;
 
     public CourseAnalyticsService(
             CourseManagementAccessService managementAccessService,
-            CourseAnalyticsMapper courseAnalyticsMapper) {
+            CourseAnalyticsMapper courseAnalyticsMapper,
+            CourseAnalyticsCache courseAnalyticsCache) {
         this.managementAccessService = managementAccessService;
         this.courseAnalyticsMapper = courseAnalyticsMapper;
+        this.courseAnalyticsCache = courseAnalyticsCache;
     }
 
     @Transactional(readOnly = true)
@@ -30,10 +35,21 @@ public class CourseAnalyticsService {
                 currentUserId,
                 currentRole
         );
+
+        CourseAnalyticsCacheLookup cacheLookup = courseAnalyticsCache.get(courseId);
+        if (cacheLookup.hit()) {
+            return cacheLookup.summary();
+        }
+
         CourseAnalyticsAggregate aggregate = courseAnalyticsMapper.selectSummary(courseId);
         if (aggregate == null) {
             throw new IllegalStateException("课程分析统计查询未返回结果");
         }
-        return CourseAnalyticsSummaryResponse.from(courseId, aggregate);
+        CourseAnalyticsSummaryResponse summary = CourseAnalyticsSummaryResponse.from(
+                courseId,
+                aggregate
+        );
+        courseAnalyticsCache.put(courseId, summary);
+        return summary;
     }
 }

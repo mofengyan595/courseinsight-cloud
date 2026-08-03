@@ -2,6 +2,7 @@ package com.courseinsight.server.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.courseinsight.server.cache.CourseAnalyticsCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
@@ -50,6 +51,9 @@ class CommentServiceTests {
 
     @Mock
     private AnalysisOutboxEventMapper outboxEventMapper;
+
+    @Mock
+    private CourseAnalyticsCache courseAnalyticsCache;
 
     @InjectMocks
     private CommentService commentService;
@@ -109,6 +113,7 @@ class CommentServiceTests {
         assertThat(savedEvent.getCommentId()).isEqualTo(10L);
         assertThat(savedEvent.getStatus()).isEqualTo(AnalysisOutboxStatus.PENDING.name());
         assertThat(savedEvent.getRetryCount()).isZero();
+        verify(courseAnalyticsCache).evictAfterCommit(1L);
     }
 
     @Test
@@ -194,6 +199,7 @@ class CommentServiceTests {
     @Test
     @SuppressWarnings({"rawtypes", "unchecked"})
     void shouldSoftDeleteOnlyCurrentUsersActiveComment() {
+        given(courseCommentMapper.selectById(10L)).willReturn(createComment());
         given(courseCommentMapper.update(
                 any(CourseComment.class),
                 any(Wrapper.class)
@@ -209,11 +215,13 @@ class CommentServiceTests {
         );
 
         assertThat(updateCaptor.getValue().getStatus()).isZero();
+        verify(courseAnalyticsCache).evictAfterCommit(1L);
     }
 
     @Test
     @SuppressWarnings({"rawtypes", "unchecked"})
     void shouldRejectDeletingMissingOrOtherUsersComment() {
+        given(courseCommentMapper.selectById(10L)).willReturn(createComment());
         given(courseCommentMapper.update(
                 any(CourseComment.class),
                 any(Wrapper.class)

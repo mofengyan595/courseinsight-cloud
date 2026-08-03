@@ -2,6 +2,7 @@ package com.courseinsight.server.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.courseinsight.server.cache.CourseAnalyticsCache;
 import com.courseinsight.server.client.AiAnalysisResponse;
 import com.courseinsight.server.dto.AnalysisExecutionResponse;
 import com.courseinsight.server.entity.AnalysisResult;
@@ -23,14 +24,17 @@ public class AnalysisResultPersistenceService {
     private final AnalysisResultMapper analysisResultMapper;
     private final AnalysisTaskMapper analysisTaskMapper;
     private final ObjectMapper objectMapper;
+    private final CourseAnalyticsCache courseAnalyticsCache;
 
     public AnalysisResultPersistenceService(
             AnalysisResultMapper analysisResultMapper,
             AnalysisTaskMapper analysisTaskMapper,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            CourseAnalyticsCache courseAnalyticsCache) {
         this.analysisResultMapper = analysisResultMapper;
         this.analysisTaskMapper = analysisTaskMapper;
         this.objectMapper = objectMapper;
+        this.courseAnalyticsCache = courseAnalyticsCache;
     }
 
     @Transactional
@@ -52,6 +56,7 @@ public class AnalysisResultPersistenceService {
             throw new AnalysisTaskConflictException("分析任务状态已发生变化");
         }
 
+        courseAnalyticsCache.evictAfterCommit(task.getCourseId());
         return AnalysisExecutionResponse.success(result);
     }
 

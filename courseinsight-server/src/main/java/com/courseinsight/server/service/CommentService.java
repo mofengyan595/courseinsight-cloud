@@ -3,6 +3,7 @@ package com.courseinsight.server.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.courseinsight.server.cache.CourseAnalyticsCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -34,16 +36,19 @@ public class CommentService {
     private final CourseCommentMapper courseCommentMapper;
     private final AnalysisTaskMapper analysisTaskMapper;
     private final AnalysisOutboxEventMapper outboxEventMapper;
+    private final CourseAnalyticsCache courseAnalyticsCache;
 
     public CommentService(
             CourseMapper courseMapper,
             CourseCommentMapper courseCommentMapper,
             AnalysisTaskMapper analysisTaskMapper,
-            AnalysisOutboxEventMapper outboxEventMapper) {
+            AnalysisOutboxEventMapper outboxEventMapper,
+            CourseAnalyticsCache courseAnalyticsCache) {
         this.courseMapper = courseMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.analysisTaskMapper = analysisTaskMapper;
         this.outboxEventMapper = outboxEventMapper;
+        this.courseAnalyticsCache = courseAnalyticsCache;
     }
 
     @Transactional
@@ -82,6 +87,7 @@ public class CommentService {
         outboxEvent.setNextRetryAt(LocalDateTime.now());
         outboxEventMapper.insert(outboxEvent);
 
+        courseAnalyticsCache.evictAfterCommit(courseId);
         return comment.getId();
     }
 
@@ -123,6 +129,13 @@ public class CommentService {
 
     @Transactional
     public void delete(Long commentId, Long userId) {
+        CourseComment existing = courseCommentMapper.selectById(commentId);
+        if (existing == null
+                || !Objects.equals(existing.getUserId(), userId)
+                || !Objects.equals(existing.getStatus(), 1)) {
+            throw new ResourceNotFoundException("评价不存在");
+        }
+
         CourseComment update = new CourseComment();
         update.setStatus(0);
 
@@ -134,6 +147,7 @@ public class CommentService {
         if (courseCommentMapper.update(update, wrapper) != 1) {
             throw new ResourceNotFoundException("评价不存在");
         }
+        courseAnalyticsCache.evictAfterCommit(existing.getCourseId());
     }
 
     private PageResponse<CommentDetailResponse> toPageResponse(Page<CourseComment> result) {

@@ -1,5 +1,7 @@
 package com.courseinsight.server.service;
 
+import com.courseinsight.server.cache.CourseAnalyticsCache;
+import com.courseinsight.server.cache.CourseAnalyticsCacheLookup;
 import com.courseinsight.server.dto.CourseAnalyticsAggregate;
 import com.courseinsight.server.dto.CourseAnalyticsSummaryResponse;
 import com.courseinsight.server.entity.UserRole;
@@ -29,18 +31,24 @@ class CourseAnalyticsServiceTests {
     @Mock
     private CourseAnalyticsMapper courseAnalyticsMapper;
 
+    @Mock
+    private CourseAnalyticsCache courseAnalyticsCache;
+
     private CourseAnalyticsService courseAnalyticsService;
 
     @BeforeEach
     void setUp() {
         courseAnalyticsService = new CourseAnalyticsService(
                 managementAccessService,
-                courseAnalyticsMapper
+                courseAnalyticsMapper,
+                courseAnalyticsCache
         );
     }
 
     @Test
     void shouldCalculateSummaryAndPercentages() {
+        given(courseAnalyticsCache.get(14L))
+                .willReturn(CourseAnalyticsCacheLookup.miss());
         given(courseAnalyticsMapper.selectSummary(14L)).willReturn(aggregate());
 
         CourseAnalyticsSummaryResponse response = courseAnalyticsService.getSummary(
@@ -67,6 +75,24 @@ class CourseAnalyticsServiceTests {
         assertThat(response.sentiments().negativePercentage())
                 .isEqualByComparingTo("33.33");
         assertThat(response.risks().unclassified()).isEqualTo(1);
+        verify(courseAnalyticsCache).put(14L, response);
+    }
+
+    @Test
+    void shouldReturnCachedSummaryWithoutQueryingDatabase() {
+        CourseAnalyticsSummaryResponse cached =
+                CourseAnalyticsSummaryResponse.from(14L, aggregate());
+        given(courseAnalyticsCache.get(14L))
+                .willReturn(CourseAnalyticsCacheLookup.found(cached));
+
+        CourseAnalyticsSummaryResponse response = courseAnalyticsService.getSummary(
+                14L,
+                11L,
+                UserRole.TEACHER
+        );
+
+        assertThat(response).isSameAs(cached);
+        verifyNoInteractions(courseAnalyticsMapper);
     }
 
     @Test
