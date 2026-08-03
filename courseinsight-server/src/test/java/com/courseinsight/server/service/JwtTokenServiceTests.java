@@ -4,11 +4,9 @@ import com.courseinsight.server.config.JwtConfig;
 import com.courseinsight.server.config.JwtProperties;
 import com.courseinsight.server.entity.AppUser;
 import org.junit.jupiter.api.Test;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 import javax.crypto.SecretKey;
 import java.time.Duration;
@@ -36,9 +34,7 @@ class JwtTokenServiceTests {
 
         JwtTokenService.IssuedToken issuedToken = tokenService.issue(user);
 
-        JwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(secretKey)
-                .macAlgorithm(MacAlgorithm.HS256)
-                .build();
+        JwtDecoder jwtDecoder = config.jwtDecoder(secretKey, properties);
         Jwt jwt = jwtDecoder.decode(issuedToken.value());
 
         assertThat(jwt.getIssuer().toString()).isEqualTo("https://courseinsight.local");
