@@ -49,6 +49,74 @@ services:
       retries: 10
       start_period: 10s
 
+  # Docker creates named volumes as root; initialize them for RocketMQ's UID 3000.
+  rocketmq-volume-init:
+    image: apache/rocketmq:5.3.2
+    container_name: courseinsight-rocketmq-volume-init
+    user: "0:0"
+    restart: "no"
+    volumes:
+      - rocketmq_nameserver_logs:/nameserver-logs
+      - rocketmq_broker_logs:/broker-logs
+      - rocketmq_broker_store:/broker-store
+    entrypoint:
+      - sh
+      - -c
+      - chown -R 3000:3000 /nameserver-logs /broker-logs /broker-store
+
+  rocketmq-nameserver:
+    image: apache/rocketmq:5.3.2
+    container_name: courseinsight-rocketmq-nameserver
+    restart: unless-stopped
+    environment:
+      JAVA_OPT_EXT: -Xms256m -Xmx256m -Xmn128m
+    depends_on:
+      rocketmq-volume-init:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${ROCKETMQ_NAMESERVER_PORT:-9876}:9876"
+    volumes:
+      - rocketmq_nameserver_logs:/home/rocketmq/logs
+    command: sh mqnamesrv
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - bash -c '</dev/tcp/127.0.0.1/9876'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.3.2
+    container_name: courseinsight-rocketmq-broker
+    restart: unless-stopped
+    depends_on:
+      rocketmq-nameserver:
+        condition: service_healthy
+    environment:
+      NAMESRV_ADDR: rocketmq-nameserver:9876
+      JAVA_OPT_EXT: -Xms512m -Xmx512m -Xmn256m
+    ports:
+      - "127.0.0.1:${ROCKETMQ_BROKER_PORT:-10911}:10911"
+      - "127.0.0.1:${ROCKETMQ_BROKER_FAST_PORT:-10909}:10909"
+    volumes:
+      - ./deploy/rocketmq/broker.conf:/home/rocketmq/rocketmq-5.3.2/conf/broker.conf:ro
+      - rocketmq_broker_logs:/home/rocketmq/logs
+      - rocketmq_broker_store:/home/rocketmq/store
+    command: >-
+      sh mqbroker
+      -n rocketmq-nameserver:9876
+      -c /home/rocketmq/rocketmq-5.3.2/conf/broker.conf
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - bash -c '</dev/tcp/127.0.0.1/10911'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   ai-service:
     build:
       context: ./courseinsight-ai-service
@@ -84,3 +152,6 @@ services:
 volumes:
   mysql_data:
   redis_data:
+  rocketmq_nameserver_logs:
+  rocketmq_broker_logs:
+  rocketmq_broker_store:
