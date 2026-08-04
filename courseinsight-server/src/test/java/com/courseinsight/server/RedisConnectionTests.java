@@ -1,5 +1,7 @@
 package com.courseinsight.server;
 
+import com.courseinsight.server.cache.CoursePopularityRankingCache;
+import com.courseinsight.server.cache.CoursePopularityRankingEntry;
 import com.courseinsight.server.exception.RateLimitExceededException;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
@@ -9,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.UUID;
@@ -26,6 +29,9 @@ class RedisConnectionTests {
 
     @Autowired
     private RedisRateLimiter rateLimiter;
+
+    @Autowired
+    private CoursePopularityRankingCache popularityRankingCache;
 
     @Test
     void connectsToRedis() {
@@ -61,6 +67,25 @@ class RedisConnectionTests {
                     .isBetween(1L, 60L);
         } finally {
             redisTemplate.delete(key);
+        }
+    }
+
+    @Test
+    void storesCoursePopularityRankingInRedisZSet() {
+        popularityRankingCache.evict();
+        try {
+            popularityRankingCache.put(List.of(
+                    new CoursePopularityRankingEntry(14L, 6),
+                    new CoursePopularityRankingEntry(10L, 3)
+            ));
+
+            assertThat(popularityRankingCache.get(10).entries())
+                    .containsExactly(
+                            new CoursePopularityRankingEntry(14L, 6),
+                            new CoursePopularityRankingEntry(10L, 3)
+                    );
+        } finally {
+            popularityRankingCache.evict();
         }
     }
 }

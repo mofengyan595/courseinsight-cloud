@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.courseinsight.server.cache.CourseCacheLookup;
 import com.courseinsight.server.cache.CourseDetailCache;
+import com.courseinsight.server.cache.CoursePopularityRankingCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseCreateRequest;
 import com.courseinsight.server.dto.CourseDetailResponse;
@@ -25,14 +26,17 @@ public class CourseService {
 
     private final CourseMapper courseMapper;
     private final CourseDetailCache courseDetailCache;
+    private final CoursePopularityRankingCache popularityRankingCache;
     private final CourseManagementAccessService managementAccessService;
 
     public CourseService(
             CourseMapper courseMapper,
             CourseDetailCache courseDetailCache,
+            CoursePopularityRankingCache popularityRankingCache,
             CourseManagementAccessService managementAccessService) {
         this.courseMapper = courseMapper;
         this.courseDetailCache = courseDetailCache;
+        this.popularityRankingCache = popularityRankingCache;
         this.managementAccessService = managementAccessService;
     }
 
@@ -75,6 +79,7 @@ public class CourseService {
         }
 
         evictCacheAfterCommit(id);
+        popularityRankingCache.evictAfterCommit();
         return id;
     }
 

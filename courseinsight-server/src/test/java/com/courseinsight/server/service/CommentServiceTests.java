@@ -3,6 +3,7 @@ package com.courseinsight.server.service;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.courseinsight.server.cache.CourseAnalyticsCache;
+import com.courseinsight.server.cache.CoursePopularityRankingCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
@@ -58,6 +59,9 @@ class CommentServiceTests {
 
     @Mock
     private CourseAnalyticsCache courseAnalyticsCache;
+
+    @Mock
+    private CoursePopularityRankingCache popularityRankingCache;
 
     @Mock
     private RedisRateLimiter rateLimiter;
@@ -122,6 +126,7 @@ class CommentServiceTests {
         assertThat(savedEvent.getRetryCount()).isZero();
         verify(rateLimiter).check(RateLimitPolicy.COMMENT_SUBMISSION, 7L);
         verify(courseAnalyticsCache).evictAfterCommit(1L);
+        verify(popularityRankingCache).evictAfterCommit();
     }
 
     @Test
@@ -245,6 +250,7 @@ class CommentServiceTests {
 
         assertThat(updateCaptor.getValue().getStatus()).isZero();
         verify(courseAnalyticsCache).evictAfterCommit(1L);
+        verify(popularityRankingCache).evictAfterCommit();
     }
 
     @Test

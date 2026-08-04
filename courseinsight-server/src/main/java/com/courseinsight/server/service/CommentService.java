@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.courseinsight.server.cache.CourseAnalyticsCache;
+import com.courseinsight.server.cache.CoursePopularityRankingCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
@@ -39,6 +40,7 @@ public class CommentService {
     private final AnalysisTaskMapper analysisTaskMapper;
     private final AnalysisOutboxEventMapper outboxEventMapper;
     private final CourseAnalyticsCache courseAnalyticsCache;
+    private final CoursePopularityRankingCache popularityRankingCache;
     private final RedisRateLimiter rateLimiter;
 
     public CommentService(
@@ -47,12 +49,14 @@ public class CommentService {
             AnalysisTaskMapper analysisTaskMapper,
             AnalysisOutboxEventMapper outboxEventMapper,
             CourseAnalyticsCache courseAnalyticsCache,
+            CoursePopularityRankingCache popularityRankingCache,
             RedisRateLimiter rateLimiter) {
         this.courseMapper = courseMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.analysisTaskMapper = analysisTaskMapper;
         this.outboxEventMapper = outboxEventMapper;
         this.courseAnalyticsCache = courseAnalyticsCache;
+        this.popularityRankingCache = popularityRankingCache;
         this.rateLimiter = rateLimiter;
     }
 
@@ -94,6 +98,7 @@ public class CommentService {
         outboxEventMapper.insert(outboxEvent);
 
         courseAnalyticsCache.evictAfterCommit(courseId);
+        popularityRankingCache.evictAfterCommit();
         return comment.getId();
     }
 
@@ -154,6 +159,7 @@ public class CommentService {
             throw new ResourceNotFoundException("评价不存在");
         }
         courseAnalyticsCache.evictAfterCommit(existing.getCourseId());
+        popularityRankingCache.evictAfterCommit();
     }
 
     private PageResponse<CommentDetailResponse> toPageResponse(Page<CourseComment> result) {

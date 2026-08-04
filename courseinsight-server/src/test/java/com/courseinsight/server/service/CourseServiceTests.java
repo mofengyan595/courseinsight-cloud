@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.courseinsight.server.cache.CourseCacheLookup;
 import com.courseinsight.server.cache.CourseDetailCache;
+import com.courseinsight.server.cache.CoursePopularityRankingCache;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseDetailResponse;
 import com.courseinsight.server.dto.CourseCreateRequest;
@@ -38,6 +39,9 @@ class CourseServiceTests {
 
     @Mock
     private CourseDetailCache courseDetailCache;
+
+    @Mock
+    private CoursePopularityRankingCache popularityRankingCache;
 
     @Mock
     private CourseManagementAccessService managementAccessService;
@@ -93,6 +97,7 @@ class CourseServiceTests {
 
         assertThat(courseId).isEqualTo(1L);
         verify(courseDetailCache).evict(1L);
+        verify(popularityRankingCache).evictAfterCommit();
     }
 
     @Test
