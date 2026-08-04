@@ -81,6 +81,16 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(HttpStatus.FORBIDDEN.value(), exception.getMessage());
     }
 
+    @ExceptionHandler(RateLimitExceededException.class)
+    @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+    public ApiResponse<Void> handleRateLimitExceeded(
+            RateLimitExceededException exception) {
+        return ApiResponse.error(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                exception.getMessage()
+        );
+    }
+
     @ExceptionHandler(AiServiceException.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)
     public ApiResponse<Void> handleAiService(AiServiceException exception) {

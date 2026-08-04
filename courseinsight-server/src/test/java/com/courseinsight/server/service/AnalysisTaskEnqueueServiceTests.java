@@ -9,6 +9,8 @@ import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
 import com.courseinsight.server.message.AnalysisTaskMessageProducer;
+import com.courseinsight.server.ratelimit.RateLimitPolicy;
+import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -34,6 +36,9 @@ class AnalysisTaskEnqueueServiceTests {
 
     @Mock
     private CourseManagementAccessService managementAccessService;
+
+    @Mock
+    private RedisRateLimiter rateLimiter;
 
     @InjectMocks
     private AnalysisTaskEnqueueService enqueueService;
@@ -65,6 +70,7 @@ class AnalysisTaskEnqueueServiceTests {
                 11L,
                 UserRole.TEACHER
         );
+        verify(rateLimiter).check(RateLimitPolicy.MANUAL_ANALYSIS, 11L);
     }
 
     @Test

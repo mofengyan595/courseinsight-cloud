@@ -9,6 +9,8 @@ import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
 import com.courseinsight.server.message.AnalysisTaskMessageProducer;
+import com.courseinsight.server.ratelimit.RateLimitPolicy;
+import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,20 +22,24 @@ public class AnalysisTaskEnqueueService {
     private final AnalysisTaskMapper analysisTaskMapper;
     private final AnalysisTaskMessageProducer messageProducer;
     private final CourseManagementAccessService managementAccessService;
+    private final RedisRateLimiter rateLimiter;
 
     public AnalysisTaskEnqueueService(
             AnalysisTaskMapper analysisTaskMapper,
             AnalysisTaskMessageProducer messageProducer,
-            CourseManagementAccessService managementAccessService) {
+            CourseManagementAccessService managementAccessService,
+            RedisRateLimiter rateLimiter) {
         this.analysisTaskMapper = analysisTaskMapper;
         this.messageProducer = messageProducer;
         this.managementAccessService = managementAccessService;
+        this.rateLimiter = rateLimiter;
     }
 
     public AnalysisTaskEnqueueResponse enqueue(
             Long taskId,
             Long currentUserId,
             UserRole currentRole) {
+        rateLimiter.check(RateLimitPolicy.MANUAL_ANALYSIS, currentUserId);
         AnalysisTask task = analysisTaskMapper.selectById(taskId);
         if (task == null) {
             throw new ResourceNotFoundException("分析任务不存在");

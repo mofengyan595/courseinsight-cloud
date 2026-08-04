@@ -4,6 +4,7 @@ import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentDetailResponse;
 import com.courseinsight.server.dto.CommentPageQuery;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
+import com.courseinsight.server.exception.RateLimitExceededException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.CommentService;
 import org.junit.jupiter.api.Test;
@@ -94,6 +95,28 @@ class CommentControllerTests {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("课程不存在"));
+    }
+
+    @Test
+    void shouldReturnTooManyRequestsWhenCommentRateLimitIsExceeded() throws Exception {
+        given(commentService.create(eq(1L), eq(7L), any()))
+                .willThrow(new RateLimitExceededException(
+                        "提交评价过于频繁，请稍后再试"
+                ));
+
+        mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
+                        .principal(() -> "7")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "content": "课程评价",
+                                  "rating": 4
+                                }
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(429))
+                .andExpect(jsonPath("$.message")
+                        .value("提交评价过于频繁，请稍后再试"));
     }
 
     @Test

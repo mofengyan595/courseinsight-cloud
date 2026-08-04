@@ -13,6 +13,8 @@ import com.courseinsight.server.exception.AnalysisTaskConflictException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
+import com.courseinsight.server.ratelimit.RateLimitPolicy;
+import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,6 +29,7 @@ public class AnalysisExecutionService {
     private final AnalysisResultPersistenceService persistenceService;
     private final CourseManagementAccessService managementAccessService;
     private final CourseAnalyticsCache courseAnalyticsCache;
+    private final RedisRateLimiter rateLimiter;
 
     public AnalysisExecutionService(
             AnalysisTaskMapper analysisTaskMapper,
@@ -34,13 +37,15 @@ public class AnalysisExecutionService {
             AiAnalysisClient aiAnalysisClient,
             AnalysisResultPersistenceService persistenceService,
             CourseManagementAccessService managementAccessService,
-            CourseAnalyticsCache courseAnalyticsCache) {
+            CourseAnalyticsCache courseAnalyticsCache,
+            RedisRateLimiter rateLimiter) {
         this.analysisTaskMapper = analysisTaskMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.aiAnalysisClient = aiAnalysisClient;
         this.persistenceService = persistenceService;
         this.managementAccessService = managementAccessService;
         this.courseAnalyticsCache = courseAnalyticsCache;
+        this.rateLimiter = rateLimiter;
     }
 
     public AnalysisExecutionResponse execute(Long taskId) {
@@ -52,6 +57,7 @@ public class AnalysisExecutionService {
             Long taskId,
             Long currentUserId,
             UserRole currentRole) {
+        rateLimiter.check(RateLimitPolicy.MANUAL_ANALYSIS, currentUserId);
         AnalysisTask task = requireTask(taskId);
         managementAccessService.assertCanManage(
                 task.getCourseId(),

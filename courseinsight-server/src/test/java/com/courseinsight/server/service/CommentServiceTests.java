@@ -14,11 +14,14 @@ import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.CourseComment;
 import com.courseinsight.server.exception.DuplicateCommentException;
+import com.courseinsight.server.exception.RateLimitExceededException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.mapper.CourseMapper;
+import com.courseinsight.server.ratelimit.RateLimitPolicy;
+import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -34,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -54,6 +58,9 @@ class CommentServiceTests {
 
     @Mock
     private CourseAnalyticsCache courseAnalyticsCache;
+
+    @Mock
+    private RedisRateLimiter rateLimiter;
 
     @InjectMocks
     private CommentService commentService;
@@ -113,7 +120,29 @@ class CommentServiceTests {
         assertThat(savedEvent.getCommentId()).isEqualTo(10L);
         assertThat(savedEvent.getStatus()).isEqualTo(AnalysisOutboxStatus.PENDING.name());
         assertThat(savedEvent.getRetryCount()).isZero();
+        verify(rateLimiter).check(RateLimitPolicy.COMMENT_SUBMISSION, 7L);
         verify(courseAnalyticsCache).evictAfterCommit(1L);
+    }
+
+    @Test
+    void shouldStopBeforeDatabaseWhenCommentRateLimitIsExceeded() {
+        willThrow(new RateLimitExceededException(
+                "提交评价过于频繁，请稍后再试"
+        )
+        ).given(rateLimiter).check(RateLimitPolicy.COMMENT_SUBMISSION, 7L);
+
+        assertThatThrownBy(() -> commentService.create(
+                1L,
+                7L,
+                new CommentCreateRequest("课程评价", 4)
+        )).isInstanceOf(RateLimitExceededException.class);
+
+        verifyNoInteractions(
+                courseMapper,
+                courseCommentMapper,
+                analysisTaskMapper,
+                outboxEventMapper
+        );
     }
 
     @Test

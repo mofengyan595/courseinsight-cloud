@@ -20,6 +20,8 @@ import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.mapper.CourseMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
+import com.courseinsight.server.ratelimit.RateLimitPolicy;
+import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,22 +39,26 @@ public class CommentService {
     private final AnalysisTaskMapper analysisTaskMapper;
     private final AnalysisOutboxEventMapper outboxEventMapper;
     private final CourseAnalyticsCache courseAnalyticsCache;
+    private final RedisRateLimiter rateLimiter;
 
     public CommentService(
             CourseMapper courseMapper,
             CourseCommentMapper courseCommentMapper,
             AnalysisTaskMapper analysisTaskMapper,
             AnalysisOutboxEventMapper outboxEventMapper,
-            CourseAnalyticsCache courseAnalyticsCache) {
+            CourseAnalyticsCache courseAnalyticsCache,
+            RedisRateLimiter rateLimiter) {
         this.courseMapper = courseMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.analysisTaskMapper = analysisTaskMapper;
         this.outboxEventMapper = outboxEventMapper;
         this.courseAnalyticsCache = courseAnalyticsCache;
+        this.rateLimiter = rateLimiter;
     }
 
     @Transactional
     public Long create(Long courseId, Long userId, CommentCreateRequest request) {
+        rateLimiter.check(RateLimitPolicy.COMMENT_SUBMISSION, userId);
         requireCourse(courseId);
 
         CourseComment comment = new CourseComment();
