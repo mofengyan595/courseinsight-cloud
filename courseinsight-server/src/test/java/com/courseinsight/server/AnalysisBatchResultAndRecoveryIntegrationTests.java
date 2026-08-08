@@ -7,12 +7,18 @@ import com.courseinsight.server.dto.AnalysisBatchRetryResponse;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.service.AnalysisBatchRecoveryService;
 import com.courseinsight.server.service.AnalysisBatchResultService;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,6 +57,37 @@ class AnalysisBatchResultAndRecoveryIntegrationTests {
         assertThat(response.items().get(1).taskStatus()).isEqualTo("FAILED");
         assertThat(response.items().get(1).resultId()).isNull();
         assertThat(response.items().get(1).deadLetteredAt()).isNotNull();
+    }
+
+    @Test
+    void shouldExportSuccessfulAndFailedItemsAsUtf8Csv() throws Exception {
+        TestBatch batch = createBatchWithTasks();
+        insertResult(batch.successTaskId(), batch.successCommentId(), batch.courseId());
+
+        String filename = resultService.authorizeCsvExport(
+                batch.batchId(),
+                999L,
+                UserRole.ADMIN
+        );
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        resultService.writeCsv(batch.batchId(), outputStream);
+
+        assertThat(filename).startsWith("analysis-batch-").endsWith(".csv");
+        String csv = outputStream.toString(StandardCharsets.UTF_8);
+        assertThat(csv.charAt(0)).isEqualTo('\uFEFF');
+        try (CSVParser parser = CSVFormat.DEFAULT.builder()
+                .setHeader()
+                .setSkipHeaderRecord(true)
+                .get()
+                .parse(new StringReader(csv.substring(1)))) {
+            List<org.apache.commons.csv.CSVRecord> records = parser.getRecords();
+            assertThat(records).hasSize(2);
+            assertThat(records.get(0).get("任务状态")).isEqualTo("SUCCESS");
+            assertThat(records.get(0).get("情感")).isEqualTo("positive");
+            assertThat(records.get(1).get("任务状态")).isEqualTo("FAILED");
+            assertThat(records.get(1).get("失败原因"))
+                    .isEqualTo("AI service unavailable");
+        }
     }
 
     @Test

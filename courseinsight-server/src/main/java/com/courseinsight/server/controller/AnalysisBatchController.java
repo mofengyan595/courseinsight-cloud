@@ -11,7 +11,10 @@ import com.courseinsight.server.security.CurrentUser;
 import com.courseinsight.server.service.AnalysisBatchRecoveryService;
 import com.courseinsight.server.service.AnalysisBatchResultService;
 import com.courseinsight.server.service.AnalysisBatchService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -24,6 +27,9 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/api")
@@ -84,6 +90,33 @@ public class AnalysisBatchController {
                 currentUser.role(),
                 query
         ));
+    }
+
+    @GetMapping(
+            value = "/analysis-batches/{batchId}/export",
+            produces = "text/csv"
+    )
+    public void exportResults(
+            @PathVariable Long batchId,
+            Authentication authentication,
+            HttpServletResponse response) throws IOException {
+        CurrentUser currentUser = CurrentUser.from(authentication);
+        String filename = resultService.authorizeCsvExport(
+                batchId,
+                currentUser.id(),
+                currentUser.role()
+        );
+
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("text/csv");
+        response.setHeader(
+                HttpHeaders.CONTENT_DISPOSITION,
+                ContentDisposition.attachment()
+                        .filename(filename)
+                        .build()
+                        .toString()
+        );
+        resultService.writeCsv(batchId, response.getOutputStream());
     }
 
     @PostMapping("/analysis-batches/{batchId}/retry-failed")

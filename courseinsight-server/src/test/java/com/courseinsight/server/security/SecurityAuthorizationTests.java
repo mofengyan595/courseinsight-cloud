@@ -276,6 +276,19 @@ class SecurityAuthorizationTests {
     }
 
     @Test
+    void shouldForbidStudentFromExportingAnalysisBatchResults() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+
+        mockMvc.perform(get("/api/analysis-batches/{batchId}/export", 30L)
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        verifyNoInteractions(analysisBatchResultService);
+    }
+
+    @Test
     void shouldForbidStudentFromRetryingAnalysisBatch() throws Exception {
         given(jwtDecoder.decode("student-token"))
                 .willReturn(jwt("student-token", "STUDENT"));

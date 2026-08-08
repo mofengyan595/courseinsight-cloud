@@ -23,19 +23,25 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AnalysisBatchController.class)
@@ -151,6 +157,39 @@ class AnalysisBatchControllerTests {
                         .param("size", "101")
                         .principal(teacherAuthentication()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldDownloadBatchResultsAsUtf8Csv() throws Exception {
+        given(resultService.authorizeCsvExport(
+                30L,
+                11L,
+                UserRole.TEACHER
+        )).willReturn("analysis-batch-batch-30.csv");
+        doAnswer(invocation -> {
+            OutputStream outputStream = invocation.getArgument(1);
+            outputStream.write("\uFEFF任务ID,评论内容\r\n60,讲解清晰\r\n"
+                    .getBytes(StandardCharsets.UTF_8));
+            return null;
+        }).when(resultService).writeCsv(eq(30L), any(OutputStream.class));
+
+        MvcResult result = mockMvc.perform(
+                        get("/api/analysis-batches/{batchId}/export", 30L)
+                                .principal(teacherAuthentication()))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith("text/csv"))
+                .andExpect(header().string(
+                        "Content-Disposition",
+                        "attachment; filename=\"analysis-batch-batch-30.csv\""
+                ))
+                .andReturn();
+
+        byte[] body = result.getResponse().getContentAsByteArray();
+        assertThat(body[0]).isEqualTo((byte) 0xEF);
+        assertThat(body[1]).isEqualTo((byte) 0xBB);
+        assertThat(body[2]).isEqualTo((byte) 0xBF);
+        assertThat(new String(body, StandardCharsets.UTF_8))
+                .contains("讲解清晰");
     }
 
     @Test

@@ -67,7 +67,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/analysis-batches/*",
-                                "/api/analysis-batches/*/results"
+                                "/api/analysis-batches/*/results",
+                                "/api/analysis-batches/*/export"
                         ).hasAnyRole("TEACHER", "ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
