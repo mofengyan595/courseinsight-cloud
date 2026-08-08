@@ -3,11 +3,14 @@ package com.courseinsight.server;
 import com.courseinsight.server.client.AiAnalysisClient;
 import com.courseinsight.server.client.AiAnalysisResponse;
 import com.courseinsight.server.dto.AnalysisBatchProgressAggregate;
+import com.courseinsight.server.entity.UserRole;
+import com.courseinsight.server.exception.AnalysisTaskConflictException;
 import com.courseinsight.server.exception.NonRetryableAiServiceException;
 import com.courseinsight.server.exception.RetryableAiServiceException;
 import com.courseinsight.server.mapper.AnalysisBatchProgressMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
 import com.courseinsight.server.message.AnalysisTaskMessageConsumer;
+import com.courseinsight.server.service.AnalysisBatchRecoveryService;
 import com.courseinsight.server.service.AnalysisExecutionService;
 import com.courseinsight.server.service.AnalysisTaskDeadLetterService;
 import com.courseinsight.server.service.AnalysisTaskLeaseRecoveryService;
@@ -43,6 +46,9 @@ class AnalysisExecutionFencingIntegrationTests {
 
     @Autowired
     private AnalysisTaskLeaseRecoveryService leaseRecoveryService;
+
+    @Autowired
+    private AnalysisBatchRecoveryService batchRecoveryService;
 
     @Autowired
     private AnalysisTaskDeadLetterService deadLetterService;
@@ -117,15 +123,16 @@ class AnalysisExecutionFencingIntegrationTests {
     void duplicateDlqCannotKillLiveUnexpiredOwner() {
         TestTask task = createTask(false);
         try {
-            LocalDateTime leaseUntil = LocalDateTime.now().plusMinutes(2);
             jdbcTemplate.update(
                     """
                     UPDATE analysis_task
-                    SET status = 'PROCESSING', execution_token = ?, lease_until = ?
+                    SET status = 'PROCESSING', execution_token = ?,
+                        lease_until = TIMESTAMPADD(
+                            MINUTE, 2, CURRENT_TIMESTAMP(3)
+                        )
                     WHERE id = ?
                     """,
                     randomId(),
-                    leaseUntil,
                     task.taskId()
             );
             LocalDateTime persistedLeaseUntil = jdbcTemplate.queryForObject(
@@ -134,6 +141,7 @@ class AnalysisExecutionFencingIntegrationTests {
                     task.taskId()
             );
 
+            assertThat(leaseRecoveryService.recoverExpired()).isZero();
             assertThat(deadLetterService.markDeadLettered(
                     task.taskId(),
                     task.eventId()
@@ -245,10 +253,15 @@ class AnalysisExecutionFencingIntegrationTests {
                     true
             )).willThrow(new RetryableAiServiceException("temporary", null));
 
-            assertThatThrownBy(() -> executionService.executeFromMessage(
+            AnalysisTaskCreatedEvent event = new AnalysisTaskCreatedEvent(
+                    task.eventId(),
                     task.taskId(),
-                    task.eventId()
-            )).isInstanceOf(RetryableAiServiceException.class);
+                    task.commentId(),
+                    AnalysisTaskCreatedEvent.EVENT_TYPE,
+                    "2026-08-08T00:00:00Z"
+            );
+            assertThatThrownBy(() -> messageConsumer.onMessage(event))
+                    .isInstanceOf(RetryableAiServiceException.class);
 
             assertThat(queryString(
                     "SELECT status FROM analysis_task WHERE id = ?",
@@ -263,6 +276,264 @@ class AnalysisExecutionFencingIntegrationTests {
                     task.taskId()
             )).isEqualTo(1);
         } finally {
+            deleteTask(task);
+        }
+    }
+
+    @Test
+    void synchronousRetryableFailureBecomesTerminalAndCanBeRecovered() {
+        TestTask task = createTask(true);
+        try {
+            jdbcTemplate.update(
+                    """
+                    UPDATE analysis_task
+                    SET status = 'FAILED',
+                        completed_at = CURRENT_TIMESTAMP(3),
+                        dead_lettered_at = CURRENT_TIMESTAMP(3)
+                    WHERE id = ?
+                    """,
+                    task.taskId()
+            );
+            given(aiAnalysisClient.analyze(
+                    task.taskId(),
+                    task.commentId(),
+                    "fencing test comment",
+                    true
+            )).willThrow(new RetryableAiServiceException("temporary", null));
+
+            assertThatThrownBy(() -> executionService.execute(task.taskId()))
+                    .isInstanceOf(RetryableAiServiceException.class);
+
+            assertThat(queryString(
+                    "SELECT status FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            )).isEqualTo("FAILED");
+            assertThat(jdbcTemplate.queryForObject(
+                    """
+                    SELECT COUNT(*) FROM analysis_task
+                    WHERE id = ? AND dead_lettered_at IS NOT NULL
+                    """,
+                    Integer.class,
+                    task.taskId()
+            )).isEqualTo(1);
+            AnalysisBatchProgressAggregate terminalProgress =
+                    batchProgressMapper.selectProgress(task.batchId());
+            assertThat(terminalProgress.getRetryingCount()).isZero();
+            assertThat(terminalProgress.getFailedCount()).isEqualTo(1);
+
+            String previousEventId = task.eventId();
+            assertThat(batchRecoveryService.retryDeadLettered(
+                    task.batchId(),
+                    9001L,
+                    UserRole.ADMIN
+            ).requeuedCount()).isEqualTo(1);
+
+            String recoveredEventId = queryString(
+                    "SELECT current_event_id FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            );
+            assertThat(recoveredEventId).isNotEqualTo(previousEventId);
+            assertThat(queryString(
+                    "SELECT status FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            )).isEqualTo("WAITING");
+            assertThat(jdbcTemplate.queryForObject(
+                    """
+                    SELECT COUNT(*) FROM analysis_outbox_event
+                    WHERE task_id = ? AND event_id = ? AND status = 'PENDING'
+                    """,
+                    Integer.class,
+                    task.taskId(),
+                    recoveredEventId
+            )).isEqualTo(1);
+        } finally {
+            deleteTask(task);
+        }
+    }
+
+    @Test
+    void staleManualRetryableFailureCannotTerminateNewGeneration() throws Exception {
+        TestTask task = createTask(false);
+        CountDownLatch manualEntered = new CountDownLatch(1);
+        CountDownLatch releaseManual = new CountDownLatch(1);
+        given(aiAnalysisClient.analyze(
+                task.taskId(),
+                task.commentId(),
+                "fencing test comment",
+                true
+        )).willAnswer(invocation -> {
+            manualEntered.countDown();
+            await(releaseManual);
+            throw new RetryableAiServiceException("temporary", null);
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> staleManual = executor.submit(
+                    () -> executionService.execute(task.taskId())
+            );
+            assertThat(manualEntered.await(5, TimeUnit.SECONDS)).isTrue();
+            jdbcTemplate.update(
+                    """
+                    UPDATE analysis_task
+                    SET lease_until = TIMESTAMPADD(
+                        SECOND, -1, CURRENT_TIMESTAMP(3)
+                    )
+                    WHERE id = ?
+                    """,
+                    task.taskId()
+            );
+
+            assertThat(leaseRecoveryService.recoverExpired()).isEqualTo(1);
+            String recoveredEventId = queryString(
+                    "SELECT current_event_id FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            );
+
+            releaseManual.countDown();
+            assertThatThrownBy(() -> staleManual.get(5, TimeUnit.SECONDS))
+                    .hasCauseInstanceOf(RetryableAiServiceException.class);
+
+            assertThat(queryString(
+                    "SELECT status FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            )).isEqualTo("WAITING");
+            assertThat(queryString(
+                    "SELECT current_event_id FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            )).isEqualTo(recoveredEventId);
+            assertThat(jdbcTemplate.queryForObject(
+                    """
+                    SELECT COUNT(*) FROM analysis_task
+                    WHERE id = ? AND dead_lettered_at IS NULL
+                    """,
+                    Integer.class,
+                    task.taskId()
+            )).isEqualTo(1);
+        } finally {
+            releaseManual.countDown();
+            executor.shutdownNow();
+            deleteTask(task);
+        }
+    }
+
+    @Test
+    void simultaneousDuplicateDeliveryCannotStealLiveOwner() throws Exception {
+        TestTask task = createTask(false);
+        CountDownLatch ownerEntered = new CountDownLatch(1);
+        CountDownLatch releaseOwner = new CountDownLatch(1);
+        given(aiAnalysisClient.analyze(
+                task.taskId(),
+                task.commentId(),
+                "fencing test comment",
+                true
+        )).willAnswer(invocation -> {
+            ownerEntered.countDown();
+            await(releaseOwner);
+            return response(task, "positive");
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> owner = executor.submit(() -> executionService.executeFromMessage(
+                    task.taskId(),
+                    task.eventId()
+            ));
+            assertThat(ownerEntered.await(5, TimeUnit.SECONDS)).isTrue();
+            String ownerToken = queryString(
+                    "SELECT execution_token FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            );
+
+            Long remainingLeaseMicros = jdbcTemplate.queryForObject(
+                    """
+                    SELECT TIMESTAMPDIFF(
+                        MICROSECOND, CURRENT_TIMESTAMP(3), lease_until
+                    )
+                    FROM analysis_task WHERE id = ?
+                    """,
+                    Long.class,
+                    task.taskId()
+            );
+            assertThat(remainingLeaseMicros)
+                    .isBetween(170_000_000L, 180_000_000L);
+            assertThatThrownBy(() -> executionService.executeFromMessage(
+                    task.taskId(),
+                    task.eventId()
+            )).isInstanceOf(AnalysisTaskConflictException.class);
+            assertThat(queryString(
+                    "SELECT execution_token FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            )).isEqualTo(ownerToken);
+            assertThat(queryString(
+                    "SELECT current_event_id FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            )).isEqualTo(task.eventId());
+
+            releaseOwner.countDown();
+            owner.get(5, TimeUnit.SECONDS);
+            verify(aiAnalysisClient, times(1)).analyze(
+                    task.taskId(),
+                    task.commentId(),
+                    "fencing test comment",
+                    true
+            );
+        } finally {
+            releaseOwner.countDown();
+            executor.shutdownNow();
+            deleteTask(task);
+        }
+    }
+
+    @Test
+    void concurrentLeaseRecoveryCreatesOneAuthoritativeGeneration()
+            throws Exception {
+        TestTask task = createTask(false);
+        jdbcTemplate.update(
+                """
+                UPDATE analysis_task
+                SET status = 'PROCESSING', execution_token = ?,
+                    lease_until = TIMESTAMPADD(
+                        SECOND, -1, CURRENT_TIMESTAMP(3)
+                    )
+                WHERE id = ?
+                """,
+                randomId(),
+                task.taskId()
+        );
+
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<Integer> first = executor.submit(() -> {
+                await(start);
+                return leaseRecoveryService.recoverExpired();
+            });
+            Future<Integer> second = executor.submit(() -> {
+                await(start);
+                return leaseRecoveryService.recoverExpired();
+            });
+            start.countDown();
+
+            assertThat(first.get(5, TimeUnit.SECONDS)
+                    + second.get(5, TimeUnit.SECONDS)).isEqualTo(1);
+            String recoveredEventId = queryString(
+                    "SELECT current_event_id FROM analysis_task WHERE id = ?",
+                    task.taskId()
+            );
+            assertThat(recoveredEventId).isNotEqualTo(task.eventId());
+            assertThat(jdbcTemplate.queryForObject(
+                    """
+                    SELECT COUNT(*) FROM analysis_outbox_event
+                    WHERE task_id = ? AND event_id = ? AND status = 'PENDING'
+                    """,
+                    Integer.class,
+                    task.taskId(),
+                    recoveredEventId
+            )).isEqualTo(1);
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
             deleteTask(task);
         }
     }

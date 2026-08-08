@@ -19,7 +19,6 @@ import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -98,24 +97,19 @@ public class AnalysisExecutionService {
         }
 
         String executionToken = randomId();
-        LocalDateTime startedAt = LocalDateTime.now();
-        LocalDateTime leaseUntil = startedAt.plus(
-                executionProperties.executionLease()
-        );
+        long leaseDurationMicros = executionProperties.executionLeaseMicros();
         boolean claimed = messageDriven
                 ? analysisTaskMapper.claimForEvent(
                         taskId,
                         eventId,
                         executionToken,
-                        startedAt,
-                        leaseUntil
+                        leaseDurationMicros
                 ) == 1
                 : analysisTaskMapper.claimManually(
                         taskId,
                         eventId,
                         executionToken,
-                        startedAt,
-                        leaseUntil
+                        leaseDurationMicros
                 ) == 1;
         if (!claimed) {
             if (messageDriven && isObsoleteMessage(requireTask(taskId), eventId)) {
@@ -155,7 +149,8 @@ public class AnalysisExecutionService {
                     task.getCourseId(),
                     eventId,
                     executionToken,
-                    exception
+                    exception,
+                    !messageDriven
             );
             if (!failedByOwner && messageDriven) {
                 return null;
@@ -184,13 +179,11 @@ public class AnalysisExecutionService {
             Long courseId,
             String eventId,
             String executionToken,
-            RuntimeException originalException) {
+            RuntimeException originalException,
+            boolean synchronousExecution) {
         String reason = failureReason(originalException);
-        LocalDateTime completedAt = LocalDateTime.now();
-        LocalDateTime deadLetteredAt = originalException
-                instanceof NonRetryableAiServiceException
-                ? completedAt
-                : null;
+        boolean terminalFailure = synchronousExecution
+                || originalException instanceof NonRetryableAiServiceException;
 
         try {
             boolean updated = analysisTaskMapper.failOwnedExecution(
@@ -198,8 +191,7 @@ public class AnalysisExecutionService {
                     eventId,
                     executionToken,
                     reason,
-                    completedAt,
-                    deadLetteredAt
+                    terminalFailure
             ) == 1;
             if (updated) {
                 courseAnalyticsCache.evict(courseId);

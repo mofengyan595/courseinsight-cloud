@@ -31,10 +31,9 @@ public class AnalysisTaskLeaseRecoveryService {
 
     @Transactional
     public int recoverExpired() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime outboxAvailableAt = taskMapper.selectCurrentDatabaseTime();
         int recovered = 0;
         for (AnalysisTask task : taskMapper.selectExpiredExecutionsForUpdate(
-                now,
                 properties.leaseRecoveryBatchSize()
         )) {
             String eventId = randomId();
@@ -42,8 +41,7 @@ public class AnalysisTaskLeaseRecoveryService {
                     task.getId(),
                     task.getCurrentEventId(),
                     task.getExecutionToken(),
-                    eventId,
-                    now
+                    eventId
             ) != 1) {
                 continue;
             }
@@ -55,7 +53,7 @@ public class AnalysisTaskLeaseRecoveryService {
             outboxEvent.setEventType(AnalysisTaskCreatedEvent.EVENT_TYPE);
             outboxEvent.setStatus(AnalysisOutboxStatus.PENDING.name());
             outboxEvent.setRetryCount(0);
-            outboxEvent.setNextRetryAt(now);
+            outboxEvent.setNextRetryAt(outboxAvailableAt);
             if (outboxEventMapper.insert(outboxEvent) != 1) {
                 throw new IllegalStateException(
                         "Failed to create lease-recovery Outbox event"

@@ -11,6 +11,9 @@ import java.util.List;
 
 public interface AnalysisTaskMapper extends BaseMapper<AnalysisTask> {
 
+    @Select("SELECT CURRENT_TIMESTAMP(3)")
+    LocalDateTime selectCurrentDatabaseTime();
+
     @Select("""
             SELECT id, task_no, comment_id, course_id, batch_id, status,
                    retry_count, failure_reason, started_at, completed_at,
@@ -30,53 +33,65 @@ public interface AnalysisTaskMapper extends BaseMapper<AnalysisTask> {
             UPDATE analysis_task
             SET status = 'PROCESSING',
                 execution_token = #{executionToken},
-                lease_until = #{leaseUntil},
+                lease_until = TIMESTAMPADD(
+                    MICROSECOND,
+                    #{leaseDurationMicros},
+                    CURRENT_TIMESTAMP(3)
+                ),
                 failure_reason = NULL,
-                started_at = #{startedAt},
+                started_at = CURRENT_TIMESTAMP(3),
                 completed_at = NULL
             WHERE id = #{taskId}
               AND current_event_id = #{eventId}
               AND dead_lettered_at IS NULL
               AND (
                     status IN ('WAITING', 'FAILED')
-                    OR (status = 'PROCESSING' AND lease_until <= #{startedAt})
+                    OR (
+                        status = 'PROCESSING'
+                        AND lease_until <= CURRENT_TIMESTAMP(3)
+                    )
                   )
             """)
     int claimForEvent(
             @Param("taskId") Long taskId,
             @Param("eventId") String eventId,
             @Param("executionToken") String executionToken,
-            @Param("startedAt") LocalDateTime startedAt,
-            @Param("leaseUntil") LocalDateTime leaseUntil);
+            @Param("leaseDurationMicros") long leaseDurationMicros);
 
     @Update("""
             UPDATE analysis_task
             SET status = 'PROCESSING',
                 execution_token = #{executionToken},
-                lease_until = #{leaseUntil},
+                lease_until = TIMESTAMPADD(
+                    MICROSECOND,
+                    #{leaseDurationMicros},
+                    CURRENT_TIMESTAMP(3)
+                ),
                 failure_reason = NULL,
-                started_at = #{startedAt},
+                started_at = CURRENT_TIMESTAMP(3),
                 completed_at = NULL,
                 dead_lettered_at = NULL
             WHERE id = #{taskId}
               AND current_event_id <=> #{expectedEventId}
               AND (
                     status IN ('WAITING', 'FAILED')
-                    OR (status = 'PROCESSING' AND lease_until <= #{startedAt})
+                    OR (
+                        status = 'PROCESSING'
+                        AND lease_until <= CURRENT_TIMESTAMP(3)
+                    )
                   )
             """)
     int claimManually(
             @Param("taskId") Long taskId,
             @Param("expectedEventId") String expectedEventId,
             @Param("executionToken") String executionToken,
-            @Param("startedAt") LocalDateTime startedAt,
-            @Param("leaseUntil") LocalDateTime leaseUntil);
+            @Param("leaseDurationMicros") long leaseDurationMicros);
 
     @Update("""
             UPDATE analysis_task
             SET status = 'SUCCESS',
                 failure_reason = NULL,
-                completed_at = #{completedAt},
+                completed_at = CURRENT_TIMESTAMP(3),
                 execution_token = NULL,
                 lease_until = NULL
             WHERE id = #{taskId}
@@ -87,15 +102,18 @@ public interface AnalysisTaskMapper extends BaseMapper<AnalysisTask> {
     int completeOwnedExecution(
             @Param("taskId") Long taskId,
             @Param("eventId") String eventId,
-            @Param("executionToken") String executionToken,
-            @Param("completedAt") LocalDateTime completedAt);
+            @Param("executionToken") String executionToken);
 
     @Update("""
             UPDATE analysis_task
             SET status = 'FAILED',
                 failure_reason = #{failureReason},
-                completed_at = #{completedAt},
-                dead_lettered_at = #{deadLetteredAt},
+                completed_at = CURRENT_TIMESTAMP(3),
+                dead_lettered_at = CASE
+                    WHEN #{terminalFailure}
+                    THEN CURRENT_TIMESTAMP(3)
+                    ELSE NULL
+                END,
                 execution_token = NULL,
                 lease_until = NULL,
                 retry_count = retry_count + 1
@@ -109,14 +127,13 @@ public interface AnalysisTaskMapper extends BaseMapper<AnalysisTask> {
             @Param("eventId") String eventId,
             @Param("executionToken") String executionToken,
             @Param("failureReason") String failureReason,
-            @Param("completedAt") LocalDateTime completedAt,
-            @Param("deadLetteredAt") LocalDateTime deadLetteredAt);
+            @Param("terminalFailure") boolean terminalFailure);
 
     @Update("""
             UPDATE analysis_task
             SET status = 'FAILED',
-                completed_at = #{deadLetteredAt},
-                dead_lettered_at = #{deadLetteredAt},
+                completed_at = CURRENT_TIMESTAMP(3),
+                dead_lettered_at = CURRENT_TIMESTAMP(3),
                 execution_token = NULL,
                 lease_until = NULL
             WHERE id = #{taskId}
@@ -126,13 +143,12 @@ public interface AnalysisTaskMapper extends BaseMapper<AnalysisTask> {
               AND (
                     status <> 'PROCESSING'
                     OR lease_until IS NULL
-                    OR lease_until <= #{deadLetteredAt}
+                    OR lease_until <= CURRENT_TIMESTAMP(3)
                   )
             """)
     int markCurrentGenerationDeadLettered(
             @Param("taskId") Long taskId,
-            @Param("eventId") String eventId,
-            @Param("deadLetteredAt") LocalDateTime deadLetteredAt);
+            @Param("eventId") String eventId);
 
     @Update("""
             UPDATE analysis_task
@@ -180,13 +196,12 @@ public interface AnalysisTaskMapper extends BaseMapper<AnalysisTask> {
                    lease_until, created_at, updated_at
             FROM analysis_task
             WHERE status = 'PROCESSING'
-              AND lease_until <= #{now}
+              AND lease_until <= CURRENT_TIMESTAMP(3)
             ORDER BY lease_until ASC, id ASC
             LIMIT #{limit}
             FOR UPDATE SKIP LOCKED
             """)
     List<AnalysisTask> selectExpiredExecutionsForUpdate(
-            @Param("now") LocalDateTime now,
             @Param("limit") int limit);
 
     @Update("""
@@ -203,12 +218,11 @@ public interface AnalysisTaskMapper extends BaseMapper<AnalysisTask> {
               AND status = 'PROCESSING'
               AND current_event_id <=> #{expectedEventId}
               AND execution_token <=> #{executionToken}
-              AND lease_until <= #{now}
+              AND lease_until <= CURRENT_TIMESTAMP(3)
             """)
     int recoverExpiredExecution(
             @Param("taskId") Long taskId,
             @Param("expectedEventId") String expectedEventId,
             @Param("executionToken") String executionToken,
-            @Param("newEventId") String newEventId,
-            @Param("now") LocalDateTime now);
+            @Param("newEventId") String newEventId);
 }

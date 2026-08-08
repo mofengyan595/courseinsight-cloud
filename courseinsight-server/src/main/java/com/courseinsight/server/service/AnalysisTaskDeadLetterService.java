@@ -5,8 +5,6 @@ import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-
 @Service
 public class AnalysisTaskDeadLetterService {
 
@@ -31,8 +29,7 @@ public class AnalysisTaskDeadLetterService {
 
         boolean updated = analysisTaskMapper.markCurrentGenerationDeadLettered(
                 taskId,
-                eventId,
-                LocalDateTime.now()
+                eventId
         ) == 1;
         if (updated) {
             courseAnalyticsCache.evict(task.getCourseId());

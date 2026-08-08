@@ -15,8 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Service
 public class AnalysisResultPersistenceService {
 
@@ -42,12 +40,10 @@ public class AnalysisResultPersistenceService {
             AiAnalysisResponse response,
             String eventId,
             String executionToken) {
-        LocalDateTime completedAt = LocalDateTime.now();
         if (analysisTaskMapper.completeOwnedExecution(
                 task.getId(),
                 eventId,
-                executionToken,
-                completedAt
+                executionToken
         ) != 1) {
             throw new StaleAnalysisExecutionException(
                     "分析任务执行所有权已变更"

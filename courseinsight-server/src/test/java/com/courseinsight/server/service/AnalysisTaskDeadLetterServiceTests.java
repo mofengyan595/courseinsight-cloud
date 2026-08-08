@@ -9,10 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -34,8 +31,7 @@ class AnalysisTaskDeadLetterServiceTests {
         given(taskMapper.selectById(60L)).willReturn(task());
         given(taskMapper.markCurrentGenerationDeadLettered(
                 org.mockito.ArgumentMatchers.eq(60L),
-                org.mockito.ArgumentMatchers.eq("event-2"),
-                any(LocalDateTime.class)
+                org.mockito.ArgumentMatchers.eq("event-2")
         )).willReturn(1);
 
         assertThat(service.markDeadLettered(60L, "event-2")).isTrue();
@@ -48,8 +44,7 @@ class AnalysisTaskDeadLetterServiceTests {
         given(taskMapper.selectById(60L)).willReturn(task());
         given(taskMapper.markCurrentGenerationDeadLettered(
                 org.mockito.ArgumentMatchers.eq(60L),
-                org.mockito.ArgumentMatchers.eq("event-1"),
-                any(LocalDateTime.class)
+                org.mockito.ArgumentMatchers.eq("event-1")
         )).willReturn(0);
 
         assertThat(service.markDeadLettered(60L, "event-1")).isFalse();
