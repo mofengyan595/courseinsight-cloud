@@ -5,9 +5,9 @@ import com.courseinsight.server.cache.CoursePopularityRankingEntry;
 import com.courseinsight.server.exception.RateLimitExceededException;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
+import com.courseinsight.server.testsupport.RedisIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@RedisIntegrationTest
 class RedisConnectionTests {
 
     @Autowired

@@ -6,9 +6,9 @@ import com.courseinsight.server.dto.AnalysisExecutionResponse;
 import com.courseinsight.server.exception.AiServiceException;
 import com.courseinsight.server.service.AnalysisExecutionService;
 import com.courseinsight.server.service.AnalysisTaskDeadLetterService;
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -22,7 +22,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
-@SpringBootTest
+@MySqlIntegrationTest
 class AnalysisExecutionIntegrationTests {
 
     @Autowired

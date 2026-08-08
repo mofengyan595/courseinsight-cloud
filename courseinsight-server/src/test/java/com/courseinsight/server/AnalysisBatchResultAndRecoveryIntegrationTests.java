@@ -7,11 +7,11 @@ import com.courseinsight.server.dto.AnalysisBatchRetryResponse;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.service.AnalysisBatchRecoveryService;
 import com.courseinsight.server.service.AnalysisBatchResultService;
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +23,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(properties = "courseinsight.outbox.enabled=false")
+@MySqlIntegrationTest
 @Transactional
 class AnalysisBatchResultAndRecoveryIntegrationTests {
 

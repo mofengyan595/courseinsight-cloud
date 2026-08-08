@@ -5,9 +5,9 @@ import com.courseinsight.server.dto.AnalysisBatchCreateResponse;
 import com.courseinsight.server.dto.AnalysisBatchProgressAggregate;
 import com.courseinsight.server.mapper.AnalysisBatchProgressMapper;
 import com.courseinsight.server.service.AnalysisBatchCreationService;
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +16,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@MySqlIntegrationTest
 @Transactional
 class AnalysisBatchIntegrationTests {
 

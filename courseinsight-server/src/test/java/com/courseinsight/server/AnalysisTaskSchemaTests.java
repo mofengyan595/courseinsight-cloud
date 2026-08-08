@@ -1,13 +1,13 @@
 package com.courseinsight.server;
 
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
+@MySqlIntegrationTest
 class AnalysisTaskSchemaTests {
 
     @Autowired

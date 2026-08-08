@@ -4,9 +4,9 @@ import com.courseinsight.server.dto.AnalysisBatchCommentRow;
 import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.service.AnalysisBatchCreationService;
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@SpringBootTest
+@MySqlIntegrationTest
 class AnalysisBatchTransactionTests {
 
     @Autowired

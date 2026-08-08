@@ -2,9 +2,9 @@ package com.courseinsight.server;
 
 import com.courseinsight.server.dto.CourseAnalyticsAggregate;
 import com.courseinsight.server.mapper.CourseAnalyticsMapper;
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +12,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
+@MySqlIntegrationTest
 @Transactional
 class CourseAnalyticsMapperIntegrationTests {
 

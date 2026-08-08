@@ -1,0 +1,8 @@
+spring:
+  config:
+    import: "optional:file:../.env[.properties]"
+
+  docker:
+    compose:
+      file: ${COURSEINSIGHT_COMPOSE_FILE:../compose.yaml}
+      lifecycle-management: start-only

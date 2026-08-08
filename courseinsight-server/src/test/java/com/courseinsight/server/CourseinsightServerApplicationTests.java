@@ -1,9 +1,9 @@
 package com.courseinsight.server;
 
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@MySqlIntegrationTest
 class CourseinsightServerApplicationTests {
 
     @Test

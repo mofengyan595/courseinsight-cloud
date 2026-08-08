@@ -5,9 +5,9 @@ import com.courseinsight.server.dto.CommentPageQuery;
 import com.courseinsight.server.exception.DuplicateCommentException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.CommentService;
+import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.UUID;
@@ -15,7 +15,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
+@MySqlIntegrationTest
 class CommentOwnershipIntegrationTests {
 
     @Autowired
