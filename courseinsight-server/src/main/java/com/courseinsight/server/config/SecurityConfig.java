@@ -60,7 +60,14 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST,
                                 "/api/analysis-tasks/*/execute",
-                                "/api/analysis-tasks/*/enqueue"
+                                "/api/analysis-tasks/*/enqueue",
+                                "/api/courses/*/analysis-batches",
+                                "/api/analysis-batches/*/retry-failed"
+                        ).hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/analysis-batches/*",
+                                "/api/analysis-batches/*/results"
                         ).hasAnyRole("TEACHER", "ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions

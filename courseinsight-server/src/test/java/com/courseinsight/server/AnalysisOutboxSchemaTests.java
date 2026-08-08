@@ -27,4 +27,31 @@ class AnalysisOutboxSchemaTests {
 
         assertEquals(1, tableCount);
     }
+
+    @Test
+    void outboxAllowsMultipleReplayEventsForOneTask() {
+        Integer obsoleteUniqueIndexCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'analysis_outbox_event'
+                  AND index_name = 'uk_analysis_outbox_task'
+                """,
+                Integer.class
+        );
+        Integer replayLookupIndexCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(DISTINCT index_name)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'analysis_outbox_event'
+                  AND index_name = 'idx_analysis_outbox_task_created'
+                """,
+                Integer.class
+        );
+
+        assertEquals(0, obsoleteUniqueIndexCount);
+        assertEquals(1, replayLookupIndexCount);
+    }
 }

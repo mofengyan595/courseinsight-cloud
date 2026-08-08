@@ -55,6 +55,11 @@ public class AnalysisTaskEnqueueService {
         if (AnalysisTaskStatus.PROCESSING.name().equals(task.getStatus())) {
             throw new AnalysisTaskConflictException("分析任务正在处理中");
         }
+        if (task.getBatchId() != null) {
+            throw new AnalysisTaskConflictException(
+                    "批量分析任务请使用批次失败重试接口"
+            );
+        }
 
         AnalysisTaskCreatedEvent event = new AnalysisTaskCreatedEvent(
                 UUID.randomUUID().toString().replace("-", ""),

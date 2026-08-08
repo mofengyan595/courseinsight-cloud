@@ -2,6 +2,11 @@ spring:
   application:
     name: courseinsight-server
 
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+
   datasource:
     url: jdbc:mysql://127.0.0.1:3307/courseinsight?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
     username: ${MYSQL_USER}

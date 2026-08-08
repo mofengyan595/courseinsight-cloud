@@ -121,6 +121,23 @@ class AnalysisTaskEnqueueServiceTests {
         verifyNoInteractions(messageProducer);
     }
 
+    @Test
+    void shouldRejectBatchTaskThatBypassesBatchRecovery() {
+        AnalysisTask task = createTask("FAILED");
+        task.setBatchId(30L);
+        given(analysisTaskMapper.selectById(6L)).willReturn(task);
+
+        assertThatThrownBy(() -> enqueueService.enqueue(
+                6L,
+                11L,
+                UserRole.TEACHER
+        ))
+                .isInstanceOf(AnalysisTaskConflictException.class)
+                .hasMessage("批量分析任务请使用批次失败重试接口");
+
+        verifyNoInteractions(messageProducer);
+    }
+
     private AnalysisTask createTask(String status) {
         AnalysisTask task = new AnalysisTask();
         task.setId(6L);

@@ -3,14 +3,20 @@ package com.courseinsight.server.security;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.config.SecurityConfig;
 import com.courseinsight.server.controller.AdminUserController;
+import com.courseinsight.server.controller.AnalysisBatchController;
 import com.courseinsight.server.controller.CommentController;
 import com.courseinsight.server.controller.CourseController;
 import com.courseinsight.server.controller.CourseAnalyticsController;
 import com.courseinsight.server.controller.HealthController;
 import com.courseinsight.server.dto.CoursePageQuery;
+import com.courseinsight.server.dto.AnalysisBatchCreateResponse;
+import com.courseinsight.server.dto.AnalysisBatchRetryResponse;
 import com.courseinsight.server.dto.CourseAnalyticsSummaryResponse;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.service.AdminUserService;
+import com.courseinsight.server.service.AnalysisBatchService;
+import com.courseinsight.server.service.AnalysisBatchRecoveryService;
+import com.courseinsight.server.service.AnalysisBatchResultService;
 import com.courseinsight.server.service.CommentService;
 import com.courseinsight.server.service.CourseService;
 import com.courseinsight.server.service.CourseAnalyticsService;
@@ -18,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -26,6 +33,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -37,12 +45,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = {
         AdminUserController.class,
+        AnalysisBatchController.class,
         CourseAnalyticsController.class,
         CourseController.class,
         CommentController.class,
@@ -50,6 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 @ContextConfiguration(classes = {
         AdminUserController.class,
+        AnalysisBatchController.class,
         CourseAnalyticsController.class,
         CourseController.class,
         CommentController.class,
@@ -72,6 +83,15 @@ class SecurityAuthorizationTests {
 
     @MockitoBean
     private AdminUserService adminUserService;
+
+    @MockitoBean
+    private AnalysisBatchService analysisBatchService;
+
+    @MockitoBean
+    private AnalysisBatchResultService analysisBatchResultService;
+
+    @MockitoBean
+    private AnalysisBatchRecoveryService analysisBatchRecoveryService;
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
@@ -210,6 +230,85 @@ class SecurityAuthorizationTests {
     }
 
     @Test
+    void shouldForbidStudentFromUploadingAnalysisBatch() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+
+        mockMvc.perform(multipart("/api/courses/{courseId}/analysis-batches", 14L)
+                        .file(csvFile())
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        verifyNoInteractions(analysisBatchService);
+    }
+
+    @Test
+    void shouldAllowTeacherToUploadAnalysisBatch() throws Exception {
+        given(jwtDecoder.decode("teacher-token"))
+                .willReturn(jwt("teacher-token", "TEACHER"));
+        given(analysisBatchService.upload(eq(14L), eq(1L), eq(UserRole.TEACHER), any()))
+                .willReturn(new AnalysisBatchCreateResponse(
+                        30L,
+                        "batch-30",
+                        14L,
+                        1
+                ));
+
+        mockMvc.perform(multipart("/api/courses/{courseId}/analysis-batches", 14L)
+                        .file(csvFile())
+                        .header("Authorization", "Bearer teacher-token"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.batchId").value(30));
+    }
+
+    @Test
+    void shouldForbidStudentFromViewingAnalysisBatchResults() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+
+        mockMvc.perform(get("/api/analysis-batches/{batchId}/results", 30L)
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        verifyNoInteractions(analysisBatchResultService);
+    }
+
+    @Test
+    void shouldForbidStudentFromRetryingAnalysisBatch() throws Exception {
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+
+        mockMvc.perform(post("/api/analysis-batches/{batchId}/retry-failed", 30L)
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(403));
+
+        verifyNoInteractions(analysisBatchRecoveryService);
+    }
+
+    @Test
+    void shouldAllowTeacherToRetryAnalysisBatch() throws Exception {
+        given(jwtDecoder.decode("teacher-token"))
+                .willReturn(jwt("teacher-token", "TEACHER"));
+        given(analysisBatchRecoveryService.retryDeadLettered(
+                30L,
+                1L,
+                UserRole.TEACHER
+        )).willReturn(new AnalysisBatchRetryResponse(
+                30L,
+                2,
+                LocalDateTime.of(2026, 8, 8, 11, 0)
+        ));
+
+        mockMvc.perform(post("/api/analysis-batches/{batchId}/retry-failed", 30L)
+                        .header("Authorization", "Bearer teacher-token"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.data.requeuedCount").value(2));
+    }
+
+    @Test
     void shouldBindStudentCommentToJwtSubject() throws Exception {
         given(jwtDecoder.decode("student-token"))
                 .willReturn(jwt("student-token", "STUDENT"));
@@ -277,6 +376,15 @@ class SecurityAuthorizationTests {
                   "description": "Security authorization test"
                 }
                 """;
+    }
+
+    private MockMultipartFile csvFile() {
+        return new MockMultipartFile(
+                "file",
+                "comments.csv",
+                "text/csv",
+                "content,rating\nGood course,5\n".getBytes()
+        );
     }
 
     private CourseAnalyticsSummaryResponse emptySummary(Long courseId) {

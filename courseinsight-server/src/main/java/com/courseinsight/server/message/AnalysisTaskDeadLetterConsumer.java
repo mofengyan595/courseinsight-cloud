@@ -31,7 +31,10 @@ public class AnalysisTaskDeadLetterConsumer implements RocketMQListener<Analysis
             return;
         }
 
-        boolean marked = deadLetterService.markDeadLettered(event.taskId());
+        boolean marked = deadLetterService.markDeadLettered(
+                event.taskId(),
+                event.eventId()
+        );
         if (marked) {
             log.error("分析任务消息已进入死信队列, eventId={}, taskId={}",
                     event.eventId(), event.taskId());

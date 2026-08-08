@@ -22,11 +22,12 @@ class AnalysisTaskDeadLetterConsumerTests {
 
     @Test
     void shouldMarkTaskWhenMessageEntersDeadLetterQueue() {
-        given(deadLetterService.markDeadLettered(6L)).willReturn(true);
+        given(deadLetterService.markDeadLettered(6L, "event-1"))
+                .willReturn(true);
 
         consumer.onMessage(createEvent());
 
-        verify(deadLetterService).markDeadLettered(6L);
+        verify(deadLetterService).markDeadLettered(6L, "event-1");
     }
 
     @Test
@@ -41,11 +42,12 @@ class AnalysisTaskDeadLetterConsumerTests {
 
     @Test
     void shouldAcknowledgeWhenTaskIsMissingOrAlreadySuccessful() {
-        given(deadLetterService.markDeadLettered(6L)).willReturn(false);
+        given(deadLetterService.markDeadLettered(6L, "event-1"))
+                .willReturn(false);
 
         consumer.onMessage(createEvent());
 
-        verify(deadLetterService).markDeadLettered(6L);
+        verify(deadLetterService).markDeadLettered(6L, "event-1");
     }
 
     private AnalysisTaskCreatedEvent createEvent() {

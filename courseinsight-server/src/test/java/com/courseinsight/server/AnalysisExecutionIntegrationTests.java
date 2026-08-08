@@ -166,7 +166,11 @@ class AnalysisExecutionIntegrationTests {
         TestData testData = createWaitingTask(commentText);
 
         try {
-            assertThat(deadLetterService.markDeadLettered(testData.taskId())).isTrue();
+            String eventId = createSentOutboxEvent(testData);
+            assertThat(deadLetterService.markDeadLettered(
+                    testData.taskId(),
+                    eventId
+            )).isTrue();
 
             given(aiAnalysisClient.analyze(
                     testData.taskId(),
@@ -253,6 +257,10 @@ class AnalysisExecutionIntegrationTests {
 
     private void deleteTestData(TestData testData) {
         jdbcTemplate.update(
+                "DELETE FROM analysis_outbox_event WHERE task_id = ?",
+                testData.taskId()
+        );
+        jdbcTemplate.update(
                 "DELETE FROM analysis_result WHERE task_id = ?",
                 testData.taskId()
         );
@@ -268,6 +276,23 @@ class AnalysisExecutionIntegrationTests {
                 "DELETE FROM course WHERE id = ?",
                 testData.courseId()
         );
+    }
+
+    private String createSentOutboxEvent(TestData testData) {
+        String eventId = UUID.randomUUID().toString().replace("-", "");
+        jdbcTemplate.update(
+                """
+                INSERT INTO analysis_outbox_event
+                    (event_id, task_id, comment_id, event_type, status,
+                     retry_count, next_retry_at, sent_at)
+                VALUES (?, ?, ?, 'COMMENT_ANALYSIS_CREATED', 'SENT',
+                        0, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3))
+                """,
+                eventId,
+                testData.taskId(),
+                testData.commentId()
+        );
+        return eventId;
     }
 
     private AiAnalysisResponse createAiResponse(Long taskId, Long commentId) {

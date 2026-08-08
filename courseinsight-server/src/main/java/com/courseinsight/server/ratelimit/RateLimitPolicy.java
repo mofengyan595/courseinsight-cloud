@@ -13,6 +13,12 @@ public enum RateLimitPolicy {
             10,
             60,
             "AI 分析操作过于频繁，请稍后再试"
+    ),
+    BATCH_ANALYSIS_UPLOAD(
+            "batch-analysis-upload",
+            2,
+            60,
+            "批量分析上传过于频繁，请稍后再试"
     );
 
     private final String keySegment;

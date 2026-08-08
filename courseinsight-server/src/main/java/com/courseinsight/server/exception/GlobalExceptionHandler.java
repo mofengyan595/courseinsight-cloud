@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -88,6 +89,23 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(
                 HttpStatus.TOO_MANY_REQUESTS.value(),
                 exception.getMessage()
+        );
+    }
+
+    @ExceptionHandler(InvalidCsvFileException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleInvalidCsvFile(
+            InvalidCsvFileException exception) {
+        return ApiResponse.error(HttpStatus.BAD_REQUEST.value(), exception.getMessage());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.PAYLOAD_TOO_LARGE)
+    public ApiResponse<Void> handleMaxUploadSize(
+            MaxUploadSizeExceededException exception) {
+        return ApiResponse.error(
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                "CSV 文件不能超过 2MB"
         );
     }
 
