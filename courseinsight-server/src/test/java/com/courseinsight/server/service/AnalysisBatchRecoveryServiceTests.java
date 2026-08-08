@@ -25,7 +25,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -62,7 +61,11 @@ class AnalysisBatchRecoveryServiceTests {
         given(batchMapper.selectById(30L)).willReturn(batch());
         given(taskMapper.selectDeadLetteredByBatchIdForUpdate(30L))
                 .willReturn(List.of(task(60L, 70L), task(61L, 71L)));
-        given(taskMapper.update(isNull(), any())).willReturn(1);
+        given(taskMapper.recoverDeadLetteredWithNewGeneration(
+                any(Long.class),
+                any(String.class),
+                any(String.class)
+        )).willReturn(1);
         given(outboxEventMapper.insert(any(AnalysisOutboxEvent.class)))
                 .willReturn(1);
 
@@ -132,6 +135,7 @@ class AnalysisBatchRecoveryServiceTests {
         task.setCourseId(14L);
         task.setBatchId(30L);
         task.setStatus("FAILED");
+        task.setCurrentEventId("event-" + taskId);
         return task;
     }
 }

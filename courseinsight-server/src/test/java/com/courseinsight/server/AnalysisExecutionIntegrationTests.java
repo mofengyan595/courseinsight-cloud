@@ -292,6 +292,11 @@ class AnalysisExecutionIntegrationTests {
                 testData.taskId(),
                 testData.commentId()
         );
+        jdbcTemplate.update(
+                "UPDATE analysis_task SET current_event_id = ? WHERE id = ?",
+                eventId,
+                testData.taskId()
+        );
         return eventId;
     }
 

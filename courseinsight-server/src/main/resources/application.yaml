@@ -41,9 +41,17 @@ courseinsight:
     base-url: ${AI_SERVICE_BASE_URL:http://127.0.0.1:8001}
     connect-timeout: 2s
     read-timeout: 90s
+  analysis:
+    # The lease exceeds the 90-second AI read timeout and fences crashed workers.
+    execution-lease: ${ANALYSIS_EXECUTION_LEASE:3m}
+    lease-recovery-batch-size: ${ANALYSIS_LEASE_RECOVERY_BATCH_SIZE:20}
+    lease-recovery-enabled: ${ANALYSIS_LEASE_RECOVERY_ENABLED:true}
+    lease-recovery-interval-ms: ${ANALYSIS_LEASE_RECOVERY_INTERVAL_MS:30000}
   rocketmq:
     analysis-topic: ${ROCKETMQ_ANALYSIS_TOPIC:courseinsight-analysis}
     analysis-consumer-group: ${ROCKETMQ_ANALYSIS_CONSUMER_GROUP:courseinsight-analysis-consumer}
+    # Conservative default to protect the single CPU-oriented AI service.
+    analysis-consume-thread-number: ${ROCKETMQ_ANALYSIS_CONSUME_THREAD_NUMBER:1}
     analysis-dead-letter-topic: ${ROCKETMQ_ANALYSIS_DLQ_TOPIC:%DLQ%courseinsight-analysis-consumer}
     analysis-dead-letter-consumer-group: ${ROCKETMQ_ANALYSIS_DLQ_CONSUMER_GROUP:courseinsight-analysis-dlq-consumer}
     send-timeout-ms: 5000

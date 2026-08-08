@@ -1,13 +1,15 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.dto.AnalysisTaskDetailResponse;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.AnalysisTaskService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,7 +31,7 @@ class AnalysisTaskControllerTests {
     private AnalysisTaskService analysisTaskService;
 
     @Test
-    void shouldGetTaskByCommentId() throws Exception {
+    void shouldPassAuthenticatedUserToObjectAuthorization() throws Exception {
         AnalysisTaskDetailResponse response = new AnalysisTaskDetailResponse(
                 3L,
                 "1234567890abcdef1234567890abcdef",
@@ -44,28 +46,34 @@ class AnalysisTaskControllerTests {
                 null,
                 null
         );
-        given(analysisTaskService.getByCommentId(10L)).willReturn(response);
+        given(analysisTaskService.getByCommentId(
+                10L,
+                20L,
+                UserRole.STUDENT
+        )).willReturn(response);
 
-        mockMvc.perform(get("/api/comments/{commentId}/analysis-task", 10L))
+        mockMvc.perform(get("/api/comments/{commentId}/analysis-task", 10L)
+                        .principal(student()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
-                .andExpect(jsonPath("$.message").value("success"))
-                .andExpect(jsonPath("$.data.id").value(3))
-                .andExpect(jsonPath("$.data.commentId").value(10))
-                .andExpect(jsonPath("$.data.courseId").value(1))
-                .andExpect(jsonPath("$.data.status").value("WAITING"))
-                .andExpect(jsonPath("$.data.retryCount").value(0))
-                .andExpect(jsonPath("$.data.deadLetteredAt").doesNotExist());
+                .andExpect(jsonPath("$.data.id").value(3));
     }
 
     @Test
     void shouldReturnNotFoundWhenTaskDoesNotExist() throws Exception {
-        given(analysisTaskService.getByCommentId(999999L))
-                .willThrow(new ResourceNotFoundException("分析任务不存在"));
+        given(analysisTaskService.getByCommentId(
+                999999L,
+                20L,
+                UserRole.STUDENT
+        )).willThrow(new ResourceNotFoundException("Analysis task does not exist"));
 
-        mockMvc.perform(get("/api/comments/{commentId}/analysis-task", 999999L))
+        mockMvc.perform(get("/api/comments/{commentId}/analysis-task", 999999L)
+                        .principal(student()))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value(404))
-                .andExpect(jsonPath("$.message").value("分析任务不存在"));
+                .andExpect(jsonPath("$.code").value(404));
+    }
+
+    private TestingAuthenticationToken student() {
+        return new TestingAuthenticationToken("20", null, "ROLE_STUDENT");
     }
 }

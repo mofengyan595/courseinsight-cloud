@@ -2,6 +2,7 @@ package com.courseinsight.server.service;
 
 import com.courseinsight.server.cache.CourseAnalyticsCache;
 import com.courseinsight.server.client.AiAnalysisClient;
+import com.courseinsight.server.config.AnalysisExecutionProperties;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.CourseAccessDeniedException;
@@ -43,6 +44,9 @@ class AnalysisExecutionAuthorizationTests {
 
     @Mock
     private RedisRateLimiter rateLimiter;
+
+    @Mock
+    private AnalysisExecutionProperties executionProperties;
 
     @InjectMocks
     private AnalysisExecutionService analysisExecutionService;

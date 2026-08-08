@@ -1,7 +1,8 @@
 package com.courseinsight.server.message;
 
-import com.courseinsight.server.exception.AiServiceException;
+import com.courseinsight.server.exception.NonRetryableAiServiceException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.exception.RetryableAiServiceException;
 import com.courseinsight.server.service.AnalysisExecutionService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,10 +25,10 @@ class AnalysisTaskMessageConsumerTests {
     private AnalysisTaskMessageConsumer consumer;
 
     @Test
-    void shouldExecuteTaskFromMessage() {
+    void shouldExecuteCurrentGenerationFromMessage() {
         consumer.onMessage(createEvent());
 
-        verify(analysisExecutionService).execute(6L);
+        verify(analysisExecutionService).executeFromMessage(6L, "event-1");
     }
 
     @Test
@@ -42,22 +43,34 @@ class AnalysisTaskMessageConsumerTests {
 
     @Test
     void shouldAcknowledgeWhenReferencedDataDoesNotExist() {
-        willThrow(new ResourceNotFoundException("分析任务不存在"))
-                .given(analysisExecutionService).execute(6L);
+        willThrow(new ResourceNotFoundException("missing"))
+                .given(analysisExecutionService)
+                .executeFromMessage(6L, "event-1");
 
         consumer.onMessage(createEvent());
 
-        verify(analysisExecutionService).execute(6L);
+        verify(analysisExecutionService).executeFromMessage(6L, "event-1");
+    }
+
+    @Test
+    void shouldAcknowledgeNonRetryableFailure() {
+        willThrow(new NonRetryableAiServiceException("permanent"))
+                .given(analysisExecutionService)
+                .executeFromMessage(6L, "event-1");
+
+        consumer.onMessage(createEvent());
+
+        verify(analysisExecutionService).executeFromMessage(6L, "event-1");
     }
 
     @Test
     void shouldRethrowRetryableFailure() {
-        willThrow(new AiServiceException("AI 服务调用失败"))
-                .given(analysisExecutionService).execute(6L);
+        willThrow(new RetryableAiServiceException("temporary", null))
+                .given(analysisExecutionService)
+                .executeFromMessage(6L, "event-1");
 
         assertThatThrownBy(() -> consumer.onMessage(createEvent()))
-                .isInstanceOf(AiServiceException.class)
-                .hasMessage("AI 服务调用失败");
+                .isInstanceOf(RetryableAiServiceException.class);
     }
 
     private AnalysisTaskCreatedEvent createEvent() {

@@ -79,16 +79,18 @@ public class CommentService {
             throw new DuplicateCommentException("你已经评价过该课程");
         }
 
+        String eventId = UUID.randomUUID().toString().replace("-", "");
         AnalysisTask task = new AnalysisTask();
         task.setTaskNo(UUID.randomUUID().toString().replace("-", ""));
         task.setCommentId(comment.getId());
         task.setCourseId(courseId);
         task.setStatus(AnalysisTaskStatus.WAITING.name());
         task.setRetryCount(0);
+        task.setCurrentEventId(eventId);
         analysisTaskMapper.insert(task);
 
         AnalysisOutboxEvent outboxEvent = new AnalysisOutboxEvent();
-        outboxEvent.setEventId(UUID.randomUUID().toString().replace("-", ""));
+        outboxEvent.setEventId(eventId);
         outboxEvent.setTaskId(task.getId());
         outboxEvent.setCommentId(comment.getId());
         outboxEvent.setEventType(AnalysisTaskCreatedEvent.EVENT_TYPE);

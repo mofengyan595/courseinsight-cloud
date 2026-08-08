@@ -26,6 +26,9 @@ public class AnalysisTask {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
     private LocalDateTime deadLetteredAt;
+    private String currentEventId;
+    private String executionToken;
+    private LocalDateTime leaseUntil;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

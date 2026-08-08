@@ -95,6 +95,28 @@ class AnalysisOutboxPublisherTests {
         verifyNoInteractions(messageProducer);
     }
 
+    @Test
+    void shouldResendSameEventWhenBrokerAcceptedButMarkSentWasLost() {
+        given(outboxEventMapper.selectList(any(Wrapper.class)))
+                .willReturn(List.of(createEvent()));
+        given(outboxEventMapper.update(any(), any(Wrapper.class)))
+                .willReturn(1, 0, 1, 1, 1);
+        given(messageProducer.send(any(AnalysisTaskCreatedEvent.class)))
+                .willReturn("message-1", "message-2");
+
+        publisher.publishPending();
+        publisher.publishPending();
+
+        verify(messageProducer, times(2)).send(
+                org.mockito.ArgumentMatchers.argThat(
+                        event -> event.eventId().equals(
+                                "1234567890abcdef1234567890abcdef"
+                        )
+                )
+        );
+        verify(outboxEventMapper, times(5)).update(any(), any(Wrapper.class));
+    }
+
     private AnalysisOutboxEvent createEvent() {
         AnalysisOutboxEvent event = new AnalysisOutboxEvent();
         event.setId(1L);

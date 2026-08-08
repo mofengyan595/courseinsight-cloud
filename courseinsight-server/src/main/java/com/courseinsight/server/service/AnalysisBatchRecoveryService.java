@@ -1,12 +1,10 @@
 package com.courseinsight.server.service;
 
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.courseinsight.server.dto.AnalysisBatchRetryResponse;
 import com.courseinsight.server.entity.AnalysisBatch;
 import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.entity.AnalysisOutboxStatus;
 import com.courseinsight.server.entity.AnalysisTask;
-import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisBatchMapper;
@@ -56,10 +54,15 @@ public class AnalysisBatchRecoveryService {
         LocalDateTime requestedAt = LocalDateTime.now();
         int requeuedCount = 0;
         for (AnalysisTask task : tasks) {
-            if (!markWaiting(task.getId())) {
+            String eventId = randomId();
+            if (!markWaiting(task, eventId)) {
                 continue;
             }
-            if (outboxEventMapper.insert(newOutboxEvent(task, requestedAt)) != 1) {
+            if (outboxEventMapper.insert(newOutboxEvent(
+                    task,
+                    eventId,
+                    requestedAt
+            )) != 1) {
                 throw new IllegalStateException("批量重试 Outbox 事件创建失败");
             }
             requeuedCount++;
@@ -79,24 +82,20 @@ public class AnalysisBatchRecoveryService {
         return batch;
     }
 
-    private boolean markWaiting(Long taskId) {
-        LambdaUpdateWrapper<AnalysisTask> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(AnalysisTask::getId, taskId)
-                .eq(AnalysisTask::getStatus, AnalysisTaskStatus.FAILED.name())
-                .isNotNull(AnalysisTask::getDeadLetteredAt)
-                .set(AnalysisTask::getStatus, AnalysisTaskStatus.WAITING.name())
-                .set(AnalysisTask::getFailureReason, null)
-                .set(AnalysisTask::getStartedAt, null)
-                .set(AnalysisTask::getCompletedAt, null)
-                .set(AnalysisTask::getDeadLetteredAt, null);
-        return taskMapper.update(null, wrapper) == 1;
+    private boolean markWaiting(AnalysisTask task, String eventId) {
+        return taskMapper.recoverDeadLetteredWithNewGeneration(
+                task.getId(),
+                task.getCurrentEventId(),
+                eventId
+        ) == 1;
     }
 
     private AnalysisOutboxEvent newOutboxEvent(
             AnalysisTask task,
+            String eventId,
             LocalDateTime requestedAt) {
         AnalysisOutboxEvent event = new AnalysisOutboxEvent();
-        event.setEventId(randomId());
+        event.setEventId(eventId);
         event.setTaskId(task.getId());
         event.setCommentId(task.getCommentId());
         event.setEventType(AnalysisTaskCreatedEvent.EVENT_TYPE);

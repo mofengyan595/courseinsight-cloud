@@ -1,10 +1,13 @@
 package com.courseinsight.server.client;
 
-import com.courseinsight.server.exception.AiServiceException;
+import com.courseinsight.server.exception.NonRetryableAiServiceException;
+import com.courseinsight.server.exception.RetryableAiServiceException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Component
 public class AiAnalysisClient {
@@ -36,8 +39,32 @@ public class AiAnalysisClient {
 
             validateResponse(taskId, commentId, response);
             return response;
+        } catch (RestClientResponseException exception) {
+            int status = exception.getStatusCode().value();
+            if (exception.getStatusCode().is5xxServerError()
+                    || status == 408
+                    || status == 429) {
+                throw new RetryableAiServiceException(
+                        "AI 服务调用失败",
+                        exception
+                );
+            }
+            throw new NonRetryableAiServiceException(
+                    "AI 服务调用失败",
+                    exception
+            );
+        } catch (ResourceAccessException exception) {
+            throw new RetryableAiServiceException(
+                    "AI 服务调用失败",
+                    exception
+            );
         } catch (RestClientException exception) {
-            throw new AiServiceException("AI 服务调用失败", exception);
+            // A successful HTTP response that cannot be decoded violates the
+            // response contract; replaying the same request will not repair it.
+            throw new NonRetryableAiServiceException(
+                    "AI 服务调用失败",
+                    exception
+            );
         }
     }
 
@@ -48,7 +75,9 @@ public class AiAnalysisClient {
         if (response == null
                 || !taskId.equals(response.taskId())
                 || !commentId.equals(response.commentId())) {
-            throw new AiServiceException("AI 服务返回结果与分析任务不匹配");
+            throw new NonRetryableAiServiceException(
+                    "AI service response does not match the analysis task"
+            );
         }
     }
 }

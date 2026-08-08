@@ -66,12 +66,19 @@ public class AnalysisBatchCreationService {
             CourseComment comment = createComment(courseId, row);
             commentMapper.insert(comment);
 
-            AnalysisTask task = createTask(batch.getId(), courseId, comment.getId());
+            String eventId = randomId();
+            AnalysisTask task = createTask(
+                    batch.getId(),
+                    courseId,
+                    comment.getId(),
+                    eventId
+            );
             taskMapper.insert(task);
 
             AnalysisOutboxEvent outboxEvent = createOutboxEvent(
                     task.getId(),
                     comment.getId(),
+                    eventId,
                     now
             );
             outboxEventMapper.insert(outboxEvent);
@@ -103,7 +110,8 @@ public class AnalysisBatchCreationService {
     private AnalysisTask createTask(
             Long batchId,
             Long courseId,
-            Long commentId) {
+            Long commentId,
+            String eventId) {
         AnalysisTask task = new AnalysisTask();
         task.setTaskNo(randomId());
         task.setCommentId(commentId);
@@ -111,15 +119,17 @@ public class AnalysisBatchCreationService {
         task.setBatchId(batchId);
         task.setStatus(AnalysisTaskStatus.WAITING.name());
         task.setRetryCount(0);
+        task.setCurrentEventId(eventId);
         return task;
     }
 
     private AnalysisOutboxEvent createOutboxEvent(
             Long taskId,
             Long commentId,
+            String eventId,
             LocalDateTime nextRetryAt) {
         AnalysisOutboxEvent event = new AnalysisOutboxEvent();
-        event.setEventId(randomId());
+        event.setEventId(eventId);
         event.setTaskId(taskId);
         event.setCommentId(commentId);
         event.setEventType(AnalysisTaskCreatedEvent.EVENT_TYPE);

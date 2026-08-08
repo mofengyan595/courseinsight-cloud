@@ -43,4 +43,33 @@ class AnalysisTaskSchemaTests {
 
         assertEquals(1, columnCount);
     }
+
+    @Test
+    void analysisTaskHasExecutionFencingColumnsAndLeaseIndex() {
+        Integer columnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'analysis_task'
+                  AND column_name IN (
+                      'current_event_id', 'execution_token', 'lease_until'
+                  )
+                """,
+                Integer.class
+        );
+        Integer indexCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(DISTINCT index_name)
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'analysis_task'
+                  AND index_name = 'idx_analysis_task_expired_lease'
+                """,
+                Integer.class
+        );
+
+        assertEquals(3, columnCount);
+        assertEquals(1, indexCount);
+    }
 }

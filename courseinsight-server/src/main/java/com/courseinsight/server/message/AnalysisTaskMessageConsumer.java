@@ -1,5 +1,6 @@
 package com.courseinsight.server.message;
 
+import com.courseinsight.server.exception.NonRetryableAiServiceException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.AnalysisExecutionService;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Component;
 @RocketMQMessageListener(
         topic = "${courseinsight.rocketmq.analysis-topic}",
         consumerGroup = "${courseinsight.rocketmq.analysis-consumer-group}",
+        consumeThreadNumber = 1,
+        consumeThreadMax = 1,
         maxReconsumeTimes = 3
 )
 public class AnalysisTaskMessageConsumer implements RocketMQListener<AnalysisTaskCreatedEvent> {
@@ -27,18 +30,34 @@ public class AnalysisTaskMessageConsumer implements RocketMQListener<AnalysisTas
     @Override
     public void onMessage(AnalysisTaskCreatedEvent event) {
         if (event == null
+                || event.eventId() == null
                 || event.taskId() == null
                 || !AnalysisTaskCreatedEvent.EVENT_TYPE.equals(event.eventType())) {
-            log.error("忽略无法处理的分析任务消息: {}", event);
+            log.error("Ignoring invalid analysis task message: {}", event);
             return;
         }
 
         try {
-            analysisExecutionService.execute(event.taskId());
+            analysisExecutionService.executeFromMessage(
+                    event.taskId(),
+                    event.eventId()
+            );
+        } catch (NonRetryableAiServiceException exception) {
+            // The owner CAS already persisted a terminal failure. Acknowledge so
+            // RocketMQ does not repeat a permanently invalid request.
+            log.error(
+                    "Analysis task failed permanently, eventId={}, taskId={}",
+                    event.eventId(),
+                    event.taskId(),
+                    exception
+            );
         } catch (ResourceNotFoundException exception) {
-            // 数据永久缺失时继续重试没有意义，记录后确认消息。
-            log.error("分析任务消息关联的数据不存在, eventId={}, taskId={}",
-                    event.eventId(), event.taskId(), exception);
+            log.error(
+                    "Analysis task message references missing data, eventId={}, taskId={}",
+                    event.eventId(),
+                    event.taskId(),
+                    exception
+            );
         }
     }
 }

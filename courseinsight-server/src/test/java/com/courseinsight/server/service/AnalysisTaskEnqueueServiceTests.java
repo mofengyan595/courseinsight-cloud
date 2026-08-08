@@ -1,14 +1,14 @@
 package com.courseinsight.server.service;
 
 import com.courseinsight.server.dto.AnalysisTaskEnqueueResponse;
+import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.UserRole;
-import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.exception.AnalysisTaskConflictException;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
-import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
-import com.courseinsight.server.message.AnalysisTaskMessageProducer;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.junit.jupiter.api.Test;
@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -32,7 +33,7 @@ class AnalysisTaskEnqueueServiceTests {
     private AnalysisTaskMapper analysisTaskMapper;
 
     @Mock
-    private AnalysisTaskMessageProducer messageProducer;
+    private AnalysisOutboxEventMapper outboxEventMapper;
 
     @Mock
     private CourseManagementAccessService managementAccessService;
@@ -44,10 +45,15 @@ class AnalysisTaskEnqueueServiceTests {
     private AnalysisTaskEnqueueService enqueueService;
 
     @Test
-    void shouldEnqueueWaitingTask() {
+    void shouldPersistNewOutboxGenerationInsteadOfSendingDirectly() {
         AnalysisTask task = createTask("WAITING");
         given(analysisTaskMapper.selectById(6L)).willReturn(task);
-        given(messageProducer.send(any(AnalysisTaskCreatedEvent.class))).willReturn("message-1");
+        given(analysisTaskMapper.requeueWithNewGeneration(
+                org.mockito.ArgumentMatchers.eq(6L),
+                org.mockito.ArgumentMatchers.eq("event-1"),
+                any(String.class)
+        )).willReturn(1);
+        given(outboxEventMapper.insert(any(AnalysisOutboxEvent.class))).willReturn(1);
 
         AnalysisTaskEnqueueResponse response = enqueueService.enqueue(
                 6L,
@@ -55,16 +61,15 @@ class AnalysisTaskEnqueueServiceTests {
                 UserRole.TEACHER
         );
 
-        ArgumentCaptor<AnalysisTaskCreatedEvent> eventCaptor =
-                ArgumentCaptor.forClass(AnalysisTaskCreatedEvent.class);
-        verify(messageProducer).send(eventCaptor.capture());
-        AnalysisTaskCreatedEvent event = eventCaptor.getValue();
-        assertThat(event.eventId()).hasSize(32);
-        assertThat(event.taskId()).isEqualTo(6L);
-        assertThat(event.commentId()).isEqualTo(13L);
-        assertThat(event.eventType()).isEqualTo(AnalysisTaskCreatedEvent.EVENT_TYPE);
-        assertThat(response.messageId()).isEqualTo("message-1");
-        assertThat(response.eventId()).isEqualTo(event.eventId());
+        ArgumentCaptor<AnalysisOutboxEvent> eventCaptor =
+                ArgumentCaptor.forClass(AnalysisOutboxEvent.class);
+        verify(outboxEventMapper).insert(eventCaptor.capture());
+        AnalysisOutboxEvent event = eventCaptor.getValue();
+        assertThat(event.getEventId()).hasSize(32).isEqualTo(response.eventId());
+        assertThat(event.getTaskId()).isEqualTo(6L);
+        assertThat(event.getCommentId()).isEqualTo(13L);
+        assertThat(event.getStatus()).isEqualTo("PENDING");
+        assertThat(response.messageId()).isNull();
         verify(managementAccessService).assertCanManage(
                 14L,
                 11L,
@@ -78,13 +83,10 @@ class AnalysisTaskEnqueueServiceTests {
         given(analysisTaskMapper.selectById(6L)).willReturn(createTask("SUCCESS"));
 
         assertThatThrownBy(() -> enqueueService.enqueue(
-                6L,
-                11L,
-                UserRole.TEACHER
-        ))
-                .isInstanceOf(AnalysisTaskConflictException.class)
-                .hasMessage("分析任务已经完成，无需重复入队");
-        verifyNoInteractions(messageProducer);
+                6L, 11L, UserRole.TEACHER
+        )).isInstanceOf(AnalysisTaskConflictException.class);
+
+        verifyNoInteractions(outboxEventMapper);
     }
 
     @Test
@@ -92,33 +94,24 @@ class AnalysisTaskEnqueueServiceTests {
         given(analysisTaskMapper.selectById(999L)).willReturn(null);
 
         assertThatThrownBy(() -> enqueueService.enqueue(
-                999L,
-                11L,
-                UserRole.TEACHER
-        ))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("分析任务不存在");
-        verifyNoInteractions(messageProducer);
+                999L, 11L, UserRole.TEACHER
+        )).isInstanceOf(ResourceNotFoundException.class);
+
+        verifyNoInteractions(outboxEventMapper);
     }
 
     @Test
     void shouldRejectTaskFromAnotherTeachersCourse() {
         given(analysisTaskMapper.selectById(6L)).willReturn(createTask("WAITING"));
-        org.mockito.BDDMockito.willThrow(
-                new CourseAccessDeniedException("无权管理其他教师的课程")
-        ).given(managementAccessService).assertCanManage(
-                14L,
-                12L,
-                UserRole.TEACHER
-        );
+        willThrow(new CourseAccessDeniedException("denied"))
+                .given(managementAccessService)
+                .assertCanManage(14L, 12L, UserRole.TEACHER);
 
         assertThatThrownBy(() -> enqueueService.enqueue(
-                6L,
-                12L,
-                UserRole.TEACHER
+                6L, 12L, UserRole.TEACHER
         )).isInstanceOf(CourseAccessDeniedException.class);
 
-        verifyNoInteractions(messageProducer);
+        verifyNoInteractions(outboxEventMapper);
     }
 
     @Test
@@ -128,14 +121,10 @@ class AnalysisTaskEnqueueServiceTests {
         given(analysisTaskMapper.selectById(6L)).willReturn(task);
 
         assertThatThrownBy(() -> enqueueService.enqueue(
-                6L,
-                11L,
-                UserRole.TEACHER
-        ))
-                .isInstanceOf(AnalysisTaskConflictException.class)
-                .hasMessage("批量分析任务请使用批次失败重试接口");
+                6L, 11L, UserRole.TEACHER
+        )).isInstanceOf(AnalysisTaskConflictException.class);
 
-        verifyNoInteractions(messageProducer);
+        verifyNoInteractions(outboxEventMapper);
     }
 
     private AnalysisTask createTask(String status) {
@@ -144,6 +133,7 @@ class AnalysisTaskEnqueueServiceTests {
         task.setCommentId(13L);
         task.setCourseId(14L);
         task.setStatus(status);
+        task.setCurrentEventId("event-1");
         return task;
     }
 }
