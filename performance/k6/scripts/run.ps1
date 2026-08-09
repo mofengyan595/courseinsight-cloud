@@ -7,7 +7,13 @@ param(
     [string]$CacheState = 'none',
     [string]$ContextPath = '',
     [string]$BaseUrl = 'http://host.docker.internal:8080',
-    [string]$PrometheusUrl = 'http://127.0.0.1:9090'
+    [string]$PrometheusUrl = 'http://127.0.0.1:9090',
+    [ValidateRange(1, 64)]
+    [int]$ConsumerConcurrency = 1,
+    [ValidateRange(1, 100)]
+    [int]$RunNumber = 1,
+    [ValidatePattern('^[A-Za-z0-9_-]{0,40}$')]
+    [string]$ExperimentId = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -90,7 +96,14 @@ if ($LASTEXITCODE -ne 0) {
     throw "Unable to inspect $k6Image."
 }
 $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
-$suffix = if ($CacheState -eq 'none') { $Scenario } else { "$Scenario-$CacheState" }
+$suffix = if ($Scenario -eq 'batch-200' -and
+    -not [string]::IsNullOrWhiteSpace($ExperimentId)) {
+    "$Scenario-$ExperimentId-c$ConsumerConcurrency-r$RunNumber"
+} elseif ($CacheState -eq 'none') {
+    $Scenario
+} else {
+    "$Scenario-$CacheState"
+}
 $resultName = "$stamp-$suffix-k6.json"
 $prometheusName = "$stamp-$suffix-prometheus.json"
 $batchResultName = "$stamp-$suffix-outcome.json"
@@ -106,7 +119,7 @@ $env:SCENARIO = $Scenario
 $env:CACHE_STATE = $CacheState
 $env:K6_IMAGE = $k6Image
 $env:K6_IMAGE_DIGEST = $imageDigest
-$env:CONSUMER_CONCURRENCY = '1'
+$env:CONSUMER_CONCURRENCY = [string]$ConsumerConcurrency
 $env:AI_BACKEND_STATE = $health | ConvertTo-Json -Compress
 $env:VU_MODEL = if ($Scenario -eq 'batch-200') {
     '1 VU x 1 iteration; asynchronous polling every 1s'
@@ -192,7 +205,9 @@ $queries = [ordered]@{
     httpP95Seconds = "histogram_quantile(0.95, sum by (le) (http_server_requests_seconds_bucket{uri!~`"/actuator.*`"} @ $endEpoch - http_server_requests_seconds_bucket{uri!~`"/actuator.*`"} @ $startEpoch))"
     http5xxCount = "sum(http_server_requests_seconds_count{status=~`"5..`",uri!~`"/actuator.*`"} @ $endEpoch - http_server_requests_seconds_count{status=~`"5..`",uri!~`"/actuator.*`"} @ $startEpoch)"
     aiRequestCountByOutcome = "sum by (outcome) (courseinsight_ai_request_seconds_count @ $endEpoch - courseinsight_ai_request_seconds_count @ $startEpoch)"
+    aiRequestTotalSecondsByOutcome = "sum by (outcome) (courseinsight_ai_request_seconds_sum @ $endEpoch - courseinsight_ai_request_seconds_sum @ $startEpoch)"
     aiP95SecondsByOutcome = "histogram_quantile(0.95, sum by (le, outcome) (courseinsight_ai_request_seconds_bucket @ $endEpoch - courseinsight_ai_request_seconds_bucket @ $startEpoch))"
+    aiP99SecondsByOutcome = "histogram_quantile(0.99, sum by (le, outcome) (courseinsight_ai_request_seconds_bucket @ $endEpoch - courseinsight_ai_request_seconds_bucket @ $startEpoch))"
     analysisTaskCountByOutcome = "sum by (outcome) (courseinsight_analysis_task_total @ $endEpoch - courseinsight_analysis_task_total @ $startEpoch)"
     outboxPublishCountByOutcome = "sum by (outcome) (courseinsight_outbox_publish_total @ $endEpoch - courseinsight_outbox_publish_total @ $startEpoch)"
 }
@@ -202,7 +217,7 @@ foreach ($entry in $queries.GetEnumerator()) {
 }
 
 $prometheusArtifact = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     gitCommit = $gitCommit
     scenario = $Scenario
     cacheState = $CacheState
@@ -211,7 +226,9 @@ $prometheusArtifact = [ordered]@{
     observedAt = $observedAt.ToString('o')
     testDurationSeconds = [Math]::Round(($finishedAt - $startedAt).TotalSeconds, 3)
     queryRangeSeconds = $rangeSeconds
-    consumerConcurrency = 1
+    experimentId = $ExperimentId
+    runNumber = $RunNumber
+    consumerConcurrency = $ConsumerConcurrency
     aiBackendState = $health
     queries = $queries
     results = $queryResults
@@ -226,9 +243,12 @@ if ($Scenario -eq 'batch-200') {
         Where-Object { $_ -match 'COURSEINSIGHT_BATCH_RESULT=(\{[^}]+\})' } |
         Select-Object -Last 1
     if ($null -ne $outcomeLine -and $outcomeLine -match 'COURSEINSIGHT_BATCH_RESULT=(\{[^}]+\})') {
-        $outcome = $Matches[1] | ConvertFrom-Json
+        $outcomeJson = $Matches[1].Replace('\"', '"')
+        $outcome = $outcomeJson | ConvertFrom-Json
         $outcome | Add-Member -NotePropertyName gitCommit -NotePropertyValue $gitCommit
-        $outcome | Add-Member -NotePropertyName consumerConcurrency -NotePropertyValue 1
+        $outcome | Add-Member -NotePropertyName experimentId -NotePropertyValue $ExperimentId
+        $outcome | Add-Member -NotePropertyName runNumber -NotePropertyValue $RunNumber
+        $outcome | Add-Member -NotePropertyName consumerConcurrency -NotePropertyValue $ConsumerConcurrency
         Write-Utf8NoBom `
             -LiteralPath (Join-Path $resultsRoot $batchResultName) `
             -Content ($outcome | ConvertTo-Json -Depth 5)

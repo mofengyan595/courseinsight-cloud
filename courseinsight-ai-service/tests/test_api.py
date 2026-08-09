@@ -1,3 +1,5 @@
+import logging
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -65,6 +67,29 @@ def test_analyze_falls_back_to_local_advice_without_api_key(monkeypatch) -> None
     assert advice["source"] == "local_fallback"
     assert advice["fallbackReason"] == "RuntimeError"
     assert advice["suggestions"]
+
+
+def test_analyze_logs_observation_phase_durations(monkeypatch, caplog) -> None:
+    monkeypatch.delenv("LLM_API_KEY", raising=False)
+    with caplog.at_level(logging.INFO, logger="uvicorn.error"):
+        response = client.post(
+            "/api/v1/analyze",
+            json={
+                "taskId": 103,
+                "commentId": 204,
+                "text": "The course examples are clear and useful.",
+                "includeAdvice": True,
+            },
+        )
+
+    assert response.status_code == 200
+    timing_messages = [
+        record.getMessage()
+        for record in caplog.records
+        if record.getMessage().startswith("courseinsight_ai_phase_duration")
+    ]
+    assert any("phase=sentiment task_id=103" in item for item in timing_messages)
+    assert any("phase=advice task_id=103" in item for item in timing_messages)
 
 
 def test_analyze_rejects_blank_text() -> None:

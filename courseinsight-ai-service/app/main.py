@@ -34,6 +34,7 @@ def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
         request.text,
         reference_reviews=[],
         use_llm=request.include_advice,
+        observation_id=str(request.task_id),
     )
     return AnalyzeResponse(
         task_id=request.task_id,

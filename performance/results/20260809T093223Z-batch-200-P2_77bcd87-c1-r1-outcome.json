@@ -1,0 +1,17 @@
+{
+  "batchId": 37,
+  "batchNo": "ca4e87ef1cf7441da74f5f518fe683b2",
+  "courseId": 274,
+  "createLatencyMs": 1780.610727,
+  "totalCompletionMs": 438679,
+  "status": "COMPLETED",
+  "successCount": 200,
+  "terminalFailureCount": 0,
+  "maxRetryingCountObserved": 0,
+  "completedAt": "2026-08-09T17:39:41.915",
+  "gitCommit": "77bcd87bf0e5ddb0302233d0c441eb0dc098197a",
+  "experimentId": "P2_77bcd87",
+  "runNumber": 1,
+  "consumerConcurrency": 1,
+  "recoveredAfterEscapedConsoleJson": true
+}

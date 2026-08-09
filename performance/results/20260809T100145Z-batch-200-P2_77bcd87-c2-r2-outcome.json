@@ -1,0 +1,16 @@
+{
+    "batchId":  41,
+    "batchNo":  "4bd2782012f047b09422efc089173938",
+    "courseId":  274,
+    "createLatencyMs":  1550.246272,
+    "totalCompletionMs":  265815,
+    "status":  "COMPLETED",
+    "successCount":  200,
+    "terminalFailureCount":  0,
+    "maxRetryingCountObserved":  0,
+    "completedAt":  "2026-08-09T18:06:11.045",
+    "gitCommit":  "77bcd87bf0e5ddb0302233d0c441eb0dc098197a",
+    "experimentId":  "P2_77bcd87",
+    "runNumber":  2,
+    "consumerConcurrency":  2
+}

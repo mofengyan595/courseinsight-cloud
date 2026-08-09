@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +19,9 @@ from .sentiment_normalizer import (
 )
 from .similarity import find_similar_reviews
 from .topic_analyzer import detect_topic_evidence
+
+
+PERFORMANCE_LOGGER = logging.getLogger("uvicorn.error")
 
 
 POSITIVE_HINTS = {"清楚", "有用", "帮助", "很好", "不错", "详细", "收获", "喜欢", "积极", "互动"}
@@ -641,6 +646,7 @@ def _build_analysis(
     stopwords: set[str],
     reference_reviews: list[str],
     use_llm: bool,
+    observation_id: str | None = None,
 ) -> dict[str, Any]:
     (
         sentiment,
@@ -689,7 +695,17 @@ def _build_analysis(
     }
 
     if use_llm:
+        advice_started_at = time.perf_counter()
         analysis["llm_advice"] = generate_review_advice(analysis)
+        advice_duration_ms = (time.perf_counter() - advice_started_at) * 1000
+        if observation_id is not None:
+            PERFORMANCE_LOGGER.info(
+                "courseinsight_ai_phase_duration phase=advice "
+                "task_id=%s duration_ms=%.3f source=%s",
+                observation_id,
+                advice_duration_ms,
+                analysis["llm_advice"].get("source", "unknown"),
+            )
 
     return analysis
 
@@ -698,6 +714,7 @@ def analyze_review(
     text: str,
     reference_reviews: list[str] | None = None,
     use_llm: bool = True,
+    observation_id: str | None = None,
 ) -> dict[str, Any]:
     """Analyze one course review."""
 
@@ -705,12 +722,23 @@ def analyze_review(
     processed = preprocess_text(text, stopwords=stopwords)
     normalization = normalize_sentiment_text_with_details(text)
     sentiment_processed = preprocess_text(normalization.text, stopwords=stopwords)
+    sentiment_started_at = time.perf_counter()
     prediction = predict_sentiment(
         text,
         processed,
         sentiment_text=normalization.text,
         sentiment_processed_text=sentiment_processed,
     )
+    sentiment_duration_ms = (time.perf_counter() - sentiment_started_at) * 1000
+    if observation_id is not None:
+        PERFORMANCE_LOGGER.info(
+            "courseinsight_ai_phase_duration phase=sentiment "
+            "task_id=%s duration_ms=%.3f source=%s device=%s",
+            observation_id,
+            sentiment_duration_ms,
+            prediction[2],
+            prediction[3],
+        )
     return _build_analysis(
         text,
         processed,
@@ -719,6 +747,7 @@ def analyze_review(
         stopwords,
         reference_reviews or [],
         use_llm,
+        observation_id,
     )
 
 

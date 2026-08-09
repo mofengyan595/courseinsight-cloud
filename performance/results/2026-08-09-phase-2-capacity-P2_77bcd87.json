@@ -1,0 +1,1341 @@
+{
+    "schemaVersion":  1,
+    "generatedAt":  "2026-08-09T10:27:04.2053984Z",
+    "experimentId":  "P2_77bcd87",
+    "gitCommit":  "77bcd87bf0e5ddb0302233d0c441eb0dc098197a",
+    "fixture":  "performance/k6/data/batch-200.csv",
+    "repetitionsPerConcurrency":  3,
+    "setup":  {
+                  "host":  {
+                               "os":  "Microsoft Windows 11 Home Chinese",
+                               "version":  "10.0.26200",
+                               "architecture":  "64-bit",
+                               "cpu":  "AMD Ryzen 7 5800H with Radeon Graphics",
+                               "physicalCores":  8,
+                               "logicalProcessors":  16,
+                               "totalVisibleMemoryBytes":  14888460288
+                           },
+                  "docker":  {
+                                 "desktopEngineVersion":  "29.6.2",
+                                 "architecture":  "x86_64",
+                                 "cpus":  16,
+                                 "memoryBytes":  7194972160
+                             },
+                  "java":  "Microsoft OpenJDK 17.0.20",
+                  "springBoot":  "3.5.16",
+                  "k6Image":  "grafana/k6:1.3.0",
+                  "k6ImageDigest":  "grafana/k6@sha256:3ddc8b1a33a2c3d8edc6e99b6a762ae36cba08788463458f5e6a7703e14eb77d",
+                  "aiContainerImageId":  "sha256:8219f09170fc1a871fc35ce135cf45776b503047713511bf43a4344c483d9969",
+                  "consumerConcurrencies":  [
+                                                1,
+                                                2,
+                                                4
+                                            ],
+                  "cooldownSecondsBetweenRuns":  30,
+                  "prometheusScrapeIntervalSeconds":  15
+              },
+    "percentileMethod":  "linear interpolation over sorted samples",
+    "standardDeviationMethod":  "sample standard deviation (n-1)",
+    "aiBackendState":  {
+                           "status":  "UP",
+                           "service":  "courseinsight-ai-service",
+                           "configuredBackend":  "auto",
+                           "activeBackend":  "bert",
+                           "bertReady":  true,
+                           "tfidfAvailable":  true,
+                           "llmConfigured":  true
+                       },
+    "aiObservation":  {
+                          "source":  "FastAPI structured phase timing logs joined to MySQL task IDs",
+                          "logSince":  "2026-08-09T09:32:21.3477634+00:00",
+                          "logUntil":  "2026-08-09T10:20:21.3400000+00:00",
+                          "contentLogged":  false
+                      },
+    "runs":  [
+                 {
+                     "consumerConcurrency":  1,
+                     "runNumber":  1,
+                     "batchId":  37,
+                     "startedAt":  "2026-08-09T09:32:23.3477634Z",
+                     "finishedAt":  "2026-08-09T09:39:42.891Z",
+                     "createLatencyMs":  1780.610727,
+                     "completionTimeMs":  438679,
+                     "throughputTasksPerSecond":  0.45591423341441012,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  0.45591423341441012,
+                                "averageMs":  2140.221581,
+                                "p95Ms":  3453.8695316499998,
+                                "p99Ms":  3698.4440579999996,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  80.546860000000052,
+                                                                            "standardDeviationSample":  9.8575902796274164,
+                                                                            "coefficientOfVariation":  0.12238329687373797,
+                                                                            "min":  66.962,
+                                                                            "p50":  78.209,
+                                                                            "p95":  96.988349999999969,
+                                                                            "p99":  112.16724999999975,
+                                                                            "max":  139.864
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  2046.8444150000005,
+                                                                         "standardDeviationSample":  726.24894453820514,
+                                                                         "coefficientOfVariation":  0.35481394639279651,
+                                                                         "min":  1253.15,
+                                                                         "p50":  1746.711,
+                                                                         "p95":  3358.85135,
+                                                                         "p99":  3585.8120699999995,
+                                                                         "max":  3670.722
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  94900512,
+                                       "jvmGcPauseSeconds":  0.024999999999999998,
+                                       "jvmLiveThreadsPeak":  119,
+                                       "hikariActivePeak":  1,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T17:32:24.326000",
+                                      "completedAt":  "2026-08-09T17:39:41.915000",
+                                      "terminalDurationMs":  437589,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T093223Z-batch-200-P2_77bcd87-c1-r1-k6.json",
+                                       "prometheus":  "20260809T093223Z-batch-200-P2_77bcd87-c1-r1-prometheus.json",
+                                       "outcome":  "20260809T093223Z-batch-200-P2_77bcd87-c1-r1-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  1,
+                     "runNumber":  2,
+                     "batchId":  38,
+                     "startedAt":  "2026-08-09T09:41:48.1618201Z",
+                     "finishedAt":  "2026-08-09T09:47:36.531Z",
+                     "createLatencyMs":  1457.528092,
+                     "completionTimeMs":  347719,
+                     "throughputTasksPerSecond":  0.5751770826443191,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  0.5751770826443191,
+                                "averageMs":  1700.2542284999997,
+                                "p95Ms":  2783.7750976666671,
+                                "p99Ms":  3459.834764,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  79.165839999999989,
+                                                                            "standardDeviationSample":  10.362182753235789,
+                                                                            "coefficientOfVariation":  0.13089209630360507,
+                                                                            "min":  67.266,
+                                                                            "p50":  76.602,
+                                                                            "p95":  96.707399999999993,
+                                                                            "p99":  108.08393999999998,
+                                                                            "max":  169.534
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  1613.5195499999995,
+                                                                         "standardDeviationSample":  431.11959986024294,
+                                                                         "coefficientOfVariation":  0.26719205221916464,
+                                                                         "min":  1275.758,
+                                                                         "p50":  1445.6395,
+                                                                         "p95":  2687.6870499999995,
+                                                                         "p99":  3355.5078299999996,
+                                                                         "max":  3528.073
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  102616208,
+                                       "jvmGcPauseSeconds":  0.014000000000000005,
+                                       "jvmLiveThreadsPeak":  119,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T17:41:48.849000",
+                                      "completedAt":  "2026-08-09T17:47:36.012000",
+                                      "terminalDurationMs":  347163,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T094148Z-batch-200-P2_77bcd87-c1-r2-k6.json",
+                                       "prometheus":  "20260809T094148Z-batch-200-P2_77bcd87-c1-r2-prometheus.json",
+                                       "outcome":  "20260809T094148Z-batch-200-P2_77bcd87-c1-r2-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  1,
+                     "runNumber":  3,
+                     "batchId":  39,
+                     "startedAt":  "2026-08-09T09:48:28.5641092Z",
+                     "finishedAt":  "2026-08-09T09:54:22.023Z",
+                     "createLatencyMs":  1548.03111,
+                     "completionTimeMs":  352834,
+                     "throughputTasksPerSecond":  0.56683879671460236,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  0.56683879671460236,
+                                "averageMs":  1726.2576775000002,
+                                "p95Ms":  3042.2684995,
+                                "p99Ms":  5010.7951785000005,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  78.429009999999977,
+                                                                            "standardDeviationSample":  6.9364169598651966,
+                                                                            "coefficientOfVariation":  0.088441980331833828,
+                                                                            "min":  65.448,
+                                                                            "p50":  77.5685,
+                                                                            "p95":  90.4794,
+                                                                            "p99":  99.193289999999976,
+                                                                            "max":  112.727
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  1640.5680949999996,
+                                                                         "standardDeviationSample":  569.62296635973007,
+                                                                         "coefficientOfVariation":  0.34721080343801897,
+                                                                         "min":  1258.62,
+                                                                         "p50":  1455.8960000000002,
+                                                                         "p95":  2902.7999499999978,
+                                                                         "p99":  4368.8238999999994,
+                                                                         "max":  4792.948
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  102030040,
+                                       "jvmGcPauseSeconds":  0.012999999999999998,
+                                       "jvmLiveThreadsPeak":  120,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T17:48:29.231000",
+                                      "completedAt":  "2026-08-09T17:54:21.357000",
+                                      "terminalDurationMs":  352126,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T094828Z-batch-200-P2_77bcd87-c1-r3-k6.json",
+                                       "prometheus":  "20260809T094828Z-batch-200-P2_77bcd87-c1-r3-prometheus.json",
+                                       "outcome":  "20260809T094828Z-batch-200-P2_77bcd87-c1-r3-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  2,
+                     "runNumber":  1,
+                     "batchId":  40,
+                     "startedAt":  "2026-08-09T09:57:21.5147698Z",
+                     "finishedAt":  "2026-08-09T10:00:52.957Z",
+                     "createLatencyMs":  1629.917813,
+                     "completionTimeMs":  210427,
+                     "throughputTasksPerSecond":  0.95044837402044413,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  0.95044837402044413,
+                                "averageMs":  2023.6036995,
+                                "p95Ms":  3459.834764,
+                                "p99Ms":  4294.9672960000007,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  81.986570000000043,
+                                                                            "standardDeviationSample":  17.165480676912235,
+                                                                            "coefficientOfVariation":  0.20936942083212198,
+                                                                            "min":  64.685,
+                                                                            "p50":  78.92,
+                                                                            "p95":  99.207499999999982,
+                                                                            "p99":  159.95725999999968,
+                                                                            "max":  222.063
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  1933.2547000000004,
+                                                                         "standardDeviationSample":  737.219353491675,
+                                                                         "coefficientOfVariation":  0.38133586510441425,
+                                                                         "min":  1215.052,
+                                                                         "p50":  1649.9344999999998,
+                                                                         "p95":  3369.4704499999989,
+                                                                         "p99":  4125.0976299999975,
+                                                                         "max":  4529.022
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  77171992,
+                                       "jvmGcPauseSeconds":  0.034,
+                                       "jvmLiveThreadsPeak":  119,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T17:57:22.625000",
+                                      "completedAt":  "2026-08-09T18:00:52.461000",
+                                      "terminalDurationMs":  209836,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T095721Z-batch-200-P2_77bcd87-c2-r1-k6.json",
+                                       "prometheus":  "20260809T095721Z-batch-200-P2_77bcd87-c2-r1-prometheus.json",
+                                       "outcome":  "20260809T095721Z-batch-200-P2_77bcd87-c2-r1-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  2,
+                     "runNumber":  2,
+                     "batchId":  41,
+                     "startedAt":  "2026-08-09T10:01:45.5400564Z",
+                     "finishedAt":  "2026-08-09T10:06:12.067Z",
+                     "createLatencyMs":  1550.246272,
+                     "completionTimeMs":  265815,
+                     "throughputTasksPerSecond":  0.75240298703985853,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  0.75240298703985853,
+                                "averageMs":  2597.498435,
+                                "p95Ms":  6135.6675652857139,
+                                "p99Ms":  8017.2722850000009,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  80.081314999999947,
+                                                                            "standardDeviationSample":  10.093204015189432,
+                                                                            "coefficientOfVariation":  0.12603694151612568,
+                                                                            "min":  67.274,
+                                                                            "p50":  78.107,
+                                                                            "p95":  93.2022,
+                                                                            "p99":  110.71096999999992,
+                                                                            "max":  167.206
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  2509.9024550000004,
+                                                                         "standardDeviationSample":  1522.5788182921624,
+                                                                         "coefficientOfVariation":  0.60662868202667353,
+                                                                         "min":  1243.136,
+                                                                         "p50":  1754.07,
+                                                                         "p95":  5701.176599999998,
+                                                                         "p99":  7683.69885,
+                                                                         "max":  7836.84
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  82228464,
+                                       "jvmGcPauseSeconds":  0.024000000000000007,
+                                       "jvmLiveThreadsPeak":  118,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T18:01:46.299000",
+                                      "completedAt":  "2026-08-09T18:06:11.045000",
+                                      "terminalDurationMs":  264746,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T100145Z-batch-200-P2_77bcd87-c2-r2-k6.json",
+                                       "prometheus":  "20260809T100145Z-batch-200-P2_77bcd87-c2-r2-prometheus.json",
+                                       "outcome":  "20260809T100145Z-batch-200-P2_77bcd87-c2-r2-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  2,
+                     "runNumber":  3,
+                     "batchId":  42,
+                     "startedAt":  "2026-08-09T10:07:03.9298949Z",
+                     "finishedAt":  "2026-08-09T10:10:32.222Z",
+                     "createLatencyMs":  1441.597361,
+                     "completionTimeMs":  207665,
+                     "throughputTasksPerSecond":  0.96308959140924089,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  0.96308959140924089,
+                                "averageMs":  2021.1247654999993,
+                                "p95Ms":  3758.0963814999996,
+                                "p99Ms":  6442.4509435,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  80.813859999999991,
+                                                                            "standardDeviationSample":  18.53944705420793,
+                                                                            "coefficientOfVariation":  0.22940925051974911,
+                                                                            "min":  62.373,
+                                                                            "p50":  77.048,
+                                                                            "p95":  97.13215,
+                                                                            "p99":  153.56635999999986,
+                                                                            "max":  280.468
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  1933.0400900000009,
+                                                                         "standardDeviationSample":  1079.613945325317,
+                                                                         "coefficientOfVariation":  0.55850571900209089,
+                                                                         "min":  1244.989,
+                                                                         "p50":  1717.725,
+                                                                         "p95":  3544.0379999999996,
+                                                                         "p99":  5924.369169999999,
+                                                                         "max":  13037.616
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  78096336,
+                                       "jvmGcPauseSeconds":  0.01999999999999999,
+                                       "jvmLiveThreadsPeak":  118,
+                                       "hikariActivePeak":  1,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T18:07:04.593000",
+                                      "completedAt":  "2026-08-09T18:10:31.520000",
+                                      "terminalDurationMs":  206927,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T100703Z-batch-200-P2_77bcd87-c2-r3-k6.json",
+                                       "prometheus":  "20260809T100703Z-batch-200-P2_77bcd87-c2-r3-prometheus.json",
+                                       "outcome":  "20260809T100703Z-batch-200-P2_77bcd87-c2-r3-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  4,
+                     "runNumber":  1,
+                     "batchId":  43,
+                     "startedAt":  "2026-08-09T10:13:20.7929832Z",
+                     "finishedAt":  "2026-08-09T10:15:08.521Z",
+                     "createLatencyMs":  1632.384378,
+                     "completionTimeMs":  106716,
+                     "throughputTasksPerSecond":  1.8741332133888078,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  1.8741332133888078,
+                                "averageMs":  1968.563596,
+                                "p95Ms":  3551.6075693846151,
+                                "p99Ms":  4116.0103240000008,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  105.88745999999998,
+                                                                            "standardDeviationSample":  35.87495361366075,
+                                                                            "coefficientOfVariation":  0.33880266476937643,
+                                                                            "min":  81.783,
+                                                                            "p50":  96.6325,
+                                                                            "p95":  174.99259999999998,
+                                                                            "p99":  267.01228999999961,
+                                                                            "max":  395.571
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  1854.1902850000008,
+                                                                         "standardDeviationSample":  769.258616357676,
+                                                                         "coefficientOfVariation":  0.4148757668405515,
+                                                                         "min":  1247.508,
+                                                                         "p50":  1570.1425,
+                                                                         "p95":  3464.5084999999995,
+                                                                         "p99":  3939.18034,
+                                                                         "max":  6022.471
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  75915656,
+                                       "jvmGcPauseSeconds":  0.032,
+                                       "jvmLiveThreadsPeak":  121,
+                                       "hikariActivePeak":  1,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T18:13:21.904000",
+                                      "completedAt":  "2026-08-09T18:15:08.069000",
+                                      "terminalDurationMs":  106165,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T101320Z-batch-200-P2_77bcd87-c4-r1-k6.json",
+                                       "prometheus":  "20260809T101320Z-batch-200-P2_77bcd87-c4-r1-prometheus.json",
+                                       "outcome":  "20260809T101320Z-batch-200-P2_77bcd87-c4-r1-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  4,
+                     "runNumber":  2,
+                     "batchId":  44,
+                     "startedAt":  "2026-08-09T10:16:00.4815044Z",
+                     "finishedAt":  "2026-08-09T10:17:42.468Z",
+                     "createLatencyMs":  1484.730581,
+                     "completionTimeMs":  101357,
+                     "throughputTasksPerSecond":  1.9732233590181241,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  1.9732233590181241,
+                                "averageMs":  1912.7525490000003,
+                                "p95Ms":  3481.526518,
+                                "p99Ms":  4772.185884333333,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  105.45215999999999,
+                                                                            "standardDeviationSample":  29.344879579615085,
+                                                                            "coefficientOfVariation":  0.27827670461766824,
+                                                                            "min":  81.088,
+                                                                            "p50":  96.6385,
+                                                                            "p95":  163.71969999999988,
+                                                                            "p99":  220.35133999999968,
+                                                                            "max":  327.083
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  1799.449385,
+                                                                         "standardDeviationSample":  732.76341338981308,
+                                                                         "coefficientOfVariation":  0.40721535126135994,
+                                                                         "min":  1269.067,
+                                                                         "p50":  1540.9495,
+                                                                         "p95":  3385.1973499999995,
+                                                                         "p99":  4358.8832499999962,
+                                                                         "max":  5546.889
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  79547584,
+                                       "jvmGcPauseSeconds":  0.014000000000000005,
+                                       "jvmLiveThreadsPeak":  120,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T18:16:01.149000",
+                                      "completedAt":  "2026-08-09T18:17:41.807000",
+                                      "terminalDurationMs":  100658,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T101600Z-batch-200-P2_77bcd87-c4-r2-k6.json",
+                                       "prometheus":  "20260809T101600Z-batch-200-P2_77bcd87-c4-r2-prometheus.json",
+                                       "outcome":  "20260809T101600Z-batch-200-P2_77bcd87-c4-r2-outcome.json"
+                                   }
+                 },
+                 {
+                     "consumerConcurrency":  4,
+                     "runNumber":  3,
+                     "batchId":  45,
+                     "startedAt":  "2026-08-09T10:18:34.2829156Z",
+                     "finishedAt":  "2026-08-09T10:20:19.340Z",
+                     "createLatencyMs":  1595.32321,
+                     "completionTimeMs":  104430,
+                     "throughputTasksPerSecond":  1.9151584793641672,
+                     "httpErrorRate":  0,
+                     "http5xxCount":  0,
+                     "successCount":  200,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "maxTaskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "ai":  {
+                                "requestCount":  200,
+                                "requestRatePerSecond":  1.9151584793641672,
+                                "averageMs":  2002.0858615000002,
+                                "p95Ms":  3698.4440579999996,
+                                "p99Ms":  5010.7951785000005,
+                                "retryableFailureCount":  0,
+                                "terminalFailureCount":  0,
+                                "sentimentPhase":  {
+                                                       "statisticsMs":  {
+                                                                            "count":  200,
+                                                                            "average":  104.94103999999996,
+                                                                            "standardDeviationSample":  33.823094410861209,
+                                                                            "coefficientOfVariation":  0.32230569099430711,
+                                                                            "min":  80.913,
+                                                                            "p50":  95.4805,
+                                                                            "p95":  167.55174999999986,
+                                                                            "p99":  226.3317499999994,
+                                                                            "max":  383.746
+                                                                        },
+                                                       "sources":  {
+                                                                       "bert+rule":  7,
+                                                                       "bert":  193
+                                                                   }
+                                                   },
+                                "advicePhase":  {
+                                                    "statisticsMs":  {
+                                                                         "count":  200,
+                                                                         "average":  1889.7132249999995,
+                                                                         "standardDeviationSample":  1145.4255623992956,
+                                                                         "coefficientOfVariation":  0.60613724201421937,
+                                                                         "min":  1238.384,
+                                                                         "p50":  1538.9185,
+                                                                         "p95":  3515.4437999999991,
+                                                                         "p99":  4677.8103599999995,
+                                                                         "max":  14083.646
+                                                                     },
+                                                    "sources":  {
+                                                                    "llm_api":  200
+                                                                }
+                                                }
+                            },
+                     "resources":  {
+                                       "jvmHeapPeakBytes":  82889024,
+                                       "jvmGcPauseSeconds":  0.012999999999999998,
+                                       "jvmLiveThreadsPeak":  120,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10
+                                   },
+                     "database":  {
+                                      "sources":  [
+                                                      {
+                                                          "sentimentSource":  "bert",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  193
+                                                      },
+                                                      {
+                                                          "sentimentSource":  "bert+rule",
+                                                          "sentimentDevice":  "cpu",
+                                                          "adviceSource":  "llm_api",
+                                                          "count":  7
+                                                      }
+                                                  ],
+                                      "createdAt":  "2026-08-09T18:18:34.948000",
+                                      "completedAt":  "2026-08-09T18:20:18.476000",
+                                      "terminalDurationMs":  103528,
+                                      "taskRetryCount":  0,
+                                      "maxTaskRetryCount":  0,
+                                      "successCount":  200,
+                                      "terminalFailureCount":  0,
+                                      "outboxRetryCount":  0,
+                                      "outboxSentCount":  200,
+                                      "outboxFailureCount":  0
+                                  },
+                     "artifacts":  {
+                                       "k6":  "20260809T101834Z-batch-200-P2_77bcd87-c4-r3-k6.json",
+                                       "prometheus":  "20260809T101834Z-batch-200-P2_77bcd87-c4-r3-prometheus.json",
+                                       "outcome":  "20260809T101834Z-batch-200-P2_77bcd87-c4-r3-outcome.json"
+                                   }
+                 }
+             ],
+    "aggregates":  [
+                       {
+                           "consumerConcurrency":  1,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  379744,
+                                                    "standardDeviationSample":  51103.243292378225,
+                                                    "coefficientOfVariation":  0.13457287881409113,
+                                                    "min":  347719,
+                                                    "p50":  352834,
+                                                    "p95":  430094.5,
+                                                    "p99":  436962.1,
+                                                    "max":  438679
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  0.5326433709244438,
+                                                            "standardDeviationSample":  0.066580043258747418,
+                                                            "coefficientOfVariation":  0.12499929013139241,
+                                                            "min":  0.45591423341441012,
+                                                            "p50":  0.56683879671460236,
+                                                            "p95":  0.57434325405134745,
+                                                            "p99":  0.5750103169257248,
+                                                            "max":  0.5751770826443191
+                                                        },
+                           "createLatencyMs":  {
+                                                   "count":  3,
+                                                   "average":  1595.3899763333332,
+                                                   "standardDeviationSample":  166.66656510806152,
+                                                   "coefficientOfVariation":  0.10446760201609728,
+                                                   "min":  1457.528092,
+                                                   "p50":  1548.03111,
+                                                   "p95":  1757.3527653,
+                                                   "p99":  1775.95913466,
+                                                   "max":  1780.610727
+                                               },
+                           "aiAverageMs":  {
+                                               "count":  3,
+                                               "average":  1855.5778289999998,
+                                               "standardDeviationSample":  246.85136014300585,
+                                               "coefficientOfVariation":  0.13303207027216851,
+                                               "min":  1700.2542284999997,
+                                               "p50":  1726.2576775000002,
+                                               "p95":  2098.82519065,
+                                               "p99":  2131.94230293,
+                                               "max":  2140.221581
+                                           },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  3093.3043762722223,
+                                           "standardDeviationSample":  337.94989739944123,
+                                           "coefficientOfVariation":  0.10925206713951269,
+                                           "min":  2783.7750976666671,
+                                           "p50":  3042.2684995,
+                                           "p95":  3412.7094284349996,
+                                           "p99":  3445.637511007,
+                                           "max":  3453.8695316499998
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  4056.3580001666669,
+                                           "standardDeviationSample":  835.13253100000031,
+                                           "coefficientOfVariation":  0.20588235332425947,
+                                           "min":  3459.834764,
+                                           "p50":  3698.4440579999996,
+                                           "p95":  4879.5600664500007,
+                                           "p99":  4984.5481560900007,
+                                           "max":  5010.7951785000005
+                                       },
+                           "sentimentPhaseAverageMs":  {
+                                                           "count":  3,
+                                                           "average":  79.38057,
+                                                           "standardDeviationSample":  1.0751297062680787,
+                                                           "coefficientOfVariation":  0.013543990755774097,
+                                                           "min":  78.429009999999977,
+                                                           "p50":  79.165839999999989,
+                                                           "p95":  80.408758000000034,
+                                                           "p99":  80.519239600000049,
+                                                           "max":  80.546860000000052
+                                                       },
+                           "sentimentPhaseP95Ms":  {
+                                                       "count":  3,
+                                                       "average":  94.72505,
+                                                       "standardDeviationSample":  3.6795232255687589,
+                                                       "coefficientOfVariation":  0.038844246855174624,
+                                                       "min":  90.4794,
+                                                       "p50":  96.707399999999993,
+                                                       "p95":  96.960254999999975,
+                                                       "p99":  96.982730999999973,
+                                                       "max":  96.988349999999969
+                                                   },
+                           "advicePhaseAverageMs":  {
+                                                        "count":  3,
+                                                        "average":  1766.977353333333,
+                                                        "standardDeviationSample":  242.74901668411525,
+                                                        "coefficientOfVariation":  0.13738094391882205,
+                                                        "min":  1613.5195499999995,
+                                                        "p50":  1640.5680949999996,
+                                                        "p95":  2006.2167830000003,
+                                                        "p99":  2038.7188886000006,
+                                                        "max":  2046.8444150000005
+                                                    },
+                           "advicePhaseP95Ms":  {
+                                                    "count":  3,
+                                                    "average":  2983.1127833333326,
+                                                    "standardDeviationSample":  342.71415610847419,
+                                                    "coefficientOfVariation":  0.11488474657184269,
+                                                    "min":  2687.6870499999995,
+                                                    "p50":  2902.7999499999978,
+                                                    "p95":  3313.2462099999993,
+                                                    "p99":  3349.730322,
+                                                    "max":  3358.85135
+                                                },
+                           "adviceShareOfAiAverage":  0.95190620944389348,
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "http5xxCount":  0,
+                           "aiRetryableFailureCount":  0,
+                           "aiTerminalFailureCount":  0,
+                           "jvmHeapPeakBytes":  102616208,
+                           "jvmGcPauseSeconds":  0.052000000000000005,
+                           "hikariActivePeak":  1
+                       },
+                       {
+                           "consumerConcurrency":  2,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  227969,
+                                                    "standardDeviationSample":  32804.678751665895,
+                                                    "coefficientOfVariation":  0.14389973527833125,
+                                                    "min":  207665,
+                                                    "p50":  210427,
+                                                    "p95":  260276.19999999998,
+                                                    "p99":  264707.24,
+                                                    "max":  265815
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  0.88864698415651455,
+                                                            "standardDeviationSample":  0.11815993465219177,
+                                                            "coefficientOfVariation":  0.13296611225699118,
+                                                            "min":  0.75240298703985853,
+                                                            "p50":  0.95044837402044413,
+                                                            "p95":  0.9618254696703612,
+                                                            "p99":  0.96283676706146493,
+                                                            "max":  0.96308959140924089
+                                                        },
+                           "createLatencyMs":  {
+                                                   "count":  3,
+                                                   "average":  1540.5871486666667,
+                                                   "standardDeviationSample":  94.531064513457579,
+                                                   "coefficientOfVariation":  0.061360413524980693,
+                                                   "min":  1441.597361,
+                                                   "p50":  1550.246272,
+                                                   "p95":  1621.9506589,
+                                                   "p99":  1628.3243821800002,
+                                                   "max":  1629.917813
+                                               },
+                           "aiAverageMs":  {
+                                               "count":  3,
+                                               "average":  2214.0756333333334,
+                                               "standardDeviationSample":  332.05619992236439,
+                                               "coefficientOfVariation":  0.14997509340837079,
+                                               "min":  2021.1247654999993,
+                                               "p50":  2023.6036995,
+                                               "p95":  2540.1089614499997,
+                                               "p99":  2586.0205402899996,
+                                               "max":  2597.498435
+                                           },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  4451.1995702619051,
+                                           "standardDeviationSample":  1466.39500742913,
+                                           "coefficientOfVariation":  0.32943816251825536,
+                                           "min":  3459.834764,
+                                           "p50":  3758.0963814999996,
+                                           "p95":  5897.9104469071417,
+                                           "p99":  6088.1161416099994,
+                                           "max":  6135.6675652857139
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  6251.5635081666669,
+                                           "standardDeviationSample":  1868.4798948636499,
+                                           "coefficientOfVariation":  0.29888201446290674,
+                                           "min":  4294.9672960000007,
+                                           "p50":  6442.4509435,
+                                           "p95":  7859.7901508500008,
+                                           "p99":  7985.7758581700009,
+                                           "max":  8017.2722850000009
+                                       },
+                           "sentimentPhaseAverageMs":  {
+                                                           "count":  3,
+                                                           "average":  80.960581666666656,
+                                                           "standardDeviationSample":  0.96106430032460655,
+                                                           "coefficientOfVariation":  0.011870768224980515,
+                                                           "min":  80.081314999999947,
+                                                           "p50":  80.813859999999991,
+                                                           "p95":  81.869299000000041,
+                                                           "p99":  81.96311580000004,
+                                                           "max":  81.986570000000043
+                                                       },
+                           "sentimentPhaseP95Ms":  {
+                                                       "count":  3,
+                                                       "average":  96.51394999999998,
+                                                       "standardDeviationSample":  3.0500058118796973,
+                                                       "coefficientOfVariation":  0.031601709513284844,
+                                                       "min":  93.2022,
+                                                       "p50":  97.13215,
+                                                       "p95":  98.999964999999975,
+                                                       "p99":  99.165992999999986,
+                                                       "max":  99.207499999999982
+                                                   },
+                           "advicePhaseAverageMs":  {
+                                                        "count":  3,
+                                                        "average":  2125.3990816666669,
+                                                        "standardDeviationSample":  332.98970643684686,
+                                                        "coefficientOfVariation":  0.15667161490242457,
+                                                        "min":  1933.0400900000009,
+                                                        "p50":  1933.2547000000004,
+                                                        "p95":  2452.2376795000005,
+                                                        "p99":  2498.3694999000004,
+                                                        "max":  2509.9024550000004
+                                                    },
+                           "advicePhaseP95Ms":  {
+                                                    "count":  3,
+                                                    "average":  4204.8950166666655,
+                                                    "standardDeviationSample":  1298.7541683648715,
+                                                    "coefficientOfVariation":  0.30886720434566978,
+                                                    "min":  3369.4704499999989,
+                                                    "p50":  3544.0379999999996,
+                                                    "p95":  5485.4627399999981,
+                                                    "p99":  5658.0338279999978,
+                                                    "max":  5701.176599999998
+                                                },
+                           "adviceShareOfAiAverage":  0.959349069443541,
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "http5xxCount":  0,
+                           "aiRetryableFailureCount":  0,
+                           "aiTerminalFailureCount":  0,
+                           "jvmHeapPeakBytes":  82228464,
+                           "jvmGcPauseSeconds":  0.078,
+                           "hikariActivePeak":  1
+                       },
+                       {
+                           "consumerConcurrency":  4,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  104167.66666666667,
+                                                    "standardDeviationSample":  2689.1140424558671,
+                                                    "coefficientOfVariation":  0.025815246981205305,
+                                                    "min":  101357,
+                                                    "p50":  104430,
+                                                    "p95":  106487.40000000001,
+                                                    "p99":  106670.28,
+                                                    "max":  106716
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  1.9208383505903663,
+                                                            "standardDeviationSample":  0.04978865275411086,
+                                                            "coefficientOfVariation":  0.025920272124308849,
+                                                            "min":  1.8741332133888078,
+                                                            "p50":  1.9151584793641672,
+                                                            "p95":  1.9674168710527284,
+                                                            "p99":  1.9720620614250448,
+                                                            "max":  1.9732233590181241
+                                                        },
+                           "createLatencyMs":  {
+                                                   "count":  3,
+                                                   "average":  1570.812723,
+                                                   "standardDeviationSample":  76.817861997468881,
+                                                   "coefficientOfVariation":  0.048903259359116408,
+                                                   "min":  1484.730581,
+                                                   "p50":  1595.32321,
+                                                   "p95":  1628.6782612,
+                                                   "p99":  1631.64315464,
+                                                   "max":  1632.384378
+                                               },
+                           "aiAverageMs":  {
+                                               "count":  3,
+                                               "average":  1961.1340021666667,
+                                               "standardDeviationSample":  45.127700240006547,
+                                               "coefficientOfVariation":  0.023011023311078859,
+                                               "min":  1912.7525490000003,
+                                               "p50":  1968.563596,
+                                               "p95":  1998.7336349500001,
+                                               "p99":  2001.41541619,
+                                               "max":  2002.0858615000002
+                                           },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  3577.1927151282048,
+                                           "standardDeviationSample":  110.69893654391352,
+                                           "coefficientOfVariation":  0.030945757011010273,
+                                           "min":  3481.526518,
+                                           "p50":  3551.6075693846151,
+                                           "p95":  3683.760409138461,
+                                           "p99":  3695.5073282276921,
+                                           "max":  3698.4440579999996
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  4632.9971289444447,
+                                           "standardDeviationSample":  463.34664796529739,
+                                           "coefficientOfVariation":  0.10001013060650517,
+                                           "min":  4116.0103240000008,
+                                           "p50":  4772.185884333333,
+                                           "p95":  4986.9342490833342,
+                                           "p99":  5006.0229926166676,
+                                           "max":  5010.7951785000005
+                                       },
+                           "sentimentPhaseAverageMs":  {
+                                                           "count":  3,
+                                                           "average":  105.42688666666663,
+                                                           "standardDeviationSample":  0.47371590656567808,
+                                                           "coefficientOfVariation":  0.0044933121098742956,
+                                                           "min":  104.94103999999996,
+                                                           "p50":  105.45215999999999,
+                                                           "p95":  105.84392999999999,
+                                                           "p99":  105.87875399999997,
+                                                           "max":  105.88745999999998
+                                                       },
+                           "sentimentPhaseP95Ms":  {
+                                                       "count":  3,
+                                                       "average":  168.75468333333325,
+                                                       "standardDeviationSample":  5.7319154787761848,
+                                                       "coefficientOfVariation":  0.033965963880565019,
+                                                       "min":  163.71969999999988,
+                                                       "p50":  167.55174999999986,
+                                                       "p95":  174.24851499999997,
+                                                       "p99":  174.84378299999997,
+                                                       "max":  174.99259999999998
+                                                   },
+                           "advicePhaseAverageMs":  {
+                                                        "count":  3,
+                                                        "average":  1847.7842983333333,
+                                                        "standardDeviationSample":  45.471614241925955,
+                                                        "coefficientOfVariation":  0.024608724234176305,
+                                                        "min":  1799.449385,
+                                                        "p50":  1854.1902850000008,
+                                                        "p95":  1886.1609309999997,
+                                                        "p99":  1889.0027661999995,
+                                                        "max":  1889.7132249999995
+                                                    },
+                           "advicePhaseP95Ms":  {
+                                                    "count":  3,
+                                                    "average":  3455.0498833333327,
+                                                    "standardDeviationSample":  65.636373348440046,
+                                                    "coefficientOfVariation":  0.018997228857696249,
+                                                    "min":  3385.1973499999995,
+                                                    "p50":  3464.5084999999995,
+                                                    "p95":  3510.350269999999,
+                                                    "p99":  3514.4250939999993,
+                                                    "max":  3515.4437999999991
+                                                },
+                           "adviceShareOfAiAverage":  0.94217889189983361,
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "http5xxCount":  0,
+                           "aiRetryableFailureCount":  0,
+                           "aiTerminalFailureCount":  0,
+                           "jvmHeapPeakBytes":  82889024,
+                           "jvmGcPauseSeconds":  0.059000000000000004,
+                           "hikariActivePeak":  1
+                       }
+                   ],
+    "scalingVsConcurrency1":  [
+                                  {
+                                      "consumerConcurrency":  1,
+                                      "completionSpeedupVs1":  1,
+                                      "completionReductionPercentVs1":  0,
+                                      "throughputImprovementPercentVs1":  0,
+                                      "aiP95DegradationPercentVs1":  0,
+                                      "taskRetryIncreaseVs1":  0,
+                                      "terminalFailureIncreaseVs1":  0
+                                  },
+                                  {
+                                      "consumerConcurrency":  2,
+                                      "completionSpeedupVs1":  1.6657703459680921,
+                                      "completionReductionPercentVs1":  39.967715092272691,
+                                      "throughputImprovementPercentVs1":  66.837143324284483,
+                                      "aiP95DegradationPercentVs1":  43.8978848769515,
+                                      "taskRetryIncreaseVs1":  0,
+                                      "terminalFailureIncreaseVs1":  0
+                                  },
+                                  {
+                                      "consumerConcurrency":  4,
+                                      "completionSpeedupVs1":  3.6455074031289296,
+                                      "completionReductionPercentVs1":  72.56897629280077,
+                                      "throughputImprovementPercentVs1":  260.62372225840392,
+                                      "aiP95DegradationPercentVs1":  15.643088425689356,
+                                      "taskRetryIncreaseVs1":  0,
+                                      "terminalFailureIncreaseVs1":  0
+                                  }
+                              ]
+}
