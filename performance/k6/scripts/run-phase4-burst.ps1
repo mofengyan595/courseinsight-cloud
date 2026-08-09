@@ -13,7 +13,7 @@ param(
     [string]$Scenario = 'scaling',
     [ValidateRange(0, 60000)]
     [int]$AiStubDelayMs = 100,
-    [ValidateSet(4, 5)]
+    [ValidateSet(4, 5, 6)]
     [int]$ExperimentPhase = 4,
     [ValidatePattern('^[A-Za-z0-9_-]{0,30}$')]
     [string]$ConfigurationLabel = '',
@@ -128,7 +128,7 @@ $appTarget = @($target.data.activeTargets | Where-Object {
     $_.labels.job -eq 'courseinsight-server' -and $_.health -eq 'up'
 })
 if ($appTarget.Count -eq 0) { throw 'Prometheus courseinsight-server target is not UP.' }
-if ($ExperimentPhase -eq 5) {
+if ($ExperimentPhase -ge 5) {
     $rocketMqTarget = @($target.data.activeTargets | Where-Object {
         $_.labels.job -eq 'rocketmq-broker' -and $_.health -eq 'up'
     })
@@ -313,7 +313,7 @@ $prometheusArtifact = [ordered]@{
 Write-Utf8NoBom (Join-Path $resultsRoot $prometheusName) ($prometheusArtifact | ConvertTo-Json -Depth 20)
 
 $rocketMqNativeArtifact = $null
-if ($ExperimentPhase -eq 5) {
+if ($ExperimentPhase -ge 5) {
     $nativeQueries = [ordered]@{
         readyMessages = 'sum(rocketmq_consumer_ready_messages{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"})'
         inflightMessages = 'sum(rocketmq_consumer_inflight_messages{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"})'
@@ -444,7 +444,7 @@ $outcome = [ordered]@{
     aiStub = $stubHealth
     artifacts = [ordered]@{
         k6 = $k6Name; prometheus = $prometheusName; backlog = $backlogName
-        rocketMqNative = if ($ExperimentPhase -eq 5) { $rocketMqNativeName } else { $null }
+        rocketMqNative = if ($ExperimentPhase -ge 5) { $rocketMqNativeName } else { $null }
     }
 }
 Write-Utf8NoBom (Join-Path $resultsRoot $outcomeName) ($outcome | ConvertTo-Json -Depth 12)
@@ -453,7 +453,7 @@ Write-Host "k6: $(Join-Path $resultsRoot $k6Name)"
 Write-Host "Prometheus: $(Join-Path $resultsRoot $prometheusName)"
 Write-Host "Backlog: $(Join-Path $resultsRoot $backlogName)"
 Write-Host "Outcome: $(Join-Path $resultsRoot $outcomeName)"
-if ($ExperimentPhase -eq 5) {
+if ($ExperimentPhase -ge 5) {
     Write-Host "RocketMQ native: $(Join-Path $resultsRoot $rocketMqNativeName)"
 }
 if ($k6ExitCode -ne 0) { throw "k6 exited with code $k6ExitCode after writing artifacts." }

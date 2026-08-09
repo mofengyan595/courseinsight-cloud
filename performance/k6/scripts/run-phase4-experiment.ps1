@@ -12,7 +12,7 @@ param(
     [int]$ControlStubDelayMs = 10,
     [ValidateRange(1, 64)]
     [int]$BacklogConcurrency = 4,
-    [ValidateSet(4, 5)]
+    [ValidateSet(4, 5, 6)]
     [int]$ExperimentPhase = 4,
     [ValidatePattern('^[A-Za-z0-9_-]{0,30}$')]
     [string]$ConfigurationLabel = '',

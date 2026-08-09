@@ -1,0 +1,1342 @@
+{
+    "schemaVersion":  1,
+    "generatedAt":  "2026-08-09T16:02:31.9608359Z",
+    "experimentId":  "P6_CONSUMER",
+    "gitCommit":  "00ba94e140d35c638ac2322142cd7232be35b583",
+    "workload":  {
+                     "fixture":  "performance/k6/data/batch-200.csv",
+                     "batches":  5,
+                     "rowsPerBatch":  200,
+                     "taskCount":  1000,
+                     "repetitionsPerConsumer":  3
+                 },
+    "fixedConfiguration":  {
+                               "aiStubDelayMs":  100,
+                               "outboxBatchSize":  100,
+                               "outboxPublishIntervalMs":  1000,
+                               "rocketMqNativeScrapeSeconds":  1
+                           },
+    "setup":  {
+                  "host":  {
+                               "os":  "Microsoft Windows 11 Home Chinese",
+                               "version":  "10.0.26200",
+                               "architecture":  "64-bit",
+                               "cpu":  "AMD Ryzen 7 5800H with Radeon Graphics",
+                               "physicalCores":  8,
+                               "logicalProcessors":  16,
+                               "totalVisibleMemoryBytes":  14888460288
+                           },
+                  "docker":  {
+                                 "desktopEngineVersion":  "29.6.2",
+                                 "architecture":  "x86_64",
+                                 "cpus":  16,
+                                 "memoryBytes":  7194972160
+                             },
+                  "java":  "Microsoft OpenJDK 17.0.20",
+                  "springBoot":  "3.5.16",
+                  "k6Image":  "grafana/k6:1.3.0",
+                  "k6ImageDigest":  "grafana/k6@sha256:3ddc8b1a33a2c3d8edc6e99b6a762ae36cba08788463458f5e6a7703e14eb77d"
+              },
+    "callChain":  [
+                      "RocketMQ customizer sets consumeThreadNumber and consumeThreadMax to the configured value",
+                      "each consumer thread synchronously reads task/comment and conditionally claims execution ownership",
+                      "the same thread performs blocking RestClient AI HTTP using SimpleClientHttpRequestFactory",
+                      "saveSuccess transaction conditionally marks SUCCESS, inserts one analysis_result row, then commits",
+                      "no shared global lock or single result-persistence scheduler exists in this path"
+                  ],
+    "definitions":  {
+                        "inflightDrain":  "seconds from the first native inflight peak sample to the final positive inflight sample",
+                        "resultPersistenceRateProxy":  "10th-to-90th percentile analysis_task completed_at rate; the SUCCESS update and result insert are committed in one transaction",
+                        "nativeBackfill":  "c2/c4 native files were queried after the runs from retained 1s Prometheus samples using each original testStartedAt-to-observedAt window; c8 was captured by the corrected runner",
+                        "standardDeviation":  "sample standard deviation (n-1)"
+                    },
+    "runs":  [
+                 {
+                     "runNumber":  1,
+                     "consumerConcurrency":  2,
+                     "taskCount":  1000,
+                     "productionDurationMs":  2104,
+                     "completionTimeMs":  70073,
+                     "endToEndDrainTimeMs":  67969,
+                     "throughputTasksPerSecond":  14.270831846788353,
+                     "resultPersistenceRateProxyPerSecond":  15.626219274287944,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  36876.887,
+                                                     "min":  5796,
+                                                     "p50":  36896,
+                                                     "p95":  64798.899999999994,
+                                                     "p99":  67245.18,
+                                                     "max":  67851
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "peakToLastPositiveSeconds":  25.907,
+                                           "ratePerSecond":  38.599606284015906
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  1000,
+                                          "peakToLastPositiveSeconds":  66.123,
+                                          "ratePerSecond":  15.123330762367102
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "backfilled from retained Prometheus samples using the original run window",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  650,
+                                                       "peakTimestampEpochSeconds":  1786289959,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290004,
+                                                       "peakToLastPositiveSeconds":  45
+                                                   },
+                                      "lagPeak":  650,
+                                      "messagesInActiveAveragePerSecond":  38.463374221109547,
+                                      "messagesInPeakPerSecond":  50,
+                                      "messagesOutActiveAveragePerSecond":  38.463374221109547,
+                                      "messagesOutPeakPerSecond":  50,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  14.270831846788351,
+                                "averageMs":  105.572965298,
+                                "p95Ms":  111.05324637055838,
+                                "p99Ms":  120.4518063846154
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.1231214619816685,
+                                       "jvmHeapPeakBytes":  85071872,
+                                       "jvmGcPauseSeconds":  0.068,
+                                       "hikariActivePeak":  2,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T153847Z-phase6-P6_CONSUMER-batch100-scaling-c2-r1-outcome.json",
+                                       "k6":  "20260809T153847Z-phase6-P6_CONSUMER-batch100-scaling-c2-r1-k6.json",
+                                       "prometheus":  "20260809T153847Z-phase6-P6_CONSUMER-batch100-scaling-c2-r1-prometheus.json",
+                                       "backlog":  "20260809T153847Z-phase6-P6_CONSUMER-batch100-scaling-c2-r1-backlog.json",
+                                       "rocketMqNative":  "20260809T153847Z-phase6-P6_CONSUMER-batch100-scaling-c2-r1-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  2,
+                     "consumerConcurrency":  2,
+                     "taskCount":  1000,
+                     "productionDurationMs":  2127,
+                     "completionTimeMs":  66766,
+                     "endToEndDrainTimeMs":  64639,
+                     "throughputTasksPerSecond":  14.977683251954586,
+                     "resultPersistenceRateProxyPerSecond":  15.621647976596783,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  33401.22,
+                                                     "min":  2486,
+                                                     "p50":  33322.5,
+                                                     "p95":  61264.299999999988,
+                                                     "p99":  63728.219999999994,
+                                                     "max":  64345
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  989,
+                                           "peakToLastPositiveSeconds":  22.21,
+                                           "ratePerSecond":  44.529491220171096
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  998,
+                                          "peakToLastPositiveSeconds":  63.578,
+                                          "ratePerSecond":  15.697253767026329
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "backfilled from retained Prometheus samples using the original run window",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  648,
+                                                       "peakTimestampEpochSeconds":  1786290051,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290094,
+                                                       "peakToLastPositiveSeconds":  43
+                                                   },
+                                      "lagPeak":  648,
+                                      "messagesInActiveAveragePerSecond":  37.040152655201048,
+                                      "messagesInPeakPerSecond":  50,
+                                      "messagesOutActiveAveragePerSecond":  37.040148025571135,
+                                      "messagesOutPeakPerSecond":  50,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  14.977683251954586,
+                                "averageMs":  105.32425661399999,
+                                "p95Ms":  110.96598747724975,
+                                "p99Ms":  113.88170790909091
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.020431286835366626,
+                                       "jvmHeapPeakBytes":  82026816,
+                                       "jvmGcPauseSeconds":  0.045,
+                                       "hikariActivePeak":  2,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T154022Z-phase6-P6_CONSUMER-batch100-scaling-c2-r2-outcome.json",
+                                       "k6":  "20260809T154022Z-phase6-P6_CONSUMER-batch100-scaling-c2-r2-k6.json",
+                                       "prometheus":  "20260809T154022Z-phase6-P6_CONSUMER-batch100-scaling-c2-r2-prometheus.json",
+                                       "backlog":  "20260809T154022Z-phase6-P6_CONSUMER-batch100-scaling-c2-r2-backlog.json",
+                                       "rocketMqNative":  "20260809T154022Z-phase6-P6_CONSUMER-batch100-scaling-c2-r2-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  3,
+                     "consumerConcurrency":  2,
+                     "taskCount":  1000,
+                     "productionDurationMs":  2507,
+                     "completionTimeMs":  67795,
+                     "endToEndDrainTimeMs":  65288,
+                     "throughputTasksPerSecond":  14.75035032082012,
+                     "resultPersistenceRateProxyPerSecond":  15.458247293359324,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  33903.797,
+                                                     "min":  3156,
+                                                     "p50":  33795.5,
+                                                     "p95":  61988.249999999993,
+                                                     "p99":  64529.249999999993,
+                                                     "max":  65159
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "peakToLastPositiveSeconds":  22.751,
+                                           "ratePerSecond":  43.954111907168915
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  1000,
+                                          "peakToLastPositiveSeconds":  64.946,
+                                          "ratePerSecond":  15.397407076648292
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "backfilled from retained Prometheus samples using the original run window",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  648,
+                                                       "peakTimestampEpochSeconds":  1786290142,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290184,
+                                                       "peakToLastPositiveSeconds":  42
+                                                   },
+                                      "lagPeak":  648,
+                                      "messagesInActiveAveragePerSecond":  37.038890344189781,
+                                      "messagesInPeakPerSecond":  50.000000000000014,
+                                      "messagesOutActiveAveragePerSecond":  37.038890344189781,
+                                      "messagesOutPeakPerSecond":  50.000000000000014,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  14.75035032082012,
+                                "averageMs":  105.331616491,
+                                "p95Ms":  110.9010051108871,
+                                "p99Ms":  111.8030059576613
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.021542239250899223,
+                                       "jvmHeapPeakBytes":  87559808,
+                                       "jvmGcPauseSeconds":  0.041000000000000009,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T154153Z-phase6-P6_CONSUMER-batch100-scaling-c2-r3-outcome.json",
+                                       "k6":  "20260809T154153Z-phase6-P6_CONSUMER-batch100-scaling-c2-r3-k6.json",
+                                       "prometheus":  "20260809T154153Z-phase6-P6_CONSUMER-batch100-scaling-c2-r3-prometheus.json",
+                                       "backlog":  "20260809T154153Z-phase6-P6_CONSUMER-batch100-scaling-c2-r3-backlog.json",
+                                       "rocketMqNative":  "20260809T154153Z-phase6-P6_CONSUMER-batch100-scaling-c2-r3-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  1,
+                     "consumerConcurrency":  4,
+                     "taskCount":  1000,
+                     "productionDurationMs":  2432,
+                     "completionTimeMs":  39593,
+                     "endToEndDrainTimeMs":  37161,
+                     "throughputTasksPerSecond":  25.256989871947059,
+                     "resultPersistenceRateProxyPerSecond":  30.105991129820339,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  21525.6,
+                                                     "min":  5990,
+                                                     "p50":  21644.5,
+                                                     "p95":  35335.25,
+                                                     "p99":  36505.19,
+                                                     "max":  36768
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "peakToLastPositiveSeconds":  28.104,
+                                           "ratePerSecond":  35.582123541132937
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  1000,
+                                          "peakToLastPositiveSeconds":  34.624,
+                                          "ratePerSecond":  28.881700554528649
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "backfilled from retained Prometheus samples using the original run window",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  252,
+                                                       "peakTimestampEpochSeconds":  1786290299,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290307,
+                                                       "peakToLastPositiveSeconds":  8
+                                                   },
+                                      "lagPeak":  252,
+                                      "messagesInActiveAveragePerSecond":  34.483518070152833,
+                                      "messagesInPeakPerSecond":  47.2381904523869,
+                                      "messagesOutActiveAveragePerSecond":  34.483518070152833,
+                                      "messagesOutPeakPerSecond":  47.2381904523869,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  25.256989871947059,
+                                "averageMs":  106.189602689,
+                                "p95Ms":  111.097142121058,
+                                "p99Ms":  123.89328653846154
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.075857998875214008,
+                                       "jvmHeapPeakBytes":  73768648,
+                                       "jvmGcPauseSeconds":  0.097,
+                                       "hikariActivePeak":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T154425Z-phase6-P6_CONSUMER-batch100-scaling-c4-r1-outcome.json",
+                                       "k6":  "20260809T154425Z-phase6-P6_CONSUMER-batch100-scaling-c4-r1-k6.json",
+                                       "prometheus":  "20260809T154425Z-phase6-P6_CONSUMER-batch100-scaling-c4-r1-prometheus.json",
+                                       "backlog":  "20260809T154425Z-phase6-P6_CONSUMER-batch100-scaling-c4-r1-backlog.json",
+                                       "rocketMqNative":  "20260809T154425Z-phase6-P6_CONSUMER-batch100-scaling-c4-r1-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  2,
+                     "consumerConcurrency":  4,
+                     "taskCount":  1000,
+                     "productionDurationMs":  1760,
+                     "completionTimeMs":  34832,
+                     "endToEndDrainTimeMs":  33072,
+                     "throughputTasksPerSecond":  28.7092328892972,
+                     "resultPersistenceRateProxyPerSecond":  31.145501205381446,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  17882.922,
+                                                     "min":  2640,
+                                                     "p50":  17894,
+                                                     "p95":  31532.25,
+                                                     "p99":  32750.02,
+                                                     "max":  33003
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "peakToLastPositiveSeconds":  23.402,
+                                           "ratePerSecond":  42.7313904794462
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  1000,
+                                          "peakToLastPositiveSeconds":  32.036,
+                                          "ratePerSecond":  31.21488325633662
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "backfilled from retained Prometheus samples using the original run window",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  291,
+                                                       "peakTimestampEpochSeconds":  1786290361,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290372,
+                                                       "peakToLastPositiveSeconds":  11
+                                                   },
+                                      "lagPeak":  291,
+                                      "messagesInActiveAveragePerSecond":  37.03775094217859,
+                                      "messagesInPeakPerSecond":  50,
+                                      "messagesOutActiveAveragePerSecond":  37.037743995996735,
+                                      "messagesOutPeakPerSecond":  50,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  28.709232889297198,
+                                "averageMs":  105.262300875,
+                                "p95Ms":  110.94428292929292,
+                                "p99Ms":  111.848106
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.025093613733522,
+                                       "jvmHeapPeakBytes":  80227976,
+                                       "jvmGcPauseSeconds":  0.038000000000000006,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T154533Z-phase6-P6_CONSUMER-batch100-scaling-c4-r2-outcome.json",
+                                       "k6":  "20260809T154533Z-phase6-P6_CONSUMER-batch100-scaling-c4-r2-k6.json",
+                                       "prometheus":  "20260809T154533Z-phase6-P6_CONSUMER-batch100-scaling-c4-r2-prometheus.json",
+                                       "backlog":  "20260809T154533Z-phase6-P6_CONSUMER-batch100-scaling-c4-r2-backlog.json",
+                                       "rocketMqNative":  "20260809T154533Z-phase6-P6_CONSUMER-batch100-scaling-c4-r2-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  3,
+                     "consumerConcurrency":  4,
+                     "taskCount":  1000,
+                     "productionDurationMs":  1618,
+                     "completionTimeMs":  34794,
+                     "endToEndDrainTimeMs":  33176,
+                     "throughputTasksPerSecond":  28.740587457607635,
+                     "resultPersistenceRateProxyPerSecond":  30.907547461027935,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  17839.559,
+                                                     "min":  2432,
+                                                     "p50":  17916,
+                                                     "p95":  31624.1,
+                                                     "p99":  32842.04,
+                                                     "max":  33090
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "peakToLastPositiveSeconds":  23.523,
+                                           "ratePerSecond":  42.511584406750842
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  1000,
+                                          "peakToLastPositiveSeconds":  32.229,
+                                          "ratePerSecond":  31.027956188525863
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "backfilled from retained Prometheus samples using the original run window",
+                                      "readyPeak":  1,
+                                      "inflight":  {
+                                                       "peak":  275,
+                                                       "peakTimestampEpochSeconds":  1786290429,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290442,
+                                                       "peakToLastPositiveSeconds":  13
+                                                   },
+                                      "lagPeak":  275,
+                                      "messagesInActiveAveragePerSecond":  37.040157476122076,
+                                      "messagesInPeakPerSecond":  50,
+                                      "messagesOutActiveAveragePerSecond":  37.040157476122076,
+                                      "messagesOutPeakPerSecond":  50,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  28.740587457607635,
+                                "averageMs":  105.37799159800002,
+                                "p95Ms":  110.9010051108871,
+                                "p99Ms":  111.8030059576613
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.025417562363142042,
+                                       "jvmHeapPeakBytes":  80201440,
+                                       "jvmGcPauseSeconds":  0.034999999999999976,
+                                       "hikariActivePeak":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T154641Z-phase6-P6_CONSUMER-batch100-scaling-c4-r3-outcome.json",
+                                       "k6":  "20260809T154641Z-phase6-P6_CONSUMER-batch100-scaling-c4-r3-k6.json",
+                                       "prometheus":  "20260809T154641Z-phase6-P6_CONSUMER-batch100-scaling-c4-r3-prometheus.json",
+                                       "backlog":  "20260809T154641Z-phase6-P6_CONSUMER-batch100-scaling-c4-r3-backlog.json",
+                                       "rocketMqNative":  "20260809T154641Z-phase6-P6_CONSUMER-batch100-scaling-c4-r3-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  1,
+                     "consumerConcurrency":  8,
+                     "taskCount":  1000,
+                     "productionDurationMs":  1930,
+                     "completionTimeMs":  31256,
+                     "endToEndDrainTimeMs":  29326,
+                     "throughputTasksPerSecond":  31.99385717942155,
+                     "resultPersistenceRateProxyPerSecond":  35.323690245193156,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  17347.406,
+                                                     "min":  5118,
+                                                     "p50":  17362,
+                                                     "p95":  28606.6,
+                                                     "p99":  29156.28,
+                                                     "max":  29323
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "peakToLastPositiveSeconds":  28.093,
+                                           "ratePerSecond":  35.596055956999962
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  1000,
+                                          "peakToLastPositiveSeconds":  28.096,
+                                          "ratePerSecond":  35.592255125284737
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "captured at run completion",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  20,
+                                                       "peakTimestampEpochSeconds":  1786290776,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290780,
+                                                       "peakToLastPositiveSeconds":  4
+                                                   },
+                                      "lagPeak":  20,
+                                      "messagesInActiveAveragePerSecond":  33.333369605777555,
+                                      "messagesInPeakPerSecond":  47.25,
+                                      "messagesOutActiveAveragePerSecond":  33.333369605777555,
+                                      "messagesOutPeakPerSecond":  47.25,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  31.99385717942155,
+                                "averageMs":  105.895289606,
+                                "p95Ms":  111.03136527383367,
+                                "p99Ms":  119.30464633333334
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.0646658400475444,
+                                       "jvmHeapPeakBytes":  73650376,
+                                       "jvmGcPauseSeconds":  0.073000000000000009,
+                                       "hikariActivePeak":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T155225Z-phase6-P6_CONSUMER-batch100-scaling-c8-r1-outcome.json",
+                                       "k6":  "20260809T155225Z-phase6-P6_CONSUMER-batch100-scaling-c8-r1-k6.json",
+                                       "prometheus":  "20260809T155225Z-phase6-P6_CONSUMER-batch100-scaling-c8-r1-prometheus.json",
+                                       "backlog":  "20260809T155225Z-phase6-P6_CONSUMER-batch100-scaling-c8-r1-backlog.json",
+                                       "rocketMqNative":  "20260809T155225Z-phase6-P6_CONSUMER-batch100-scaling-c8-r1-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  2,
+                     "consumerConcurrency":  8,
+                     "taskCount":  1000,
+                     "productionDurationMs":  1529,
+                     "completionTimeMs":  25856,
+                     "endToEndDrainTimeMs":  24327,
+                     "throughputTasksPerSecond":  38.67574257425742,
+                     "resultPersistenceRateProxyPerSecond":  39.5887905896308,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  13105.289,
+                                                     "min":  2080,
+                                                     "p50":  13129.5,
+                                                     "p95":  23303.15,
+                                                     "p99":  23873.02,
+                                                     "max":  24024
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "peakToLastPositiveSeconds":  23.363,
+                                           "ratePerSecond":  42.8027222531353
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  1000,
+                                          "peakToLastPositiveSeconds":  23.906,
+                                          "ratePerSecond":  41.830502802643693
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "captured at run completion",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  24,
+                                                       "peakTimestampEpochSeconds":  1786290833,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290840,
+                                                       "peakToLastPositiveSeconds":  7
+                                                   },
+                                      "lagPeak":  24,
+                                      "messagesInActiveAveragePerSecond":  35.7154962132453,
+                                      "messagesInPeakPerSecond":  50.000000000000014,
+                                      "messagesOutActiveAveragePerSecond":  35.715498445946338,
+                                      "messagesOutPeakPerSecond":  50.000000000000014,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  38.67574257425742,
+                                "averageMs":  105.079916414,
+                                "p95Ms":  110.94428292929292,
+                                "p99Ms":  111.848106
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.032949259964184609,
+                                       "jvmHeapPeakBytes":  80362064,
+                                       "jvmGcPauseSeconds":  0.043,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T155333Z-phase6-P6_CONSUMER-batch100-scaling-c8-r2-outcome.json",
+                                       "k6":  "20260809T155333Z-phase6-P6_CONSUMER-batch100-scaling-c8-r2-k6.json",
+                                       "prometheus":  "20260809T155333Z-phase6-P6_CONSUMER-batch100-scaling-c8-r2-prometheus.json",
+                                       "backlog":  "20260809T155333Z-phase6-P6_CONSUMER-batch100-scaling-c8-r2-backlog.json",
+                                       "rocketMqNative":  "20260809T155333Z-phase6-P6_CONSUMER-batch100-scaling-c8-r2-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "runNumber":  3,
+                     "consumerConcurrency":  8,
+                     "taskCount":  1000,
+                     "productionDurationMs":  1799,
+                     "completionTimeMs":  25566,
+                     "endToEndDrainTimeMs":  23767,
+                     "throughputTasksPerSecond":  39.11444887741532,
+                     "resultPersistenceRateProxyPerSecond":  39.848763743097358,
+                     "resultPersistenceRateDefinition":  "10th-to-90th percentile task completed_at rate; SUCCESS update and result insert commit in one transaction",
+                     "taskCompletionLatencyMs":  {
+                                                     "count":  1000,
+                                                     "average":  12775.238,
+                                                     "min":  1911,
+                                                     "p50":  12805,
+                                                     "p95":  22751.149999999998,
+                                                     "p99":  23313.030000000002,
+                                                     "max":  23445
+                                                 },
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  982,
+                                           "peakToLastPositiveSeconds":  22.314,
+                                           "ratePerSecond":  44.008245944250248
+                                       },
+                     "proxyBacklog":  {
+                                          "peak":  991,
+                                          "peakToLastPositiveSeconds":  22.863,
+                                          "ratePerSecond":  43.345142807155668
+                                      },
+                     "rocketMq":  {
+                                      "collection":  "captured at run completion",
+                                      "readyPeak":  0,
+                                      "inflight":  {
+                                                       "peak":  24,
+                                                       "peakTimestampEpochSeconds":  1786290903,
+                                                       "lastPositiveTimestampEpochSeconds":  1786290910,
+                                                       "peakToLastPositiveSeconds":  7
+                                                   },
+                                      "lagPeak":  24,
+                                      "messagesInActiveAveragePerSecond":  37.037485220663513,
+                                      "messagesInPeakPerSecond":  50.01250312578145,
+                                      "messagesOutActiveAveragePerSecond":  37.037480591033585,
+                                      "messagesOutPeakPerSecond":  50.01250312578145,
+                                      "queueingLatencyAvailable":  false,
+                                      "lagLatencyAvailable":  false
+                                  },
+                     "ai":  {
+                                "requestCount":  1000,
+                                "requestRatePerSecond":  39.11444887741532,
+                                "averageMs":  105.08285371100001,
+                                "p95Ms":  111.00952851570416,
+                                "p99Ms":  117.01032623076924
+                            },
+                     "outboxPublish":  {
+                                           "successCount":  1000,
+                                           "failedAttemptCount":  0
+                                       },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.031018358798175577,
+                                       "jvmHeapPeakBytes":  84556368,
+                                       "jvmGcPauseSeconds":  0.036000000000000004,
+                                       "hikariActivePeak":  3,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T155440Z-phase6-P6_CONSUMER-batch100-scaling-c8-r3-outcome.json",
+                                       "k6":  "20260809T155440Z-phase6-P6_CONSUMER-batch100-scaling-c8-r3-k6.json",
+                                       "prometheus":  "20260809T155440Z-phase6-P6_CONSUMER-batch100-scaling-c8-r3-prometheus.json",
+                                       "backlog":  "20260809T155440Z-phase6-P6_CONSUMER-batch100-scaling-c8-r3-backlog.json",
+                                       "rocketMqNative":  "20260809T155440Z-phase6-P6_CONSUMER-batch100-scaling-c8-r3-rocketmq-native.json"
+                                   }
+                 }
+             ],
+    "aggregates":  [
+                       {
+                           "consumerConcurrency":  2,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  68211.333333333328,
+                                                    "standardDeviationSample":  1692.3540803665564,
+                                                    "coefficientOfVariation":  0.024810453009273481,
+                                                    "min":  66766,
+                                                    "p50":  67795,
+                                                    "p95":  69845.2,
+                                                    "p99":  70027.439999999988,
+                                                    "max":  70073
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  14.666288473187686,
+                                                            "standardDeviationSample":  0.36084556657509803,
+                                                            "coefficientOfVariation":  0.024603741242017793,
+                                                            "min":  14.270831846788353,
+                                                            "p50":  14.75035032082012,
+                                                            "p95":  14.954949958841139,
+                                                            "p99":  14.973136593331898,
+                                                            "max":  14.977683251954586
+                                                        },
+                           "resultPersistenceRateProxyPerSecond":  {
+                                                                       "count":  3,
+                                                                       "average":  15.568704848081351,
+                                                                       "standardDeviationSample":  0.095686350839721976,
+                                                                       "coefficientOfVariation":  0.00614607006642008,
+                                                                       "min":  15.458247293359324,
+                                                                       "p50":  15.621647976596783,
+                                                                       "p95":  15.625762144518829,
+                                                                       "p99":  15.626127848334121,
+                                                                       "max":  15.626219274287944
+                                                                   },
+                           "endToEndDrainTimeMs":  {
+                                                       "count":  3,
+                                                       "average":  65965.333333333328,
+                                                       "standardDeviationSample":  1765.3074330929819,
+                                                       "coefficientOfVariation":  0.02676113867525845,
+                                                       "min":  64639,
+                                                       "p50":  65288,
+                                                       "p95":  67700.9,
+                                                       "p99":  67915.37999999999,
+                                                       "max":  67969
+                                                   },
+                           "outboxPendingDrainRatePerSecond":  {
+                                                                   "count":  3,
+                                                                   "average":  42.361069803785306,
+                                                                   "standardDeviationSample":  3.2702020115544417,
+                                                                   "coefficientOfVariation":  0.077198286698184918,
+                                                                   "min":  38.599606284015906,
+                                                                   "p50":  43.954111907168915,
+                                                                   "p95":  44.471953288870878,
+                                                                   "p99":  44.517983633911051,
+                                                                   "max":  44.529491220171096
+                                                               },
+                           "outboxPendingDrainSeconds":  {
+                                                             "count":  3,
+                                                             "average":  23.622666666666671,
+                                                             "standardDeviationSample":  1.9966983581235629,
+                                                             "coefficientOfVariation":  0.084524680735602639,
+                                                             "min":  22.21,
+                                                             "p50":  22.751,
+                                                             "p95":  25.5914,
+                                                             "p99":  25.843880000000002,
+                                                             "max":  25.907
+                                                         },
+                           "rocketMqReadyPeak":  {
+                                                     "count":  3,
+                                                     "average":  0,
+                                                     "standardDeviationSample":  0,
+                                                     "coefficientOfVariation":  0,
+                                                     "min":  0,
+                                                     "p50":  0,
+                                                     "p95":  0,
+                                                     "p99":  0,
+                                                     "max":  0
+                                                 },
+                           "rocketMqInflightPeak":  {
+                                                        "count":  3,
+                                                        "average":  648.66666666666663,
+                                                        "standardDeviationSample":  1.1547005383792517,
+                                                        "coefficientOfVariation":  0.0017801138823935023,
+                                                        "min":  648,
+                                                        "p50":  648,
+                                                        "p95":  649.8,
+                                                        "p99":  649.96,
+                                                        "max":  650
+                                                    },
+                           "rocketMqInflightDrainSeconds":  {
+                                                                "count":  3,
+                                                                "average":  43.333333333333336,
+                                                                "standardDeviationSample":  1.5275252316519465,
+                                                                "coefficientOfVariation":  0.035250582268891072,
+                                                                "min":  42,
+                                                                "p50":  43,
+                                                                "p95":  44.8,
+                                                                "p99":  44.96,
+                                                                "max":  45
+                                                            },
+                           "rocketMqLagPeak":  {
+                                                   "count":  3,
+                                                   "average":  648.66666666666663,
+                                                   "standardDeviationSample":  1.1547005383792517,
+                                                   "coefficientOfVariation":  0.0017801138823935023,
+                                                   "min":  648,
+                                                   "p50":  648,
+                                                   "p95":  649.8,
+                                                   "p99":  649.96,
+                                                   "max":  650
+                                               },
+                           "rocketMqMessagesInActiveAveragePerSecond":  {
+                                                                            "count":  3,
+                                                                            "average":  37.514139073500125,
+                                                                            "standardDeviationSample":  0.82206199428636906,
+                                                                            "coefficientOfVariation":  0.021913390913109645,
+                                                                            "min":  37.038890344189781,
+                                                                            "p50":  37.040152655201048,
+                                                                            "p95":  38.321052064518696,
+                                                                            "p99":  38.434909789791377,
+                                                                            "max":  38.463374221109547
+                                                                        },
+                           "rocketMqMessagesOutActiveAveragePerSecond":  {
+                                                                             "count":  3,
+                                                                             "average":  37.514137530290157,
+                                                                             "standardDeviationSample":  0.8220633289710273,
+                                                                             "coefficientOfVariation":  0.021913427392733369,
+                                                                             "min":  37.038890344189781,
+                                                                             "p50":  37.040148025571135,
+                                                                             "p95":  38.321051601555709,
+                                                                             "p99":  38.434909697198776,
+                                                                             "max":  38.463374221109547
+                                                                         },
+                           "aiAverageMs":  {
+                                               "count":  3,
+                                               "average":  105.409612801,
+                                               "standardDeviationSample":  0.14151526650671026,
+                                               "coefficientOfVariation":  0.0013425271447858667,
+                                               "min":  105.32425661399999,
+                                               "p50":  105.331616491,
+                                               "p95":  105.5488304173,
+                                               "p99":  105.56813832186,
+                                               "max":  105.572965298
+                                           },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  110.97341298623174,
+                                           "standardDeviationSample":  0.076391779167042317,
+                                           "coefficientOfVariation":  0.00068837910911616373,
+                                           "min":  110.9010051108871,
+                                           "p50":  110.96598747724975,
+                                           "p95":  111.04452048122752,
+                                           "p99":  111.05150119269221,
+                                           "max":  111.05324637055838
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  115.3788400837892,
+                                           "standardDeviationSample":  4.51458644481507,
+                                           "coefficientOfVariation":  0.039128374332213209,
+                                           "min":  111.8030059576613,
+                                           "p50":  113.88170790909091,
+                                           "p95":  119.79479653706295,
+                                           "p99":  120.32040441510492,
+                                           "max":  120.4518063846154
+                                       },
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "outboxFailureCount":  0,
+                           "outboxPublishSuccessRate":  1,
+                           "http5xxCount":  0,
+                           "processCpuUsagePeak":  0.1231214619816685,
+                           "jvmHeapPeakBytes":  87559808,
+                           "jvmGcPauseSeconds":  0.15400000000000003,
+                           "hikariActivePeak":  2,
+                           "hikariConfiguredMax":  10,
+                           "nativeBackfilledRunCount":  3
+                       },
+                       {
+                           "consumerConcurrency":  4,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  36406.333333333336,
+                                                    "standardDeviationSample":  2759.7996907988327,
+                                                    "coefficientOfVariation":  0.075805483225414055,
+                                                    "min":  34794,
+                                                    "p50":  34832,
+                                                    "p95":  39116.9,
+                                                    "p99":  39497.78,
+                                                    "max":  39593
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  27.5689367396173,
+                                                            "standardDeviationSample":  2.0022660953120481,
+                                                            "coefficientOfVariation":  0.072627613978116831,
+                                                            "min":  25.256989871947059,
+                                                            "p50":  28.7092328892972,
+                                                            "p95":  28.737452000776592,
+                                                            "p99":  28.739960366241426,
+                                                            "max":  28.740587457607635
+                                                        },
+                           "resultPersistenceRateProxyPerSecond":  {
+                                                                       "count":  3,
+                                                                       "average":  30.719679932076573,
+                                                                       "standardDeviationSample":  0.54462460064156382,
+                                                                       "coefficientOfVariation":  0.017728850100188806,
+                                                                       "min":  30.105991129820339,
+                                                                       "p50":  30.907547461027935,
+                                                                       "p95":  31.121705830946095,
+                                                                       "p99":  31.140742130494377,
+                                                                       "max":  31.145501205381446
+                                                                   },
+                           "endToEndDrainTimeMs":  {
+                                                       "count":  3,
+                                                       "average":  34469.666666666664,
+                                                       "standardDeviationSample":  2331.3430321025976,
+                                                       "coefficientOfVariation":  0.067634626544186616,
+                                                       "min":  33072,
+                                                       "p50":  33176,
+                                                       "p95":  36762.5,
+                                                       "p99":  37081.3,
+                                                       "max":  37161
+                                                   },
+                           "outboxPendingDrainRatePerSecond":  {
+                                                                   "count":  3,
+                                                                   "average":  40.275032809109995,
+                                                                   "standardDeviationSample":  4.0656643645900168,
+                                                                   "coefficientOfVariation":  0.10094751216864026,
+                                                                   "min":  35.582123541132937,
+                                                                   "p50":  42.511584406750842,
+                                                                   "p95":  42.709409872176664,
+                                                                   "p99":  42.72699435799229,
+                                                                   "max":  42.7313904794462
+                                                               },
+                           "outboxPendingDrainSeconds":  {
+                                                             "count":  3,
+                                                             "average":  25.009666666666664,
+                                                             "standardDeviationSample":  2.6804541281904695,
+                                                             "coefficientOfVariation":  0.10717672346121379,
+                                                             "min":  23.402,
+                                                             "p50":  23.523,
+                                                             "p95":  27.6459,
+                                                             "p99":  28.012379999999997,
+                                                             "max":  28.104
+                                                         },
+                           "rocketMqReadyPeak":  {
+                                                     "count":  3,
+                                                     "average":  0.33333333333333331,
+                                                     "standardDeviationSample":  0.57735026918962584,
+                                                     "coefficientOfVariation":  1.7320508075688776,
+                                                     "min":  0,
+                                                     "p50":  0,
+                                                     "p95":  0.89999999999999991,
+                                                     "p99":  0.98,
+                                                     "max":  1
+                                                 },
+                           "rocketMqInflightPeak":  {
+                                                        "count":  3,
+                                                        "average":  272.66666666666669,
+                                                        "standardDeviationSample":  19.604421270043481,
+                                                        "coefficientOfVariation":  0.071898855513606891,
+                                                        "min":  252,
+                                                        "p50":  275,
+                                                        "p95":  289.4,
+                                                        "p99":  290.68,
+                                                        "max":  291
+                                                    },
+                           "rocketMqInflightDrainSeconds":  {
+                                                                "count":  3,
+                                                                "average":  10.666666666666666,
+                                                                "standardDeviationSample":  2.5166114784235836,
+                                                                "coefficientOfVariation":  0.23593232610221096,
+                                                                "min":  8,
+                                                                "p50":  11,
+                                                                "p95":  12.8,
+                                                                "p99":  12.96,
+                                                                "max":  13
+                                                            },
+                           "rocketMqLagPeak":  {
+                                                   "count":  3,
+                                                   "average":  272.66666666666669,
+                                                   "standardDeviationSample":  19.604421270043481,
+                                                   "coefficientOfVariation":  0.071898855513606891,
+                                                   "min":  252,
+                                                   "p50":  275,
+                                                   "p95":  289.4,
+                                                   "p99":  290.68,
+                                                   "max":  291
+                                               },
+                           "rocketMqMessagesInActiveAveragePerSecond":  {
+                                                                            "count":  3,
+                                                                            "average":  36.187142162817835,
+                                                                            "standardDeviationSample":  1.4753822334171198,
+                                                                            "coefficientOfVariation":  0.040770896656577377,
+                                                                            "min":  34.483518070152833,
+                                                                            "p50":  37.03775094217859,
+                                                                            "p95":  37.039916822727726,
+                                                                            "p99":  37.040109345443206,
+                                                                            "max":  37.040157476122076
+                                                                        },
+                           "rocketMqMessagesOutActiveAveragePerSecond":  {
+                                                                             "count":  3,
+                                                                             "average":  36.187139847423886,
+                                                                             "standardDeviationSample":  1.4753802310644204,
+                                                                             "coefficientOfVariation":  0.040770843931990132,
+                                                                             "min":  34.483518070152833,
+                                                                             "p50":  37.037743995996735,
+                                                                             "p95":  37.039916128109539,
+                                                                             "p99":  37.040109206519567,
+                                                                             "max":  37.040157476122076
+                                                                         },
+                           "aiAverageMs":  {
+                                               "count":  3,
+                                               "average":  105.609965054,
+                                               "standardDeviationSample":  0.50530280701610586,
+                                               "coefficientOfVariation":  0.0047846129553942825,
+                                               "min":  105.262300875,
+                                               "p50":  105.37799159800002,
+                                               "p95":  106.1084415799,
+                                               "p99":  106.17337046717999,
+                                               "max":  106.189602689
+                                           },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  110.980810053746,
+                                           "standardDeviationSample":  0.10304418860519622,
+                                           "coefficientOfVariation":  0.00092848654245084158,
+                                           "min":  110.9010051108871,
+                                           "p50":  110.94428292929292,
+                                           "p95":  111.08185620188149,
+                                           "p99":  111.0940849372227,
+                                           "max":  111.097142121058
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  115.84813283204095,
+                                           "standardDeviationSample":  6.9673439791217779,
+                                           "coefficientOfVariation":  0.06014204811762637,
+                                           "min":  111.8030059576613,
+                                           "p50":  111.848106,
+                                           "p95":  122.68876848461538,
+                                           "p99":  123.6523829276923,
+                                           "max":  123.89328653846154
+                                       },
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "outboxFailureCount":  0,
+                           "outboxPublishSuccessRate":  1,
+                           "http5xxCount":  0,
+                           "processCpuUsagePeak":  0.075857998875214008,
+                           "jvmHeapPeakBytes":  80227976,
+                           "jvmGcPauseSeconds":  0.16999999999999998,
+                           "hikariActivePeak":  1,
+                           "hikariConfiguredMax":  10,
+                           "nativeBackfilledRunCount":  3
+                       },
+                       {
+                           "consumerConcurrency":  8,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  27559.333333333332,
+                                                    "standardDeviationSample":  3204.6892725088551,
+                                                    "coefficientOfVariation":  0.11628326540949908,
+                                                    "min":  25566,
+                                                    "p50":  25856,
+                                                    "p95":  30716,
+                                                    "p99":  31148,
+                                                    "max":  31256
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  36.594682877031431,
+                                                            "standardDeviationSample":  3.990465340025922,
+                                                            "coefficientOfVariation":  0.10904494932870502,
+                                                            "min":  31.99385717942155,
+                                                            "p50":  38.67574257425742,
+                                                            "p95":  39.070578247099526,
+                                                            "p99":  39.105674751352161,
+                                                            "max":  39.11444887741532
+                                                        },
+                           "resultPersistenceRateProxyPerSecond":  {
+                                                                       "count":  3,
+                                                                       "average":  38.253748192640437,
+                                                                       "standardDeviationSample":  2.5408317912998624,
+                                                                       "coefficientOfVariation":  0.066420466263974839,
+                                                                       "min":  35.323690245193156,
+                                                                       "p50":  39.5887905896308,
+                                                                       "p95":  39.8227664277507,
+                                                                       "p99":  39.843564280028026,
+                                                                       "max":  39.848763743097358
+                                                                   },
+                           "endToEndDrainTimeMs":  {
+                                                       "count":  3,
+                                                       "average":  25806.666666666668,
+                                                       "standardDeviationSample":  3060.6666485152109,
+                                                       "coefficientOfVariation":  0.11859984429792859,
+                                                       "min":  23767,
+                                                       "p50":  24327,
+                                                       "p95":  28826.1,
+                                                       "p99":  29226.02,
+                                                       "max":  29326
+                                                   },
+                           "outboxPendingDrainRatePerSecond":  {
+                                                                   "count":  3,
+                                                                   "average":  40.80234138479517,
+                                                                   "standardDeviationSample":  4.5488875353447025,
+                                                                   "coefficientOfVariation":  0.11148594372184306,
+                                                                   "min":  35.596055956999962,
+                                                                   "p50":  42.8027222531353,
+                                                                   "p95":  43.887693575138748,
+                                                                   "p99":  43.984135470427944,
+                                                                   "max":  44.008245944250248
+                                                               },
+                           "outboxPendingDrainSeconds":  {
+                                                             "count":  3,
+                                                             "average":  24.590000000000003,
+                                                             "standardDeviationSample":  3.0786940413103738,
+                                                             "coefficientOfVariation":  0.12520105902034864,
+                                                             "min":  22.314,
+                                                             "p50":  23.363,
+                                                             "p95":  27.619999999999997,
+                                                             "p99":  27.9984,
+                                                             "max":  28.093
+                                                         },
+                           "rocketMqReadyPeak":  {
+                                                     "count":  3,
+                                                     "average":  0,
+                                                     "standardDeviationSample":  0,
+                                                     "coefficientOfVariation":  0,
+                                                     "min":  0,
+                                                     "p50":  0,
+                                                     "p95":  0,
+                                                     "p99":  0,
+                                                     "max":  0
+                                                 },
+                           "rocketMqInflightPeak":  {
+                                                        "count":  3,
+                                                        "average":  22.666666666666668,
+                                                        "standardDeviationSample":  2.3094010767585034,
+                                                        "coefficientOfVariation":  0.10188534162169867,
+                                                        "min":  20,
+                                                        "p50":  24,
+                                                        "p95":  24,
+                                                        "p99":  24,
+                                                        "max":  24
+                                                    },
+                           "rocketMqInflightDrainSeconds":  {
+                                                                "count":  3,
+                                                                "average":  6,
+                                                                "standardDeviationSample":  1.7320508075688772,
+                                                                "coefficientOfVariation":  0.28867513459481287,
+                                                                "min":  4,
+                                                                "p50":  7,
+                                                                "p95":  7,
+                                                                "p99":  7,
+                                                                "max":  7
+                                                            },
+                           "rocketMqLagPeak":  {
+                                                   "count":  3,
+                                                   "average":  22.666666666666668,
+                                                   "standardDeviationSample":  2.3094010767585034,
+                                                   "coefficientOfVariation":  0.10188534162169867,
+                                                   "min":  20,
+                                                   "p50":  24,
+                                                   "p95":  24,
+                                                   "p99":  24,
+                                                   "max":  24
+                                               },
+                           "rocketMqMessagesInActiveAveragePerSecond":  {
+                                                                            "count":  3,
+                                                                            "average":  35.36211701322879,
+                                                                            "standardDeviationSample":  1.8771722793509724,
+                                                                            "coefficientOfVariation":  0.053084273168620862,
+                                                                            "min":  33.333369605777555,
+                                                                            "p50":  35.7154962132453,
+                                                                            "p95":  36.905286319921693,
+                                                                            "p99":  37.011045440515154,
+                                                                            "max":  37.037485220663513
+                                                                        },
+                           "rocketMqMessagesOutActiveAveragePerSecond":  {
+                                                                             "count":  3,
+                                                                             "average":  35.362116214252495,
+                                                                             "standardDeviationSample":  1.8771704235447804,
+                                                                             "coefficientOfVariation":  0.053084221887947917,
+                                                                             "min":  33.333369605777555,
+                                                                             "p50":  35.715498445946338,
+                                                                             "p95":  36.905282376524859,
+                                                                             "p99":  37.011040948131836,
+                                                                             "max":  37.037480591033585
+                                                                         },
+                           "aiAverageMs":  {
+                                               "count":  3,
+                                               "average":  105.352686577,
+                                               "standardDeviationSample":  0.46991030233268821,
+                                               "coefficientOfVariation":  0.0044603542406034509,
+                                               "min":  105.079916414,
+                                               "p50":  105.08285371100001,
+                                               "p95":  105.81404601650001,
+                                               "p99":  105.87904088810001,
+                                               "max":  105.895289606
+                                           },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  110.99505890627692,
+                                           "standardDeviationSample":  0.045308507814879925,
+                                           "coefficientOfVariation":  0.00040820292598013716,
+                                           "min":  110.94428292929292,
+                                           "p50":  111.00952851570416,
+                                           "p95":  111.02918159802073,
+                                           "p99":  111.03092853867109,
+                                           "max":  111.03136527383367
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  116.05435952136753,
+                                           "standardDeviationSample":  3.8190840129237746,
+                                           "coefficientOfVariation":  0.032907716941220272,
+                                           "min":  111.848106,
+                                           "p50":  117.01032623076924,
+                                           "p95":  119.07521432307692,
+                                           "p99":  119.25875993128206,
+                                           "max":  119.30464633333334
+                                       },
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "outboxFailureCount":  0,
+                           "outboxPublishSuccessRate":  1,
+                           "http5xxCount":  0,
+                           "processCpuUsagePeak":  0.0646658400475444,
+                           "jvmHeapPeakBytes":  84556368,
+                           "jvmGcPauseSeconds":  0.15200000000000002,
+                           "hikariActivePeak":  3,
+                           "hikariConfiguredMax":  10,
+                           "nativeBackfilledRunCount":  0
+                       }
+                   ],
+    "scaling":  [
+                    {
+                        "fromConsumer":  2,
+                        "toConsumer":  4,
+                        "completionReductionPercent":  46.627148958628574,
+                        "throughputImprovementPercent":  87.974870329447768,
+                        "completionSpeedup":  1.8736117342220673,
+                        "scalingEfficiencyPercent":  93.680586711103359,
+                        "inflightPeakReductionPercent":  57.965056526207604,
+                        "inflightDrainReductionPercent":  75.384615384615387,
+                        "aiP95ChangePercent":  0.0066656213548954568
+                    },
+                    {
+                        "fromConsumer":  4,
+                        "toConsumer":  8,
+                        "completionReductionPercent":  24.300716908230257,
+                        "throughputImprovementPercent":  32.738825666946724,
+                        "completionSpeedup":  1.3210164735479815,
+                        "scalingEfficiencyPercent":  66.05082367739908,
+                        "inflightPeakReductionPercent":  91.687041564792167,
+                        "inflightDrainReductionPercent":  43.75,
+                        "aiP95ChangePercent":  0.012839023723132392
+                    }
+                ],
+    "conclusion":  {
+                       "c2ToC4":  "Consumer concurrency is the limiting downstream factor at c2; c4 nearly doubles throughput and materially reduces inflight backlog.",
+                       "c4ToC8":  "c8 still improves throughput, but scaling efficiency drops and inflight nearly disappears.",
+                       "newLimit":  "At c8, throughput and persistence rate converge on the roughly 35-40 events/s Outbox publishing supply, so the limiting boundary moves back to the publisher side.",
+                       "batch100Value":  "Batch size 100 is useful only when consumer concurrency is high enough to use the additional supply; it did not help c2 in Phase 5 but unlocks c4/c8 scaling here.",
+                       "nextOptimization":  "Optimize the sequential Outbox claim -\u003e syncSend -\u003e mark-sent dispatch path with bounded pipelining while preserving conditional state transitions and retry semantics."
+                   },
+    "resumeSafe":  {
+                       "eligible":  true,
+                       "consumers":  [
+                                         2,
+                                         4,
+                                         8
+                                     ],
+                       "caveat":  "single-machine local environment, deterministic 100ms HTTP AI Stub, batch size 100; no real BERT/LLM"
+                   }
+}
