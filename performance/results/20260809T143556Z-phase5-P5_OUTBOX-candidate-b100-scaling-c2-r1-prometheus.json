@@ -1,0 +1,337 @@
+{
+    "schemaVersion":  1,
+    "gitCommit":  "b879acfcdff625851257cd51bbe1e4f1b58b2337",
+    "experimentId":  "P5_OUTBOX",
+    "scenario":  "scaling",
+    "runNumber":  1,
+    "consumerConcurrency":  2,
+    "aiStub":  {
+                   "status":  "UP",
+                   "service":  "courseinsight-performance-ai-stub",
+                   "delayMs":  100,
+                   "deterministic":  true,
+                   "bertEnabled":  false,
+                   "llmEnabled":  false
+               },
+    "testStartedAt":  "2026-08-09T14:35:56.6593705Z",
+    "testFinishedAt":  "2026-08-09T14:37:13.9526205Z",
+    "observedAt":  "2026-08-09T14:37:33.9630681Z",
+    "queryRangeSeconds":  113,
+    "queries":  {
+                    "applicationUp":  "max(up{job=\"courseinsight-server\"})",
+                    "processCpuUsageMax":  "max(max_over_time(process_cpu_usage[113s]))",
+                    "systemCpuUsageMax":  "max(max_over_time(system_cpu_usage[113s]))",
+                    "jvmHeapUsedMaxBytes":  "max_over_time(sum(jvm_memory_used_bytes{area=\"heap\"})[113s:15s])",
+                    "jvmHeapMaxBytes":  "sum(jvm_memory_max_bytes{area=\"heap\"})",
+                    "jvmGcPauseIncreaseSeconds":  "sum(jvm_gc_pause_seconds_sum @ 1786286253 - jvm_gc_pause_seconds_sum @ 1786286156)",
+                    "jvmThreadsLiveMax":  "max(max_over_time(jvm_threads_live_threads[113s]))",
+                    "hikariActiveMax":  "max(max_over_time(hikaricp_connections_active[113s]))",
+                    "hikariConfiguredMax":  "max(hikaricp_connections_max)",
+                    "http5xxCount":  "sum(http_server_requests_seconds_count{status=~\"5..\",uri!~\"/actuator.*\"} @ 1786286253 - http_server_requests_seconds_count{status=~\"5..\",uri!~\"/actuator.*\"} @ 1786286156)",
+                    "aiRequestCountByOutcome":  "sum by (outcome) (courseinsight_ai_request_seconds_count @ 1786286253 - courseinsight_ai_request_seconds_count @ 1786286156)",
+                    "aiRequestTotalSecondsByOutcome":  "sum by (outcome) (courseinsight_ai_request_seconds_sum @ 1786286253 - courseinsight_ai_request_seconds_sum @ 1786286156)",
+                    "aiP50SecondsByOutcome":  "histogram_quantile(0.50, sum by (le,outcome) (courseinsight_ai_request_seconds_bucket @ 1786286253 - courseinsight_ai_request_seconds_bucket @ 1786286156))",
+                    "aiP95SecondsByOutcome":  "histogram_quantile(0.95, sum by (le,outcome) (courseinsight_ai_request_seconds_bucket @ 1786286253 - courseinsight_ai_request_seconds_bucket @ 1786286156))",
+                    "aiP99SecondsByOutcome":  "histogram_quantile(0.99, sum by (le,outcome) (courseinsight_ai_request_seconds_bucket @ 1786286253 - courseinsight_ai_request_seconds_bucket @ 1786286156))",
+                    "analysisTaskCountByOutcome":  "sum by (outcome) (courseinsight_analysis_task_total @ 1786286253 - courseinsight_analysis_task_total @ 1786286156)",
+                    "outboxPublishCountByOutcome":  "sum by (outcome) (courseinsight_outbox_publish_total @ 1786286253 - courseinsight_outbox_publish_total @ 1786286156)"
+                },
+    "results":  {
+                    "applicationUp":  {
+                                          "metric":  {
+
+                                                     },
+                                          "value":  [
+                                                        1786286253.964,
+                                                        "1"
+                                                    ]
+                                      },
+                    "processCpuUsageMax":  {
+                                               "metric":  {
+
+                                                          },
+                                               "value":  [
+                                                             1786286253.966,
+                                                             "0.10354719801992196"
+                                                         ]
+                                           },
+                    "systemCpuUsageMax":  {
+                                              "metric":  {
+
+                                                         },
+                                              "value":  [
+                                                            1786286253.967,
+                                                            "0.6485873403268431"
+                                                        ]
+                                          },
+                    "jvmHeapUsedMaxBytes":  {
+                                                "metric":  {
+
+                                                           },
+                                                "value":  [
+                                                              1786286253.968,
+                                                              "123375864"
+                                                          ]
+                                            },
+                    "jvmHeapMaxBytes":  {
+                                            "metric":  {
+
+                                                       },
+                                            "value":  [
+                                                          1786286253.969,
+                                                          "3722444798"
+                                                      ]
+                                        },
+                    "jvmGcPauseIncreaseSeconds":  {
+                                                      "metric":  {
+
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.971,
+                                                                    "0.063"
+                                                                ]
+                                                  },
+                    "jvmThreadsLiveMax":  {
+                                              "metric":  {
+
+                                                         },
+                                              "value":  [
+                                                            1786286253.973,
+                                                            "119"
+                                                        ]
+                                          },
+                    "hikariActiveMax":  {
+                                            "metric":  {
+
+                                                       },
+                                            "value":  [
+                                                          1786286253.974,
+                                                          "5"
+                                                      ]
+                                        },
+                    "hikariConfiguredMax":  {
+                                                "metric":  {
+
+                                                           },
+                                                "value":  [
+                                                              1786286253.976,
+                                                              "10"
+                                                          ]
+                                            },
+                    "http5xxCount":  {
+
+                                     },
+                    "aiRequestCountByOutcome":  [
+                                                    {
+                                                        "metric":  {
+                                                                       "outcome":  "retryable_failure"
+                                                                   },
+                                                        "value":  [
+                                                                      1786286253.978,
+                                                                      "0"
+                                                                  ]
+                                                    },
+                                                    {
+                                                        "metric":  {
+                                                                       "outcome":  "success"
+                                                                   },
+                                                        "value":  [
+                                                                      1786286253.978,
+                                                                      "1000"
+                                                                  ]
+                                                    },
+                                                    {
+                                                        "metric":  {
+                                                                       "outcome":  "terminal_failure"
+                                                                   },
+                                                        "value":  [
+                                                                      1786286253.978,
+                                                                      "0"
+                                                                  ]
+                                                    }
+                                                ],
+                    "aiRequestTotalSecondsByOutcome":  [
+                                                           {
+                                                               "metric":  {
+                                                                              "outcome":  "retryable_failure"
+                                                                          },
+                                                               "value":  [
+                                                                             1786286253.979,
+                                                                             "0"
+                                                                         ]
+                                                           },
+                                                           {
+                                                               "metric":  {
+                                                                              "outcome":  "success"
+                                                                          },
+                                                               "value":  [
+                                                                             1786286253.979,
+                                                                             "105.954593524"
+                                                                         ]
+                                                           },
+                                                           {
+                                                               "metric":  {
+                                                                              "outcome":  "terminal_failure"
+                                                                          },
+                                                               "value":  [
+                                                                             1786286253.979,
+                                                                             "0"
+                                                                         ]
+                                                           }
+                                                       ],
+                    "aiP50SecondsByOutcome":  [
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "retryable_failure"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.981,
+                                                                    "NaN"
+                                                                ]
+                                                  },
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "success"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.981,
+                                                                    "0.10081061316616008"
+                                                                ]
+                                                  },
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "terminal_failure"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.981,
+                                                                    "NaN"
+                                                                ]
+                                                  }
+                                              ],
+                    "aiP95SecondsByOutcome":  [
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "retryable_failure"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.983,
+                                                                    "NaN"
+                                                                ]
+                                                  },
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "success"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.983,
+                                                                    "0.11100952851570416"
+                                                                ]
+                                                  },
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "terminal_failure"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.983,
+                                                                    "NaN"
+                                                                ]
+                                                  }
+                                              ],
+                    "aiP99SecondsByOutcome":  [
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "terminal_failure"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.985,
+                                                                    "NaN"
+                                                                ]
+                                                  },
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "retryable_failure"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.985,
+                                                                    "NaN"
+                                                                ]
+                                                  },
+                                                  {
+                                                      "metric":  {
+                                                                     "outcome":  "success"
+                                                                 },
+                                                      "value":  [
+                                                                    1786286253.985,
+                                                                    "0.11794891172727273"
+                                                                ]
+                                                  }
+                                              ],
+                    "analysisTaskCountByOutcome":  [
+                                                       {
+                                                           "metric":  {
+                                                                          "outcome":  "dlq_terminal"
+                                                                      },
+                                                           "value":  [
+                                                                         1786286253.990,
+                                                                         "0"
+                                                                     ]
+                                                       },
+                                                       {
+                                                           "metric":  {
+                                                                          "outcome":  "lease_recovery"
+                                                                      },
+                                                           "value":  [
+                                                                         1786286253.990,
+                                                                         "0"
+                                                                     ]
+                                                       },
+                                                       {
+                                                           "metric":  {
+                                                                          "outcome":  "retryable_failure"
+                                                                      },
+                                                           "value":  [
+                                                                         1786286253.990,
+                                                                         "0"
+                                                                     ]
+                                                       },
+                                                       {
+                                                           "metric":  {
+                                                                          "outcome":  "success"
+                                                                      },
+                                                           "value":  [
+                                                                         1786286253.990,
+                                                                         "1000"
+                                                                     ]
+                                                       },
+                                                       {
+                                                           "metric":  {
+                                                                          "outcome":  "terminal_failure"
+                                                                      },
+                                                           "value":  [
+                                                                         1786286253.990,
+                                                                         "0"
+                                                                     ]
+                                                       }
+                                                   ],
+                    "outboxPublishCountByOutcome":  [
+                                                        {
+                                                            "metric":  {
+                                                                           "outcome":  "failure"
+                                                                       },
+                                                            "value":  [
+                                                                          1786286253.994,
+                                                                          "1"
+                                                                      ]
+                                                        },
+                                                        {
+                                                            "metric":  {
+                                                                           "outcome":  "success"
+                                                                       },
+                                                            "value":  [
+                                                                          1786286253.994,
+                                                                          "1000"
+                                                                      ]
+                                                        }
+                                                    ]
+                }
+}

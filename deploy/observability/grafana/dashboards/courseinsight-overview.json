@@ -269,6 +269,97 @@
       ],
       "title": "Outbox Publish Events",
       "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 32},
+      "id": 13,
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}
+      },
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(rocketmq_consumer_ready_messages{topic=\"courseinsight-analysis\",consumer_group=\"courseinsight-analysis-consumer\"})",
+          "legendFormat": "ready",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rocketmq_consumer_inflight_messages{topic=\"courseinsight-analysis\",consumer_group=\"courseinsight-analysis-consumer\"})",
+          "legendFormat": "inflight",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rocketmq_consumer_lag_messages{topic=\"courseinsight-analysis\",consumer_group=\"courseinsight-analysis-consumer\"})",
+          "legendFormat": "lag messages",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "RocketMQ Analysis Backlog",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ms"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 32},
+      "id": 14,
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}
+      },
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max(rocketmq_consumer_queueing_latency{topic=\"courseinsight-analysis\",consumer_group=\"courseinsight-analysis-consumer\"})",
+          "legendFormat": "queueing",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max(rocketmq_consumer_lag_latency{topic=\"courseinsight-analysis\",consumer_group=\"courseinsight-analysis-consumer\"})",
+          "legendFormat": "lag",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "RocketMQ Analysis Lag Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 32},
+      "id": 15,
+      "options": {
+        "legend": {"calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true},
+        "tooltip": {"hideZeros": false, "mode": "multi", "sort": "desc"}
+      },
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rocketmq_messages_in_total{topic=\"courseinsight-analysis\"}[5s]))",
+          "legendFormat": "published",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rocketmq_messages_out_total{topic=\"courseinsight-analysis\",consumer_group=\"courseinsight-analysis-consumer\"}[5s]))",
+          "legendFormat": "consumed",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "RocketMQ Analysis Throughput",
+      "type": "timeseries"
     }
   ],
   "preload": false,

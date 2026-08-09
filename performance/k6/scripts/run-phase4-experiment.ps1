@@ -12,6 +12,18 @@ param(
     [int]$ControlStubDelayMs = 10,
     [ValidateRange(1, 64)]
     [int]$BacklogConcurrency = 4,
+    [ValidateSet(4, 5)]
+    [int]$ExperimentPhase = 4,
+    [ValidatePattern('^[A-Za-z0-9_-]{0,30}$')]
+    [string]$ConfigurationLabel = '',
+    [ValidateRange(1, 1000)]
+    [int]$OutboxBatchSize = 20,
+    [ValidateRange(10, 60000)]
+    [int]$OutboxPublishIntervalMs = 1000,
+    [ValidatePattern('^[A-Za-z][A-Za-z0-9_]{2,20}$')]
+    [string]$UserPrefix = 'perf_p4',
+    [ValidatePattern('^[A-Za-z0-9_-]{3,20}$')]
+    [string]$DatasetPrefix = 'PERF_P4',
     [switch]$SkipDelayControl,
     [string]$ContextPath = ''
 )
@@ -24,7 +36,7 @@ $runScript = Join-Path $PSScriptRoot 'run-phase4-burst.ps1'
 $prepareScript = Join-Path $PSScriptRoot 'prepare-phase4-data.ps1'
 $resultsRoot = Join-Path $repoRoot 'performance\results'
 if ([string]::IsNullOrWhiteSpace($ContextPath)) {
-    $ContextPath = Join-Path $resultsRoot 'phase-4-runtime-context.json'
+    $ContextPath = Join-Path $resultsRoot "phase-$ExperimentPhase-runtime-context.json"
 }
 if ([string]::IsNullOrWhiteSpace($env:PERF_PASSWORD)) {
     throw 'PERF_PASSWORD must be set. It is passed to k6 at runtime and is never written to results.'
@@ -64,13 +76,17 @@ function Start-CourseInsightServer {
         'ROCKETMQ_ANALYSIS_CONSUME_THREAD_NUMBER', [string]$Concurrency, 'Process')
     [Environment]::SetEnvironmentVariable(
         'AI_SERVICE_BASE_URL', 'http://127.0.0.1:8002', 'Process')
+    [Environment]::SetEnvironmentVariable(
+        'OUTBOX_BATCH_SIZE', [string]$OutboxBatchSize, 'Process')
+    [Environment]::SetEnvironmentVariable(
+        'OUTBOX_PUBLISH_INTERVAL_MS', [string]$OutboxPublishIntervalMs, 'Process')
     $stdout = Join-Path $env:TEMP "courseinsight-phase4-$ExperimentId-c$Concurrency-stdout.log"
     $stderr = Join-Path $env:TEMP "courseinsight-phase4-$ExperimentId-c$Concurrency-stderr.log"
     $process = Start-Process -FilePath (Join-Path $serverRoot 'mvnw.cmd') `
         -ArgumentList @('spring-boot:run', '-Dspring-boot.run.profiles=local') `
         -WorkingDirectory $serverRoot -WindowStyle Hidden -PassThru `
         -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-    Write-Host "Starting CourseInsight with consumer concurrency $Concurrency (launcher PID $($process.Id))."
+    Write-Host "Starting CourseInsight with consumer concurrency $Concurrency, Outbox batch $OutboxBatchSize / interval ${OutboxPublishIntervalMs}ms (launcher PID $($process.Id))."
     $deadline = (Get-Date).AddMinutes(4)
     do {
         Start-Sleep -Seconds 2
@@ -117,19 +133,26 @@ Set-AiStubDelay -DelayMs $MainStubDelayMs
 
 try {
     Start-CourseInsightServer -Concurrency $Concurrencies[0]
-    & $prepareScript -OutputPath $ContextPath
+    & $prepareScript -OutputPath $ContextPath -UserPrefix $UserPrefix `
+        -DatasetPrefix $DatasetPrefix
 
     foreach ($concurrency in $Concurrencies) {
         Start-CourseInsightServer -Concurrency $concurrency
         for ($run = 1; $run -le $RunsPerConcurrency; $run++) {
             & $runScript -ConsumerConcurrency $concurrency -ExperimentId $ExperimentId `
                 -RunNumber $run -Scenario scaling -AiStubDelayMs $MainStubDelayMs `
-                -ContextPath $ContextPath
+                -ContextPath $ContextPath -ExperimentPhase $ExperimentPhase `
+                -ConfigurationLabel $ConfigurationLabel `
+                -OutboxBatchSize $OutboxBatchSize `
+                -OutboxPublishIntervalMs $OutboxPublishIntervalMs
         }
         if ($concurrency -eq $BacklogConcurrency) {
             & $runScript -ConsumerConcurrency $concurrency -ExperimentId $ExperimentId `
                 -RunNumber 1 -Scenario backlog -AiStubDelayMs $MainStubDelayMs `
-                -ContextPath $ContextPath
+                -ContextPath $ContextPath -ExperimentPhase $ExperimentPhase `
+                -ConfigurationLabel $ConfigurationLabel `
+                -OutboxBatchSize $OutboxBatchSize `
+                -OutboxPublishIntervalMs $OutboxPublishIntervalMs
         }
     }
 
@@ -138,10 +161,13 @@ try {
         Set-AiStubDelay -DelayMs $ControlStubDelayMs
         & $runScript -ConsumerConcurrency 8 -ExperimentId $ExperimentId `
             -RunNumber 1 -Scenario delay-control -AiStubDelayMs $ControlStubDelayMs `
-            -ContextPath $ContextPath
+            -ContextPath $ContextPath -ExperimentPhase $ExperimentPhase `
+            -ConfigurationLabel $ConfigurationLabel `
+            -OutboxBatchSize $OutboxBatchSize `
+            -OutboxPublishIntervalMs $OutboxPublishIntervalMs
     }
 } finally {
     Stop-CourseInsightServer
 }
 
-Write-Host "Phase 4 experiment $ExperimentId completed. The shared Docker services remain running."
+Write-Host "Phase $ExperimentPhase experiment $ExperimentId $ConfigurationLabel completed. The shared Docker services remain running."

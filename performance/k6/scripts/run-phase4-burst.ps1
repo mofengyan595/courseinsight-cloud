@@ -13,6 +13,14 @@ param(
     [string]$Scenario = 'scaling',
     [ValidateRange(0, 60000)]
     [int]$AiStubDelayMs = 100,
+    [ValidateSet(4, 5)]
+    [int]$ExperimentPhase = 4,
+    [ValidatePattern('^[A-Za-z0-9_-]{0,30}$')]
+    [string]$ConfigurationLabel = '',
+    [ValidateRange(1, 1000)]
+    [int]$OutboxBatchSize = 20,
+    [ValidateRange(10, 60000)]
+    [int]$OutboxPublishIntervalMs = 1000,
     [string]$ContextPath = '',
     [string]$BaseUrl = 'http://host.docker.internal:8080',
     [string]$PrometheusUrl = 'http://127.0.0.1:9090'
@@ -25,7 +33,7 @@ $k6Root = Split-Path -Parent $PSScriptRoot
 $performanceRoot = Split-Path -Parent $k6Root
 $resultsRoot = Join-Path $performanceRoot 'results'
 if ([string]::IsNullOrWhiteSpace($ContextPath)) {
-    $ContextPath = Join-Path $resultsRoot 'phase-4-runtime-context.json'
+    $ContextPath = Join-Path $resultsRoot "phase-$ExperimentPhase-runtime-context.json"
 }
 if (-not (Test-Path -LiteralPath $ContextPath)) {
     throw "Phase 4 context does not exist: $ContextPath"
@@ -98,6 +106,16 @@ function Invoke-PrometheusQuery {
     @($response.data.result)
 }
 
+function Invoke-PrometheusRangeQuery {
+    param([string]$Query, [long]$Start, [long]$End)
+    $encoded = [Uri]::EscapeDataString($Query)
+    $response = Invoke-RestMethod `
+        -Uri "$PrometheusUrl/api/v1/query_range?query=$encoded&start=$Start&end=$End&step=1" `
+        -TimeoutSec 30
+    if ($response.status -ne 'success') { throw "Prometheus range query failed: $Query" }
+    @($response.data.result)
+}
+
 $localHealth = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/actuator/health' -TimeoutSec 10
 if ($localHealth.status -ne 'UP') { throw 'CourseInsight server is not healthy.' }
 $stubHealth = Invoke-RestMethod -Uri 'http://127.0.0.1:8002/health' -TimeoutSec 10
@@ -110,6 +128,14 @@ $appTarget = @($target.data.activeTargets | Where-Object {
     $_.labels.job -eq 'courseinsight-server' -and $_.health -eq 'up'
 })
 if ($appTarget.Count -eq 0) { throw 'Prometheus courseinsight-server target is not UP.' }
+if ($ExperimentPhase -eq 5) {
+    $rocketMqTarget = @($target.data.activeTargets | Where-Object {
+        $_.labels.job -eq 'rocketmq-broker' -and $_.health -eq 'up'
+    })
+    if ($rocketMqTarget.Count -eq 0) {
+        throw 'Prometheus rocketmq-broker target is not UP.'
+    }
+}
 
 $active = [long](Invoke-MySqlScalar @"
 SELECT COUNT(*) FROM analysis_task
@@ -135,11 +161,15 @@ $gitCommit = (& git rev-parse HEAD).Trim()
 $imageDigest = (& docker image inspect $k6Image --format '{{index .RepoDigests 0}}').Trim()
 if ($LASTEXITCODE -ne 0) { throw "Unable to inspect $k6Image." }
 $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
-$stem = "$stamp-phase4-$ExperimentId-$Scenario-c$ConsumerConcurrency-r$RunNumber"
+$configurationSuffix = if ([string]::IsNullOrWhiteSpace($ConfigurationLabel)) {
+    ''
+} else { "-$ConfigurationLabel" }
+$stem = "$stamp-phase$ExperimentPhase-$ExperimentId$configurationSuffix-$Scenario-c$ConsumerConcurrency-r$RunNumber"
 $k6Name = "$stem-k6.json"
 $prometheusName = "$stem-prometheus.json"
 $backlogName = "$stem-backlog.json"
 $outcomeName = "$stem-outcome.json"
+$rocketMqNativeName = "$stem-rocketmq-native.json"
 $startedAt = (Get-Date).ToUniversalTime()
 $databaseStartedAt = Invoke-MySqlScalar "SELECT DATE_FORMAT(CURRENT_TIMESTAMP(3), '%Y-%m-%d %H:%i:%s.%f');"
 
@@ -163,11 +193,11 @@ $samplerJob = Start-Job -ScriptBlock {
 $envValues = [ordered]@{
     BASE_URL = $BaseUrl
     PERF_PASSWORD = $env:PERF_PASSWORD
-    PHASE4_CONTEXT_FILE = '/results/phase-4-runtime-context.json'
+    PHASE4_CONTEXT_FILE = "/results/$(Split-Path -Leaf $ContextPath)"
     RESULT_FILE = "/results/$k6Name"
     TEST_STARTED_AT = $startedAt.ToString('o')
     GIT_COMMIT = $gitCommit
-    SCENARIO = "phase4-$Scenario"
+    SCENARIO = "phase$ExperimentPhase-$Scenario"
     K6_IMAGE = $k6Image
     K6_IMAGE_DIGEST = $imageDigest
     CONSUMER_CONCURRENCY = [string]$ConsumerConcurrency
@@ -175,7 +205,10 @@ $envValues = [ordered]@{
     AI_STUB_DELAY_MS = [string]$AiStubDelayMs
     VU_MODEL = '1 VU x 1 iteration; 5 concurrent real API uploads; 0.5s progress polling'
     EXPERIMENT_ID = $ExperimentId
-    EXPERIMENT_PHASE = '4'
+    EXPERIMENT_PHASE = [string]$ExperimentPhase
+    CONFIGURATION_LABEL = $ConfigurationLabel
+    OUTBOX_BATCH_SIZE = [string]$OutboxBatchSize
+    OUTBOX_PUBLISH_INTERVAL_MS = [string]$OutboxPublishIntervalMs
     RUN_NUMBER = [string]$RunNumber
     TASK_COUNT = '1000'
     BATCH_COUNT = '5'
@@ -196,7 +229,7 @@ foreach ($entry in $envValues.GetEnumerator()) {
 }
 $dockerArguments += @($k6Image, 'run', '/scripts/scenarios/batch-burst.js')
 
-Write-Host "Running Phase 4 $Scenario c$ConsumerConcurrency r$RunNumber with ${AiStubDelayMs}ms Stub."
+Write-Host "Running Phase $ExperimentPhase $Scenario $ConfigurationLabel c$ConsumerConcurrency r$RunNumber with ${AiStubDelayMs}ms Stub."
 $oldPreference = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
 try {
@@ -279,6 +312,39 @@ $prometheusArtifact = [ordered]@{
 }
 Write-Utf8NoBom (Join-Path $resultsRoot $prometheusName) ($prometheusArtifact | ConvertTo-Json -Depth 20)
 
+$rocketMqNativeArtifact = $null
+if ($ExperimentPhase -eq 5) {
+    $nativeQueries = [ordered]@{
+        readyMessages = 'sum(rocketmq_consumer_ready_messages{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"})'
+        inflightMessages = 'sum(rocketmq_consumer_inflight_messages{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"})'
+        lagMessages = 'sum(rocketmq_consumer_lag_messages{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"})'
+        queueingLatencyMs = 'max(rocketmq_consumer_queueing_latency{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"})'
+        lagLatencyMs = 'max(rocketmq_consumer_lag_latency{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"})'
+        messagesInPerSecond = 'sum(rate(rocketmq_messages_in_total{topic="courseinsight-analysis"}[5s]))'
+        messagesOutPerSecond = 'sum(rate(rocketmq_messages_out_total{topic="courseinsight-analysis",consumer_group="courseinsight-analysis-consumer"}[5s]))'
+        retryReadyMessages = 'sum(rocketmq_consumer_ready_messages{consumer_group="courseinsight-analysis-consumer",is_retry="true"})'
+        dlqMessagesTotal = 'sum(rocketmq_send_to_dlq_messages_total{consumer_group="courseinsight-analysis-consumer"})'
+    }
+    $nativeResults = [ordered]@{}
+    foreach ($entry in $nativeQueries.GetEnumerator()) {
+        $nativeResults[$entry.Key] = Invoke-PrometheusRangeQuery `
+            -Query $entry.Value -Start $startEpoch -End $endEpoch
+    }
+    $rocketMqNativeArtifact = [ordered]@{
+        schemaVersion = 1; gitCommit = $gitCommit; experimentId = $ExperimentId
+        configurationLabel = $ConfigurationLabel; scenario = $Scenario
+        runNumber = $RunNumber; consumerConcurrency = $ConsumerConcurrency
+        outboxBatchSize = $OutboxBatchSize
+        outboxPublishIntervalMs = $OutboxPublishIntervalMs
+        scrapeIntervalSeconds = 1
+        startEpochSeconds = $startEpoch; endEpochSeconds = $endEpoch
+        source = 'RocketMQ 5.3.2 built-in PROM exporter on broker port 5557'
+        queries = $nativeQueries; results = $nativeResults
+    }
+    Write-Utf8NoBom (Join-Path $resultsRoot $rocketMqNativeName) `
+        ($rocketMqNativeArtifact | ConvertTo-Json -Depth 30)
+}
+
 $samples = @()
 foreach ($line in $samplerLines) {
     $parts = [string]$line -split "`t"
@@ -356,7 +422,10 @@ $steadyThroughput = if ($steadyWindowSeconds -gt 0) {
 } else { $null }
 $outcome = [ordered]@{
     schemaVersion = 1; gitCommit = $gitCommit; experimentId = $ExperimentId
+    experimentPhase = $ExperimentPhase; configurationLabel = $ConfigurationLabel
     scenario = $Scenario; runNumber = $RunNumber; consumerConcurrency = $ConsumerConcurrency
+    outboxBatchSize = $OutboxBatchSize
+    outboxPublishIntervalMs = $OutboxPublishIntervalMs
     aiStubDelayMs = $AiStubDelayMs; taskCount = 1000; batchCount = 5
     batchIds = @($k6Outcome.batchIds); productionDurationMs = [double]$k6Outcome.productionDurationMs
     createLatencyMs = @($k6Outcome.createLatencyMs)
@@ -373,7 +442,10 @@ $outcome = [ordered]@{
     peakOutboxPending = $backlogArtifact.peakOutboxPending
     http5xxSource = 'Prometheus artifact'
     aiStub = $stubHealth
-    artifacts = [ordered]@{ k6 = $k6Name; prometheus = $prometheusName; backlog = $backlogName }
+    artifacts = [ordered]@{
+        k6 = $k6Name; prometheus = $prometheusName; backlog = $backlogName
+        rocketMqNative = if ($ExperimentPhase -eq 5) { $rocketMqNativeName } else { $null }
+    }
 }
 Write-Utf8NoBom (Join-Path $resultsRoot $outcomeName) ($outcome | ConvertTo-Json -Depth 12)
 
@@ -381,4 +453,7 @@ Write-Host "k6: $(Join-Path $resultsRoot $k6Name)"
 Write-Host "Prometheus: $(Join-Path $resultsRoot $prometheusName)"
 Write-Host "Backlog: $(Join-Path $resultsRoot $backlogName)"
 Write-Host "Outcome: $(Join-Path $resultsRoot $outcomeName)"
+if ($ExperimentPhase -eq 5) {
+    Write-Host "RocketMQ native: $(Join-Path $resultsRoot $rocketMqNativeName)"
+}
 if ($k6ExitCode -ne 0) { throw "k6 exited with code $k6ExitCode after writing artifacts." }

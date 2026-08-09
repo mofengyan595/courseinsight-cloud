@@ -1,0 +1,40 @@
+{
+    "schemaVersion":  1,
+    "preparedAt":  "2026-08-09T14:35:03.1332612Z",
+    "baseUrl":  "http://127.0.0.1:8080",
+    "userPrefix":  "perf_p5",
+    "datasetPrefix":  "PERF_P5",
+    "principalCount":  5,
+    "batchCountPerRun":  5,
+    "rowsPerBatch":  200,
+    "taskCountPerRun":  1000,
+    "principals":  [
+                       {
+                           "username":  "perf_p5_01",
+                           "courseId":  65879,
+                           "courseCode":  "PERF_P5-01"
+                       },
+                       {
+                           "username":  "perf_p5_02",
+                           "courseId":  65880,
+                           "courseCode":  "PERF_P5-02"
+                       },
+                       {
+                           "username":  "perf_p5_03",
+                           "courseId":  65881,
+                           "courseCode":  "PERF_P5-03"
+                       },
+                       {
+                           "username":  "perf_p5_04",
+                           "courseId":  65882,
+                           "courseCode":  "PERF_P5-04"
+                       },
+                       {
+                           "username":  "perf_p5_05",
+                           "courseId":  65883,
+                           "courseCode":  "PERF_P5-05"
+                       }
+                   ],
+    "dataPresent":  false,
+    "cleanedAt":  "2026-08-09T14:59:32.7841744Z"
+}

@@ -56,6 +56,9 @@ export function performanceSummary(data) {
     taskCount: Number(__ENV.TASK_COUNT || '0') || null,
     batchCount: Number(__ENV.BATCH_COUNT || '0') || null,
     aiStubDelayMs: Number(__ENV.AI_STUB_DELAY_MS || '0'),
+    configurationLabel: __ENV.CONFIGURATION_LABEL || null,
+    outboxBatchSize: Number(__ENV.OUTBOX_BATCH_SIZE || '0') || null,
+    outboxPublishIntervalMs: Number(__ENV.OUTBOX_PUBLISH_INTERVAL_MS || '0') || null,
   };
   const result = {
     metadata,

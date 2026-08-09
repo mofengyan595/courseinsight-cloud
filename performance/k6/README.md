@@ -15,6 +15,8 @@
 - `../results/`：k6、Prometheus、batch outcome 和阶段报告。
 
 第三阶段严格 Cache A/B 和 arrival-rate 容量实验见 [HTTP_BENCHMARK.md](HTTP_BENCHMARK.md)。
+第四阶段 AI Stub 异步链路压测见 [PHASE4.md](PHASE4.md)，第五阶段 RocketMQ 原生积压与
+Outbox 发布侧容量实验见 [PHASE5.md](PHASE5.md)。
 
 ## 前置条件
 
