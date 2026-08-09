@@ -1,0 +1,62 @@
+{
+    "schemaVersion":  1,
+    "gitCommit":  "b0a929f071c198ac820443cf7a2204a54cc3b1c3",
+    "experimentId":  "P4_STUB100",
+    "scenario":  "scaling",
+    "runNumber":  3,
+    "consumerConcurrency":  1,
+    "aiStubDelayMs":  100,
+    "taskCount":  1000,
+    "batchCount":  5,
+    "batchIds":  [
+                     74,
+                     75,
+                     73,
+                     72,
+                     71
+                 ],
+    "productionDurationMs":  3485,
+    "createLatencyMs":  [
+                            3472.610108,
+                            3465.382029,
+                            3460.432773,
+                            3465.568768,
+                            3446.568776
+                        ],
+    "totalCompletionMs":  131442,
+    "drainTimeMs":  127957,
+    "throughputTasksPerSecond":  7.607918321388901,
+    "steadyCompletionThroughputTasksPerSecond":  7.8314430973797418,
+    "steadyThroughputDefinition":  "completed tasks between the 10th and 90th percentile completion timestamps divided by that window",
+    "taskCompletionLatencyMs":  {
+                                    "count":  1000,
+                                    "average":  65941.31,
+                                    "min":  3851,
+                                    "p50":  66041,
+                                    "p95":  121762.35,
+                                    "p99":  126712.26999999999,
+                                    "max":  127938
+                                },
+    "successCount":  1000,
+    "terminalFailureCount":  0,
+    "taskRetryCount":  0,
+    "outboxRetryCount":  0,
+    "outboxSentCount":  1000,
+    "outboxFailureCount":  0,
+    "peakProxyBacklog":  1000,
+    "peakOutboxPending":  992,
+    "http5xxSource":  "Prometheus artifact",
+    "aiStub":  {
+                   "status":  "UP",
+                   "service":  "courseinsight-performance-ai-stub",
+                   "delayMs":  100,
+                   "deterministic":  true,
+                   "bertEnabled":  false,
+                   "llmEnabled":  false
+               },
+    "artifacts":  {
+                      "k6":  "20260809T131741Z-phase4-P4_STUB100-scaling-c1-r3-k6.json",
+                      "prometheus":  "20260809T131741Z-phase4-P4_STUB100-scaling-c1-r3-prometheus.json",
+                      "backlog":  "20260809T131741Z-phase4-P4_STUB100-scaling-c1-r3-backlog.json"
+                  }
+}

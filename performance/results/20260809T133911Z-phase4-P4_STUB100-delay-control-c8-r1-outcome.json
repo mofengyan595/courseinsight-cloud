@@ -1,0 +1,62 @@
+{
+    "schemaVersion":  1,
+    "gitCommit":  "b0a929f071c198ac820443cf7a2204a54cc3b1c3",
+    "experimentId":  "P4_STUB100",
+    "scenario":  "delay-control",
+    "runNumber":  1,
+    "consumerConcurrency":  8,
+    "aiStubDelayMs":  10,
+    "taskCount":  1000,
+    "batchCount":  5,
+    "batchIds":  [
+                     130,
+                     126,
+                     127,
+                     129,
+                     128
+                 ],
+    "productionDurationMs":  3251,
+    "createLatencyMs":  [
+                            3243.942034,
+                            3229.559476,
+                            3236.591847,
+                            3231.087102,
+                            3241.601374
+                        ],
+    "totalCompletionMs":  69142,
+    "drainTimeMs":  65891,
+    "throughputTasksPerSecond":  14.462989210610051,
+    "steadyCompletionThroughputTasksPerSecond":  14.852311286644046,
+    "steadyThroughputDefinition":  "completed tasks between the 10th and 90th percentile completion timestamps divided by that window",
+    "taskCompletionLatencyMs":  {
+                                    "count":  1000,
+                                    "average":  34861.116,
+                                    "min":  3537,
+                                    "p50":  34863.5,
+                                    "p95":  63251.5,
+                                    "p99":  65691.13,
+                                    "max":  65800
+                                },
+    "successCount":  1000,
+    "terminalFailureCount":  0,
+    "taskRetryCount":  0,
+    "outboxRetryCount":  0,
+    "outboxSentCount":  1000,
+    "outboxFailureCount":  0,
+    "peakProxyBacklog":  999,
+    "peakOutboxPending":  996,
+    "http5xxSource":  "Prometheus artifact",
+    "aiStub":  {
+                   "status":  "UP",
+                   "service":  "courseinsight-performance-ai-stub",
+                   "delayMs":  10,
+                   "deterministic":  true,
+                   "bertEnabled":  false,
+                   "llmEnabled":  false
+               },
+    "artifacts":  {
+                      "k6":  "20260809T133911Z-phase4-P4_STUB100-delay-control-c8-r1-k6.json",
+                      "prometheus":  "20260809T133911Z-phase4-P4_STUB100-delay-control-c8-r1-prometheus.json",
+                      "backlog":  "20260809T133911Z-phase4-P4_STUB100-delay-control-c8-r1-backlog.json"
+                  }
+}

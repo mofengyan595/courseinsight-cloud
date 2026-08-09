@@ -53,6 +53,9 @@ export function performanceSummary(data) {
     durationSeconds: Number(__ENV.DURATION_SECONDS || '0') || null,
     runNumber: Number(__ENV.RUN_NUMBER || '0') || null,
     stableSlo: __ENV.STABLE_SLO || null,
+    taskCount: Number(__ENV.TASK_COUNT || '0') || null,
+    batchCount: Number(__ENV.BATCH_COUNT || '0') || null,
+    aiStubDelayMs: Number(__ENV.AI_STUB_DELAY_MS || '0'),
   };
   const result = {
     metadata,

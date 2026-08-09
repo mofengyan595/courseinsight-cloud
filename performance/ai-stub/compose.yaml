@@ -1,0 +1,22 @@
+name: courseinsight-performance-ai-stub
+
+services:
+  ai-stub:
+    build:
+      context: .
+    container_name: courseinsight-ai-stub
+    restart: unless-stopped
+    environment:
+      AI_STUB_DELAY_MS: ${AI_STUB_DELAY_MS:-100}
+    ports:
+      - "127.0.0.1:${AI_STUB_PORT:-8002}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s

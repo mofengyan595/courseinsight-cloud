@@ -1,0 +1,40 @@
+{
+    "schemaVersion":  1,
+    "preparedAt":  "2026-08-09T13:11:35.4409134Z",
+    "baseUrl":  "http://127.0.0.1:8080",
+    "userPrefix":  "perf_p4",
+    "datasetPrefix":  "PERF_P4",
+    "principalCount":  5,
+    "batchCountPerRun":  5,
+    "rowsPerBatch":  200,
+    "taskCountPerRun":  1000,
+    "principals":  [
+                       {
+                           "username":  "perf_p4_01",
+                           "courseId":  65874,
+                           "courseCode":  "PERF_P4-01"
+                       },
+                       {
+                           "username":  "perf_p4_02",
+                           "courseId":  65875,
+                           "courseCode":  "PERF_P4-02"
+                       },
+                       {
+                           "username":  "perf_p4_03",
+                           "courseId":  65876,
+                           "courseCode":  "PERF_P4-03"
+                       },
+                       {
+                           "username":  "perf_p4_04",
+                           "courseId":  65877,
+                           "courseCode":  "PERF_P4-04"
+                       },
+                       {
+                           "username":  "perf_p4_05",
+                           "courseId":  65878,
+                           "courseCode":  "PERF_P4-05"
+                       }
+                   ],
+    "dataPresent":  false,
+    "cleanedAt":  "2026-08-09T13:51:36.1360649Z"
+}
