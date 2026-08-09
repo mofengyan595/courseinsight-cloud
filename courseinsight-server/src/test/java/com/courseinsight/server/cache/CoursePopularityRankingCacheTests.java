@@ -8,12 +8,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.script.RedisScript;
 
 import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -70,24 +72,20 @@ class CoursePopularityRankingCacheTests {
     }
 
     @Test
-    void shouldWriteRankingAndReadyMarkerWithTtl() {
-        given(redisTemplate.opsForZSet()).willReturn(zSetOperations);
-        given(redisTemplate.opsForValue()).willReturn(valueOperations);
-
+    void shouldPublishRankingAndReadyMarkerWithSingleScript() {
         rankingCache.put(List.of(new CoursePopularityRankingEntry(14L, 6)));
 
-        verify(zSetOperations).add(
-                org.mockito.ArgumentMatchers.eq(CoursePopularityRankingCache.RANKING_KEY),
-                anySet()
-        );
-        verify(redisTemplate).expire(
-                CoursePopularityRankingCache.RANKING_KEY,
-                CoursePopularityRankingCache.RANKING_TTL
-        );
-        verify(valueOperations).set(
-                CoursePopularityRankingCache.READY_KEY,
-                CoursePopularityRankingCache.READY_VALUE,
-                CoursePopularityRankingCache.RANKING_TTL
+        verify(redisTemplate).execute(
+                any(RedisScript.class),
+                eq(List.of(
+                        CoursePopularityRankingCache.RANKING_KEY,
+                        CoursePopularityRankingCache.READY_KEY
+                )),
+                eq("600000"),
+                eq("601000"),
+                eq(CoursePopularityRankingCache.READY_VALUE),
+                eq("6"),
+                eq("00000000000000000014")
         );
     }
 

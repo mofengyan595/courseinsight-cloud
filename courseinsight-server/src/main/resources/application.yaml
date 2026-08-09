@@ -37,6 +37,17 @@ courseinsight:
       secret: ${JWT_SECRET}
       issuer: ${JWT_ISSUER:https://courseinsight.local}
       access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:2h}
+    authentication-rate-limit:
+      # Fixed-window Redis limits. All values are operationally tunable.
+      login-source:
+        max-requests: ${AUTH_LOGIN_SOURCE_MAX_REQUESTS:20}
+        window: ${AUTH_LOGIN_SOURCE_WINDOW:1m}
+      login-account:
+        max-requests: ${AUTH_LOGIN_ACCOUNT_MAX_REQUESTS:10}
+        window: ${AUTH_LOGIN_ACCOUNT_WINDOW:5m}
+      registration-source:
+        max-requests: ${AUTH_REGISTER_SOURCE_MAX_REQUESTS:5}
+        window: ${AUTH_REGISTER_SOURCE_WINDOW:10m}
   ai-service:
     base-url: ${AI_SERVICE_BASE_URL:http://127.0.0.1:8001}
     connect-timeout: 2s

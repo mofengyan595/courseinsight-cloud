@@ -1,17 +1,21 @@
 package com.courseinsight.server.config;
 
 import com.courseinsight.server.common.ApiResponse;
+import com.courseinsight.server.mapper.AppUserMapper;
+import com.courseinsight.server.security.CurrentUserJwtAuthenticationConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -20,12 +24,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 @Configuration
+@EnableConfigurationProperties(AuthenticationRateLimitProperties.class)
 public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
-            ObjectMapper objectMapper) throws Exception {
+            ObjectMapper objectMapper,
+            Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter)
+            throws Exception {
         AuthenticationEntryPoint authenticationEntryPoint = (request, response, exception) ->
                 writeError(
                         response,
@@ -77,25 +84,16 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .authenticationEntryPoint(authenticationEntryPoint)
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(
-                                jwtAuthenticationConverter()
+                                jwtAuthenticationConverter
                         )));
 
         return http.build();
     }
 
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter =
-                new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthoritiesClaimName("role");
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
-
-        JwtAuthenticationConverter authenticationConverter =
-                new JwtAuthenticationConverter();
-        authenticationConverter.setJwtGrantedAuthoritiesConverter(
-                authoritiesConverter
-        );
-        return authenticationConverter;
+    public Converter<Jwt, AbstractAuthenticationToken> jwtAuthenticationConverter(
+            AppUserMapper appUserMapper) {
+        return new CurrentUserJwtAuthenticationConverter(appUserMapper);
     }
 
     private void writeError(

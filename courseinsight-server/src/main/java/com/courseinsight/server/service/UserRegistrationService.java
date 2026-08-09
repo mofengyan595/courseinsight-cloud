@@ -11,8 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
-
 @Service
 public class UserRegistrationService {
 
@@ -29,7 +27,7 @@ public class UserRegistrationService {
     @Transactional
     public UserRegisterResponse register(UserRegisterRequest request) {
         AppUser user = new AppUser();
-        user.setUsername(request.username().trim().toLowerCase(Locale.ROOT));
+        user.setUsername(UsernameNormalizer.normalize(request.username()));
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setDisplayName(request.displayName().trim());
         user.setRole(UserRole.STUDENT.name());

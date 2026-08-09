@@ -1,16 +1,17 @@
 package com.courseinsight.server.cache;
 
+import org.springframework.core.io.ClassPathResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.redis.core.DefaultTypedTuple;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
-import java.util.LinkedHashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -21,14 +22,21 @@ public class CoursePopularityRankingCache {
     static final String READY_KEY = "course:ranking:popular:ready";
     static final String READY_VALUE = "1";
     static final Duration RANKING_TTL = Duration.ofMinutes(10);
+    static final Duration RANKING_DATA_TTL = RANKING_TTL.plusSeconds(1);
 
     private static final Logger LOGGER =
             LoggerFactory.getLogger(CoursePopularityRankingCache.class);
 
     private final StringRedisTemplate redisTemplate;
+    private final DefaultRedisScript<Long> publishScript;
 
     public CoursePopularityRankingCache(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
+        this.publishScript = new DefaultRedisScript<>();
+        this.publishScript.setLocation(new ClassPathResource(
+                "redis/publish-course-popularity-ranking.lua"
+        ));
+        this.publishScript.setResultType(Long.class);
     }
 
     public CoursePopularityRankingCacheLookup get(int limit) {
@@ -61,19 +69,19 @@ public class CoursePopularityRankingCache {
 
     public void put(List<CoursePopularityRankingEntry> entries) {
         try {
-            redisTemplate.delete(RANKING_KEY);
-            if (!entries.isEmpty()) {
-                Set<ZSetOperations.TypedTuple<String>> tuples = new LinkedHashSet<>();
-                for (CoursePopularityRankingEntry entry : entries) {
-                    tuples.add(new DefaultTypedTuple<>(
-                            formatCourseId(entry.courseId()),
-                            (double) entry.commentCount()
-                    ));
-                }
-                redisTemplate.opsForZSet().add(RANKING_KEY, tuples);
-                redisTemplate.expire(RANKING_KEY, RANKING_TTL);
+            List<String> arguments = new ArrayList<>(3 + entries.size() * 2);
+            arguments.add(String.valueOf(RANKING_TTL.toMillis()));
+            arguments.add(String.valueOf(RANKING_DATA_TTL.toMillis()));
+            arguments.add(READY_VALUE);
+            for (CoursePopularityRankingEntry entry : entries) {
+                arguments.add(String.valueOf(entry.commentCount()));
+                arguments.add(formatCourseId(entry.courseId()));
             }
-            redisTemplate.opsForValue().set(READY_KEY, READY_VALUE, RANKING_TTL);
+            redisTemplate.execute(
+                    publishScript,
+                    List.of(RANKING_KEY, READY_KEY),
+                    arguments.toArray()
+            );
         } catch (RuntimeException exception) {
             LOGGER.warn("Redis course ranking write failed, response still uses MySQL data", exception);
         }

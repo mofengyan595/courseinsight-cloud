@@ -11,8 +11,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Locale;
-
 @Service
 public class UserLoginService {
 
@@ -33,7 +31,7 @@ public class UserLoginService {
 
     @Transactional(readOnly = true)
     public UserLoginResponse login(UserLoginRequest request) {
-        String username = request.username().trim().toLowerCase(Locale.ROOT);
+        String username = UsernameNormalizer.normalize(request.username());
         AppUser user = appUserMapper.selectOne(
                 Wrappers.<AppUser>lambdaQuery()
                         .eq(AppUser::getUsername, username)

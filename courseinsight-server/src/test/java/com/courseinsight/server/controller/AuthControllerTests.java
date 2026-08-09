@@ -4,7 +4,9 @@ import com.courseinsight.server.dto.UserLoginResponse;
 import com.courseinsight.server.dto.UserRegisterResponse;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.InvalidCredentialsException;
+import com.courseinsight.server.exception.RateLimitExceededException;
 import com.courseinsight.server.exception.UsernameAlreadyExistsException;
+import com.courseinsight.server.ratelimit.AuthenticationRateLimitService;
 import com.courseinsight.server.service.UserLoginService;
 import com.courseinsight.server.service.UserRegistrationService;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -36,6 +40,9 @@ class AuthControllerTests {
 
     @MockitoBean
     private UserLoginService loginService;
+
+    @MockitoBean
+    private AuthenticationRateLimitService authenticationRateLimitService;
 
     @Test
     void shouldRegisterUser() throws Exception {
@@ -116,6 +123,11 @@ class AuthControllerTests {
                 ));
 
         mockMvc.perform(post("/api/auth/login")
+                        .with(request -> {
+                            request.setRemoteAddr("198.51.100.10");
+                            return request;
+                        })
+                        .header("X-Forwarded-For", "203.0.113.99")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -130,6 +142,11 @@ class AuthControllerTests {
                 .andExpect(jsonPath("$.data.expiresIn").value(7200))
                 .andExpect(jsonPath("$.data.userId").value(1))
                 .andExpect(jsonPath("$.data.role").value("STUDENT"));
+
+        verify(authenticationRateLimitService).checkLogin(
+                "198.51.100.10",
+                "student_01"
+        );
     }
 
     @Test
@@ -165,5 +182,59 @@ class AuthControllerTests {
                 .andExpect(jsonPath("$.message").value("密码不能为空"));
 
         verifyNoInteractions(loginService);
+    }
+
+    @Test
+    void shouldReturnTooManyRequestsWhenLoginLimitIsExceeded() throws Exception {
+        willThrow(new RateLimitExceededException("登录请求过于频繁，请稍后再试"))
+                .given(authenticationRateLimitService)
+                .checkLogin("198.51.100.20", "missing_user");
+
+        mockMvc.perform(post("/api/auth/login")
+                        .with(request -> {
+                            request.setRemoteAddr("198.51.100.20");
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "missing_user",
+                                  "password": "wrong-password"
+                                }
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(429))
+                .andExpect(jsonPath("$.message")
+                        .value("登录请求过于频繁，请稍后再试"));
+
+        verifyNoInteractions(loginService);
+    }
+
+    @Test
+    void shouldReturnTooManyRequestsWhenRegistrationLimitIsExceeded()
+            throws Exception {
+        willThrow(new RateLimitExceededException("注册请求过于频繁，请稍后再试"))
+                .given(authenticationRateLimitService)
+                .checkRegistration("198.51.100.30");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .with(request -> {
+                            request.setRemoteAddr("198.51.100.30");
+                            return request;
+                        })
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "student_02",
+                                  "password": "password123",
+                                  "displayName": "测试学生"
+                                }
+                                """))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value(429))
+                .andExpect(jsonPath("$.message")
+                        .value("注册请求过于频繁，请稍后再试"));
+
+        verifyNoInteractions(registrationService);
     }
 }

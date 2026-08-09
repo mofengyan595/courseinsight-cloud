@@ -43,6 +43,17 @@ RocketMQ NameServer 与 AI 服务继续使用 `application.yaml` 中的本机映
 
 在 IntelliJ IDEA 中启动时，将运行配置的 Active profiles 设置为 `local`，效果相同。
 
+## 认证接口限流
+
+`POST /api/auth/login` 同时按请求来源和规范化后的用户名限流，默认分别为每分钟
+20 次、每 5 分钟 10 次；`POST /api/auth/register` 默认按请求来源每 10 分钟
+5 次。阈值和窗口可通过 `.env.example` 中的 `AUTH_*` 配置调整。Redis 不可用时与
+已有业务限流保持一致，暂时放行请求并记录警告，避免认证入口因缓存故障整体不可用。
+
+当前请求来源只使用 Servlet 容器提供的 `getRemoteAddr()`，不会信任客户端直接发送的
+`X-Forwarded-For` 或 `X-Real-IP`。部署在反向代理之后时，需要先在容器/框架层配置明确
+可信的代理和 forwarded-header 处理，否则所有请求可能表现为同一个代理地址。
+
 Compose 生命周期为 `start-only`。停止 Java 不会停止或重建 MySQL、Redis、
 RocketMQ 和 AI 服务，下一次启动 Java 会复用已经运行的服务。需要手动停止共享服务时，
 在仓库根目录运行：

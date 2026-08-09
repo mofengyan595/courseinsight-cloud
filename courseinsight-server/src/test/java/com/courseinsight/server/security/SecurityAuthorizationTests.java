@@ -12,7 +12,9 @@ import com.courseinsight.server.dto.CoursePageQuery;
 import com.courseinsight.server.dto.AnalysisBatchCreateResponse;
 import com.courseinsight.server.dto.AnalysisBatchRetryResponse;
 import com.courseinsight.server.dto.CourseAnalyticsSummaryResponse;
+import com.courseinsight.server.entity.AppUser;
 import com.courseinsight.server.entity.UserRole;
+import com.courseinsight.server.mapper.AppUserMapper;
 import com.courseinsight.server.service.AdminUserService;
 import com.courseinsight.server.service.AnalysisBatchService;
 import com.courseinsight.server.service.AnalysisBatchRecoveryService;
@@ -20,6 +22,7 @@ import com.courseinsight.server.service.AnalysisBatchResultService;
 import com.courseinsight.server.service.CommentService;
 import com.courseinsight.server.service.CourseService;
 import com.courseinsight.server.service.CourseAnalyticsService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -95,6 +98,22 @@ class SecurityAuthorizationTests {
 
     @MockitoBean
     private JwtDecoder jwtDecoder;
+
+    @MockitoBean
+    private AppUserMapper appUserMapper;
+
+    private String authoritativeRole;
+
+    @BeforeEach
+    void stubAuthoritativeUser() {
+        given(appUserMapper.selectById(1L)).willAnswer(ignored -> {
+            AppUser user = new AppUser();
+            user.setId(1L);
+            user.setRole(authoritativeRole);
+            user.setStatus(1);
+            return user;
+        });
+    }
 
     @Test
     void shouldAllowPublicHealthEndpoint() throws Exception {
@@ -365,6 +384,8 @@ class SecurityAuthorizationTests {
     }
 
     private Jwt jwt(String tokenValue, String role) {
+        authoritativeRole = role;
+
         Instant issuedAt = Instant.now();
         return new Jwt(
                 tokenValue,

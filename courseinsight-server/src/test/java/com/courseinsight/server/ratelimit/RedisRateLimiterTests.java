@@ -10,6 +10,7 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -75,6 +76,25 @@ class RedisRateLimiterTests {
         assertThatCode(() -> rateLimiter.check(
                 RateLimitPolicy.COMMENT_SUBMISSION,
                 7L
+        )).doesNotThrowAnyException();
+    }
+
+    @Test
+    void shouldFailOpenForAuthenticationLimitWhenRedisIsUnavailable() {
+        given(redisTemplate.execute(
+                any(RedisScript.class),
+                eq(List.of("rate-limit:authentication-login:source:fingerprint")),
+                eq("20"),
+                eq("60")
+        )).willThrow(new DataAccessResourceFailureException("Redis unavailable"));
+
+        assertThatCode(() -> rateLimiter.check(
+                "authentication-login",
+                "source",
+                "fingerprint",
+                20,
+                Duration.ofMinutes(1),
+                "登录请求过于频繁，请稍后再试"
         )).doesNotThrowAnyException();
     }
 }

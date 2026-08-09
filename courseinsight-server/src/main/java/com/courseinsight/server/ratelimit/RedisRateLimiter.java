@@ -8,6 +8,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.List;
 
 @Component
@@ -30,37 +31,65 @@ public class RedisRateLimiter {
     }
 
     public void check(RateLimitPolicy policy, Long userId) {
-        String key = buildKey(policy, userId);
+        check(
+                buildUserKey(policy, userId),
+                policy.keySegment(),
+                policy.maxRequests(),
+                policy.windowSeconds(),
+                policy.exceededMessage()
+        );
+    }
+
+    public void check(
+            String keySegment,
+            String dimension,
+            String identityFingerprint,
+            int maxRequests,
+            Duration window,
+            String exceededMessage) {
+        check(
+                KEY_PREFIX + keySegment + ":" + dimension + ":" + identityFingerprint,
+                keySegment + ":" + dimension,
+                maxRequests,
+                Math.toIntExact(window.toSeconds()),
+                exceededMessage
+        );
+    }
+
+    private void check(
+            String key,
+            String policyLabel,
+            int maxRequests,
+            int windowSeconds,
+            String exceededMessage) {
         try {
             Long allowed = redisTemplate.execute(
                     rateLimitScript,
                     List.of(key),
-                    String.valueOf(policy.maxRequests()),
-                    String.valueOf(policy.windowSeconds())
+                    String.valueOf(maxRequests),
+                    String.valueOf(windowSeconds)
             );
             if (Long.valueOf(0).equals(allowed)) {
-                throw new RateLimitExceededException(policy.exceededMessage());
+                throw new RateLimitExceededException(exceededMessage);
             }
             if (allowed == null) {
                 LOGGER.warn(
-                        "Redis rate limit returned no result for policy={}, userId={}, allowing request",
-                        policy,
-                        userId
+                        "Redis rate limit returned no result for policy={}, allowing request",
+                        policyLabel
                 );
             }
         } catch (RateLimitExceededException exception) {
             throw exception;
         } catch (RuntimeException exception) {
             LOGGER.warn(
-                    "Redis rate limit failed for policy={}, userId={}, allowing request",
-                    policy,
-                    userId,
+                    "Redis rate limit failed for policy={}, allowing request",
+                    policyLabel,
                     exception
             );
         }
     }
 
-    private String buildKey(RateLimitPolicy policy, Long userId) {
+    private String buildUserKey(RateLimitPolicy policy, Long userId) {
         return KEY_PREFIX + policy.keySegment() + ":user:" + userId;
     }
 }
