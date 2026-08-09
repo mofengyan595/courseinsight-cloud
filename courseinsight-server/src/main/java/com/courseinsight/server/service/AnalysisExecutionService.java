@@ -15,6 +15,7 @@ import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.exception.StaleAnalysisExecutionException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
+import com.courseinsight.server.metrics.CourseInsightMetrics;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class AnalysisExecutionService {
     private final CourseAnalyticsCache courseAnalyticsCache;
     private final RedisRateLimiter rateLimiter;
     private final AnalysisExecutionProperties executionProperties;
+    private final CourseInsightMetrics metrics;
 
     public AnalysisExecutionService(
             AnalysisTaskMapper analysisTaskMapper,
@@ -42,7 +44,8 @@ public class AnalysisExecutionService {
             CourseManagementAccessService managementAccessService,
             CourseAnalyticsCache courseAnalyticsCache,
             RedisRateLimiter rateLimiter,
-            AnalysisExecutionProperties executionProperties) {
+            AnalysisExecutionProperties executionProperties,
+            CourseInsightMetrics metrics) {
         this.analysisTaskMapper = analysisTaskMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.aiAnalysisClient = aiAnalysisClient;
@@ -51,6 +54,7 @@ public class AnalysisExecutionService {
         this.courseAnalyticsCache = courseAnalyticsCache;
         this.rateLimiter = rateLimiter;
         this.executionProperties = executionProperties;
+        this.metrics = metrics;
     }
 
     public AnalysisExecutionResponse execute(Long taskId) {
@@ -129,12 +133,14 @@ public class AnalysisExecutionService {
                     true
             );
             try {
-                return persistenceService.saveSuccess(
+                AnalysisExecutionResponse result = persistenceService.saveSuccess(
                         task,
                         response,
                         eventId,
                         executionToken
                 );
+                metrics.analysisTaskSucceeded();
+                return result;
             } catch (StaleAnalysisExecutionException exception) {
                 if (messageDriven) {
                     return null;
@@ -194,6 +200,7 @@ public class AnalysisExecutionService {
                     terminalFailure
             ) == 1;
             if (updated) {
+                metrics.analysisTaskFailed(terminalFailure);
                 courseAnalyticsCache.evict(courseId);
             }
             return updated;

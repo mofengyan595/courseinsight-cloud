@@ -73,3 +73,29 @@ courseinsight:
     batch-size: ${OUTBOX_BATCH_SIZE:20}
     retry-delay-seconds: ${OUTBOX_RETRY_DELAY_SECONDS:30}
     recovery-timeout-seconds: ${OUTBOX_RECOVERY_TIMEOUT_SECONDS:300}
+
+management:
+  endpoints:
+    access:
+      default: none
+    web:
+      discovery:
+        enabled: false
+      exposure:
+        include: "health,prometheus"
+    jmx:
+      exposure:
+        exclude: "*"
+  endpoint:
+    health:
+      access: read-only
+      show-details: never
+    prometheus:
+      access: read-only
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        courseinsight.ai.request: true

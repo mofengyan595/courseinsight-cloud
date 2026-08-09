@@ -7,6 +7,7 @@ import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.entity.AnalysisOutboxStatus;
 import com.courseinsight.server.exception.MessageQueueException;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
+import com.courseinsight.server.metrics.CourseInsightMetrics;
 import org.apache.ibatis.builder.MapperBuilderAssistant;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,9 @@ class AnalysisOutboxPublisherTests {
     @Mock
     private AnalysisTaskMessageProducer messageProducer;
 
+    @Mock
+    private CourseInsightMetrics metrics;
+
     private AnalysisOutboxPublisher publisher;
 
     @BeforeEach
@@ -52,7 +56,8 @@ class AnalysisOutboxPublisherTests {
                 messageProducer,
                 20,
                 30,
-                300
+                300,
+                metrics
         );
     }
 
@@ -68,6 +73,7 @@ class AnalysisOutboxPublisherTests {
 
         verify(messageProducer).send(any(AnalysisTaskCreatedEvent.class));
         verify(outboxEventMapper, times(2)).update(any(), any(Wrapper.class));
+        verify(metrics).outboxPublishSucceeded();
     }
 
     @Test
@@ -82,6 +88,7 @@ class AnalysisOutboxPublisherTests {
 
         verify(messageProducer).send(any(AnalysisTaskCreatedEvent.class));
         verify(outboxEventMapper, times(2)).update(any(), any(Wrapper.class));
+        verify(metrics).outboxPublishFailed();
     }
 
     @Test

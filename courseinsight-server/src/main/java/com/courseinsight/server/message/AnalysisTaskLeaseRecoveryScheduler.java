@@ -1,5 +1,6 @@
 package com.courseinsight.server.message;
 
+import com.courseinsight.server.metrics.CourseInsightMetrics;
 import com.courseinsight.server.service.AnalysisTaskLeaseRecoveryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +21,13 @@ public class AnalysisTaskLeaseRecoveryScheduler {
     );
 
     private final AnalysisTaskLeaseRecoveryService recoveryService;
+    private final CourseInsightMetrics metrics;
 
     public AnalysisTaskLeaseRecoveryScheduler(
-            AnalysisTaskLeaseRecoveryService recoveryService) {
+            AnalysisTaskLeaseRecoveryService recoveryService,
+            CourseInsightMetrics metrics) {
         this.recoveryService = recoveryService;
+        this.metrics = metrics;
     }
 
     @Scheduled(
@@ -32,6 +36,7 @@ public class AnalysisTaskLeaseRecoveryScheduler {
     )
     public void recoverExpired() {
         int recovered = recoveryService.recoverExpired();
+        metrics.analysisTaskLeaseRecovered(recovered);
         if (recovered > 0) {
             log.warn("Recovered {} expired analysis task executions", recovered);
         }

@@ -8,6 +8,7 @@ import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
+import com.courseinsight.server.metrics.CourseInsightMetrics;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,9 @@ class AnalysisExecutionAuthorizationTests {
 
     @Mock
     private AnalysisExecutionProperties executionProperties;
+
+    @Mock
+    private CourseInsightMetrics metrics;
 
     @InjectMocks
     private AnalysisExecutionService analysisExecutionService;

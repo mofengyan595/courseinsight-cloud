@@ -1,6 +1,8 @@
 package com.courseinsight.server.client;
 
 import com.courseinsight.server.exception.AiServiceException;
+import com.courseinsight.server.metrics.CourseInsightMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -148,7 +150,8 @@ class AiAnalysisClientTests {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         AiAnalysisClient client = new AiAnalysisClient(
-                builder.baseUrl("http://ai-service:8000").build()
+                builder.baseUrl("http://ai-service:8000").build(),
+                new CourseInsightMetrics(new SimpleMeterRegistry())
         );
         return new TestClient(client, server);
     }

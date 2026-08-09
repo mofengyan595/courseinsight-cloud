@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.entity.AnalysisOutboxStatus;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
+import com.courseinsight.server.metrics.CourseInsightMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,18 +32,21 @@ public class AnalysisOutboxPublisher {
     private final int batchSize;
     private final long retryDelaySeconds;
     private final long recoveryTimeoutSeconds;
+    private final CourseInsightMetrics metrics;
 
     public AnalysisOutboxPublisher(
             AnalysisOutboxEventMapper outboxEventMapper,
             AnalysisTaskMessageProducer messageProducer,
             @Value("${courseinsight.outbox.batch-size:20}") int batchSize,
             @Value("${courseinsight.outbox.retry-delay-seconds:30}") long retryDelaySeconds,
-            @Value("${courseinsight.outbox.recovery-timeout-seconds:300}") long recoveryTimeoutSeconds) {
+            @Value("${courseinsight.outbox.recovery-timeout-seconds:300}") long recoveryTimeoutSeconds,
+            CourseInsightMetrics metrics) {
         this.outboxEventMapper = outboxEventMapper;
         this.messageProducer = messageProducer;
         this.batchSize = batchSize;
         this.retryDelaySeconds = retryDelaySeconds;
         this.recoveryTimeoutSeconds = recoveryTimeoutSeconds;
+        this.metrics = metrics;
     }
 
     @Scheduled(
@@ -82,8 +86,10 @@ public class AnalysisOutboxPublisher {
             );
             String messageId = messageProducer.send(message);
             markSent(outboxId, messageId);
+            metrics.outboxPublishSucceeded();
         } catch (RuntimeException exception) {
             markFailed(outboxId, event.getEventId(), exception);
+            metrics.outboxPublishFailed();
         }
     }
 

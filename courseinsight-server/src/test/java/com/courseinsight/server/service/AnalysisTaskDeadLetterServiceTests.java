@@ -3,6 +3,7 @@ package com.courseinsight.server.service;
 import com.courseinsight.server.cache.CourseAnalyticsCache;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
+import com.courseinsight.server.metrics.CourseInsightMetrics;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +24,9 @@ class AnalysisTaskDeadLetterServiceTests {
     @Mock
     private CourseAnalyticsCache analyticsCache;
 
+    @Mock
+    private CourseInsightMetrics metrics;
+
     @InjectMocks
     private AnalysisTaskDeadLetterService service;
 
@@ -37,6 +41,7 @@ class AnalysisTaskDeadLetterServiceTests {
         assertThat(service.markDeadLettered(60L, "event-2")).isTrue();
 
         verify(analyticsCache).evict(14L);
+        verify(metrics).analysisTaskDeadLettered();
     }
 
     @Test

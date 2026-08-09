@@ -43,6 +43,69 @@ RocketMQ NameServer 与 AI 服务继续使用 `application.yaml` 中的本机映
 
 在 IntelliJ IDEA 中启动时，将运行配置的 Active profiles 设置为 `local`，效果相同。
 
+## 本地监控
+
+本地监控链路为 Spring Boot Actuator / Micrometer → Prometheus → Grafana。
+Prometheus 和 Grafana 位于可选的 Compose `observability` profile 中，不会被普通
+`local` profile 强制启动。最短启动流程如下：
+
+1. 在 `courseinsight-server` 目录启动本地应用；Spring Boot 会按现有 `start-only`
+   方式启动 MySQL、Redis、RocketMQ 和 AI 服务：
+
+   ```powershell
+   .\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=local'
+   ```
+
+2. 保持 Java 运行，在另一个终端从仓库根目录启动监控组件：
+
+   ```powershell
+   docker compose --profile observability up -d prometheus grafana
+   ```
+
+3. 打开以下地址：
+
+   - Spring Boot 健康检查：<http://localhost:8080/actuator/health>
+   - Spring Boot Prometheus 指标：<http://localhost:8080/actuator/prometheus>
+   - Prometheus：<http://localhost:9090>
+   - Prometheus targets：<http://localhost:9090/targets>
+   - Grafana：<http://localhost:3000>
+   - `CourseInsight Overview` dashboard：
+     <http://localhost:3000/d/courseinsight-overview/courseinsight-overview>
+
+Grafana 仅绑定本机回环地址，并为本地开发启用了匿名 Viewer；Prometheus data source
+和 dashboard 都会在容器启动时自动 provisioning，无需手工添加。默认抓取间隔为
+15 秒，Prometheus 数据保留 7 天。端口可通过 `.env` 中的 `PROMETHEUS_PORT` 和
+`GRAFANA_PORT` 覆盖。
+
+可用以下命令做最小验证：
+
+```powershell
+Invoke-RestMethod http://localhost:8080/actuator/health
+(Invoke-WebRequest http://localhost:8080/actuator/prometheus).Content |
+    Select-String 'jvm_memory_used_bytes|http_server_requests|courseinsight_'
+Invoke-RestMethod http://localhost:9090/api/v1/targets
+Invoke-RestMethod http://localhost:3000/api/health
+```
+
+Dashboard 包含 HTTP 请求速率、p95 延迟、5xx，JVM heap、GC pause，HikariCP
+active/max，以及 AI 请求速率/p95/失败、Analysis Task 生命周期事件和 Outbox 发布
+结果。自定义指标只使用固定的 `outcome` tag：
+
+- `courseinsight.ai.request`：Timer，区分 `success`、`retryable_failure`、
+  `terminal_failure`；
+- `courseinsight.analysis.task`：Counter，区分 `success`、`retryable_failure`、
+  `terminal_failure`、`lease_recovery`、`dlq_terminal`；
+- `courseinsight.outbox.publish`：Counter，区分 `success`、`failure`。
+
+本阶段没有增加任务状态或 Outbox backlog Gauge。现有实现没有可复用的低成本聚合，
+为这些 Gauge 在每次 Prometheus 抓取时扫描业务表不适合本地开发基线。
+
+仅停止监控组件且保留监控数据：
+
+```powershell
+docker compose --profile observability stop grafana prometheus
+```
+
 ## 认证接口限流
 
 `POST /api/auth/login` 同时按请求来源和规范化后的用户名限流，默认分别为每分钟

@@ -2,6 +2,8 @@ package com.courseinsight.server.client;
 
 import com.courseinsight.server.exception.NonRetryableAiServiceException;
 import com.courseinsight.server.exception.RetryableAiServiceException;
+import com.courseinsight.server.metrics.CourseInsightMetrics;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -76,7 +78,10 @@ class AiAnalysisFailureClassificationTests {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
         return new TestClient(
-                new AiAnalysisClient(builder.baseUrl("http://ai").build()),
+                new AiAnalysisClient(
+                        builder.baseUrl("http://ai").build(),
+                        new CourseInsightMetrics(new SimpleMeterRegistry())
+                ),
                 server
         );
     }
