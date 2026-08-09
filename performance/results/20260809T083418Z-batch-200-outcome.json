@@ -1,0 +1,40 @@
+{
+    "batchId":  36,
+    "courseId":  224,
+    "createLatencyMs":  1551.819381,
+    "totalCompletionMs":  375100,
+    "status":  "COMPLETED",
+    "successCount":  200,
+    "terminalFailureCount":  0,
+    "maxRetryingCountObserved":  0,
+    "gitCommit":  "b308586f8fd889b65be5965feff059eddd380bc4",
+    "consumerConcurrency":  1,
+    "databaseCreatedAt":  "2026-08-09T16:34:19.147+08:00",
+    "databaseCompletedAt":  "2026-08-09T16:40:33.259+08:00",
+    "databaseTerminalDurationMs":  374112,
+    "taskRetryCount":  0,
+    "maxTaskRetryCount":  0,
+    "outboxSentCount":  200,
+    "outboxFailureCount":  0,
+    "outboxRetryCount":  0,
+    "aiRequestCount":  200,
+    "aiRequestRatePerSecond":  0.5331911490269261,
+    "aiP95Ms":  3161.5731465,
+    "aiTotalTimeMs":  364575.8041,
+    "aiAverageMs":  1822.8790205,
+    "aiShareOfCompletion":  0.97194295947747267,
+    "actualAiResultSources":  [
+                                  {
+                                      "sentimentSource":  "bert",
+                                      "sentimentDevice":  "cpu",
+                                      "adviceSource":  "llm_api",
+                                      "count":  193
+                                  },
+                                  {
+                                      "sentimentSource":  "bert+rule",
+                                      "sentimentDevice":  "cpu",
+                                      "adviceSource":  "llm_api",
+                                      "count":  7
+                                  }
+                              ]
+}
