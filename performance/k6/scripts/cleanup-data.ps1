@@ -21,6 +21,21 @@ function Write-Utf8NoBom {
         (New-Object Text.UTF8Encoding($false))
     )
 }
+
+function Remove-RedisKeysInBatches {
+    param(
+        [Parameter(Mandatory = $true)][string[]]$Keys,
+        [int]$BatchSize = 500
+    )
+    for ($offset = 0; $offset -lt $Keys.Count; $offset += $BatchSize) {
+        $last = [Math]::Min($offset + $BatchSize - 1, $Keys.Count - 1)
+        $batch = @($Keys[$offset..$last])
+        & docker exec courseinsight-redis redis-cli UNLINK @batch | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            throw 'MySQL rows were deleted, but Redis cache cleanup failed.'
+        }
+    }
+}
 if ([string]::IsNullOrWhiteSpace($ContextPath)) {
     $ContextPath = Join-Path $performanceRoot 'results\runtime-context.json'
 }
@@ -101,10 +116,7 @@ foreach ($id in $context.courseIds) {
 $keys += 'course:ranking:popular'
 $keys += 'course:ranking:popular:ready'
 if ($keys.Count -gt 0) {
-    & docker exec courseinsight-redis redis-cli DEL @keys | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw 'MySQL rows were deleted, but Redis cache cleanup failed.'
-    }
+    Remove-RedisKeysInBatches -Keys $keys
 }
 $context | Add-Member `
     -Force `

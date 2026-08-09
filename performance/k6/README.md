@@ -14,6 +14,8 @@
 - `scripts/cleanup-data.ps1`：按数据集前缀清理本测试创建的数据。
 - `../results/`：k6、Prometheus、batch outcome 和阶段报告。
 
+第三阶段严格 Cache A/B 和 arrival-rate 容量实验见 [HTTP_BENCHMARK.md](HTTP_BENCHMARK.md)。
+
 ## 前置条件
 
 1. Docker Desktop 可用，仓库根目录已有本地 `.env`，但不要把其中内容传给 k6。

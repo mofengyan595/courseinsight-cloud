@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "experimentId": "P3_HTTP",
+  "observations": [
+    {
+      "k6File": "20260809T115037Z-http-P3_HTTP-capacity-course-detail-hit-rps600-r1-k6.json",
+      "source": "captured k6 console final progress line",
+      "interruptedIterations": 2,
+      "note": "The run still met the predeclared >=99% achieved-RPS SLO; interruption is disclosed separately."
+    },
+    {
+      "scope": "pilot run 1",
+      "source": "k6 summary plus cache precondition artifact",
+      "excludedFromFormalResults": true,
+      "note": "The first pilot prewarmed 1000 keys but scheduled 1001 queries; the formal runner added 10 guard keys before formal runs."
+    }
+  ]
+}

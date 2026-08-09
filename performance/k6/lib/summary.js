@@ -46,6 +46,13 @@ export function performanceSummary(data) {
     consumerConcurrency: Number(__ENV.CONSUMER_CONCURRENCY || '1'),
     aiBackendState: __ENV.AI_BACKEND_STATE || null,
     virtualUserModel: __ENV.VU_MODEL || null,
+    experimentId: __ENV.EXPERIMENT_ID || null,
+    experimentPhase: __ENV.EXPERIMENT_PHASE || null,
+    endpoint: __ENV.ENDPOINT || null,
+    targetRps: Number(__ENV.TARGET_RPS || '0') || null,
+    durationSeconds: Number(__ENV.DURATION_SECONDS || '0') || null,
+    runNumber: Number(__ENV.RUN_NUMBER || '0') || null,
+    stableSlo: __ENV.STABLE_SLO || null,
   };
   const result = {
     metadata,

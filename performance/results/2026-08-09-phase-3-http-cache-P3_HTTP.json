@@ -1,0 +1,2235 @@
+{
+    "schemaVersion":  3,
+    "generatedAt":  "2026-08-09T12:05:13.9156380Z",
+    "experimentId":  "P3_HTTP",
+    "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+    "stableSlo":  "error_rate\u003c1%; p95\u003c200ms; achieved_rps\u003e=99% target; dropped_iterations=0",
+    "environment":  {
+                        "os":  "Microsoft Windows NT 10.0.26200.0",
+                        "cpu":  "AMD Ryzen 7 5800H with Radeon Graphics",
+                        "logicalProcessors":  16,
+                        "memoryBytes":  14888460288,
+                        "k6Image":  "grafana/k6:1.3.0",
+                        "prometheusScrapeIntervalSeconds":  15,
+                        "aiBackendHealth":  {
+                                                "status":  "UP",
+                                                "service":  "courseinsight-ai-service",
+                                                "configuredBackend":  "auto",
+                                                "activeBackend":  "bert",
+                                                "bertReady":  true,
+                                                "tfidfAvailable":  true,
+                                                "llmConfigured":  true
+                                            }
+                    },
+    "ab":  {
+               "workload":  {
+                                "executor":  "constant-arrival-rate",
+                                "targetRps":  100,
+                                "durationSeconds":  30,
+                                "repeats":  3,
+                                "uniqueKeyPerRequest":  true,
+                                "identicalIdOrder":  true
+                            },
+               "aggregates":  [
+                                  {
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "miss",
+                                      "repeats":  3,
+                                      "targetRps":  100,
+                                      "achievedRps":  {
+                                                          "mean":  100.033333,
+                                                          "sampleStdDev":  0,
+                                                          "min":  100.033333,
+                                                          "max":  100.033333
+                                                      },
+                                      "p50Ms":  {
+                                                    "mean":  11.113901,
+                                                    "sampleStdDev":  0.685413,
+                                                    "min":  10.627208,
+                                                    "max":  11.897746
+                                                },
+                                      "p95Ms":  {
+                                                    "mean":  14.313529,
+                                                    "sampleStdDev":  2.644127,
+                                                    "min":  12.722698,
+                                                    "max":  17.365789
+                                                },
+                                      "p99Ms":  {
+                                                    "mean":  17.367951,
+                                                    "sampleStdDev":  5.098465,
+                                                    "min":  14.348489,
+                                                    "max":  23.254493
+                                                },
+                                      "maxMs":  {
+                                                    "mean":  31.865097,
+                                                    "sampleStdDev":  9.452298,
+                                                    "min":  21.590935,
+                                                    "max":  40.19234
+                                                },
+                                      "errorRate":  {
+                                                        "mean":  0,
+                                                        "sampleStdDev":  0,
+                                                        "min":  0,
+                                                        "max":  0
+                                                    },
+                                      "hikariPeak":  {
+                                                         "mean":  1,
+                                                         "sampleStdDev":  0,
+                                                         "min":  1,
+                                                         "max":  1
+                                                     },
+                                      "processCpuMax":  {
+                                                            "mean":  0.031855,
+                                                            "sampleStdDev":  0.003068,
+                                                            "min":  0.028801,
+                                                            "max":  0.034937
+                                                        },
+                                      "mysqlComSelect":  {
+                                                             "mean":  6039.333333,
+                                                             "sampleStdDev":  0.57735,
+                                                             "min":  6039,
+                                                             "max":  6040
+                                                         },
+                                      "allPassed":  true
+                                  },
+                                  {
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "hit",
+                                      "repeats":  3,
+                                      "targetRps":  100,
+                                      "achievedRps":  {
+                                                          "mean":  100.022222,
+                                                          "sampleStdDev":  0.019245,
+                                                          "min":  100,
+                                                          "max":  100.033333
+                                                      },
+                                      "p50Ms":  {
+                                                    "mean":  8.509843,
+                                                    "sampleStdDev":  0.020323,
+                                                    "min":  8.487243,
+                                                    "max":  8.526617
+                                                },
+                                      "p95Ms":  {
+                                                    "mean":  10.685901,
+                                                    "sampleStdDev":  0.156369,
+                                                    "min":  10.556974,
+                                                    "max":  10.859839
+                                                },
+                                      "p99Ms":  {
+                                                    "mean":  12.303318,
+                                                    "sampleStdDev":  0.418242,
+                                                    "min":  11.900265,
+                                                    "max":  12.735251
+                                                },
+                                      "maxMs":  {
+                                                    "mean":  17.255552,
+                                                    "sampleStdDev":  1.860889,
+                                                    "min":  15.106817,
+                                                    "max":  18.340406
+                                                },
+                                      "errorRate":  {
+                                                        "mean":  0,
+                                                        "sampleStdDev":  0,
+                                                        "min":  0,
+                                                        "max":  0
+                                                    },
+                                      "hikariPeak":  {
+                                                         "mean":  0.666667,
+                                                         "sampleStdDev":  0.57735,
+                                                         "min":  0,
+                                                         "max":  1
+                                                     },
+                                      "processCpuMax":  {
+                                                            "mean":  0.024992,
+                                                            "sampleStdDev":  0.000392,
+                                                            "min":  0.024539,
+                                                            "max":  0.025238
+                                                        },
+                                      "mysqlComSelect":  {
+                                                             "mean":  3039,
+                                                             "sampleStdDev":  1,
+                                                             "min":  3038,
+                                                             "max":  3040
+                                                         },
+                                      "allPassed":  true
+                                  },
+                                  {
+                                      "endpoint":  "course-analytics",
+                                      "cacheState":  "miss",
+                                      "repeats":  3,
+                                      "targetRps":  100,
+                                      "achievedRps":  {
+                                                          "mean":  100.022222,
+                                                          "sampleStdDev":  0.019245,
+                                                          "min":  100,
+                                                          "max":  100.033333
+                                                      },
+                                      "p50Ms":  {
+                                                    "mean":  12.971735,
+                                                    "sampleStdDev":  0.18668,
+                                                    "min":  12.848912,
+                                                    "max":  13.186559
+                                                },
+                                      "p95Ms":  {
+                                                    "mean":  15.251807,
+                                                    "sampleStdDev":  0.331831,
+                                                    "min":  15.047681,
+                                                    "max":  15.634693
+                                                },
+                                      "p99Ms":  {
+                                                    "mean":  17.375859,
+                                                    "sampleStdDev":  1.232339,
+                                                    "min":  16.411015,
+                                                    "max":  18.764077
+                                                },
+                                      "maxMs":  {
+                                                    "mean":  39.76205,
+                                                    "sampleStdDev":  21.147225,
+                                                    "min":  27.003691,
+                                                    "max":  64.172406
+                                                },
+                                      "errorRate":  {
+                                                        "mean":  0,
+                                                        "sampleStdDev":  0,
+                                                        "min":  0,
+                                                        "max":  0
+                                                    },
+                                      "hikariPeak":  {
+                                                         "mean":  1.666667,
+                                                         "sampleStdDev":  0.57735,
+                                                         "min":  1,
+                                                         "max":  2
+                                                     },
+                                      "processCpuMax":  {
+                                                            "mean":  0.036518,
+                                                            "sampleStdDev":  0.000579,
+                                                            "min":  0.036076,
+                                                            "max":  0.037174
+                                                        },
+                                      "mysqlComSelect":  {
+                                                             "mean":  9040,
+                                                             "sampleStdDev":  2.645751,
+                                                             "min":  9037,
+                                                             "max":  9042
+                                                         },
+                                      "allPassed":  true
+                                  },
+                                  {
+                                      "endpoint":  "course-analytics",
+                                      "cacheState":  "hit",
+                                      "repeats":  3,
+                                      "targetRps":  100,
+                                      "achievedRps":  {
+                                                          "mean":  100.033333,
+                                                          "sampleStdDev":  0,
+                                                          "min":  100.033333,
+                                                          "max":  100.033333
+                                                      },
+                                      "p50Ms":  {
+                                                    "mean":  9.939159,
+                                                    "sampleStdDev":  0.379887,
+                                                    "min":  9.644914,
+                                                    "max":  10.368024
+                                                },
+                                      "p95Ms":  {
+                                                    "mean":  12.356892,
+                                                    "sampleStdDev":  0.972307,
+                                                    "min":  11.591474,
+                                                    "max":  13.450925
+                                                },
+                                      "p99Ms":  {
+                                                    "mean":  13.901774,
+                                                    "sampleStdDev":  1.292096,
+                                                    "min":  12.873009,
+                                                    "max":  15.351968
+                                                },
+                                      "maxMs":  {
+                                                    "mean":  20.642283,
+                                                    "sampleStdDev":  1.480978,
+                                                    "min":  19.685994,
+                                                    "max":  22.348202
+                                                },
+                                      "errorRate":  {
+                                                        "mean":  0,
+                                                        "sampleStdDev":  0,
+                                                        "min":  0,
+                                                        "max":  0
+                                                    },
+                                      "hikariPeak":  {
+                                                         "mean":  1,
+                                                         "sampleStdDev":  0,
+                                                         "min":  1,
+                                                         "max":  1
+                                                     },
+                                      "processCpuMax":  {
+                                                            "mean":  0.027127,
+                                                            "sampleStdDev":  0.002201,
+                                                            "min":  0.024879,
+                                                            "max":  0.029278
+                                                        },
+                                      "mysqlComSelect":  {
+                                                             "mean":  6040.666667,
+                                                             "sampleStdDev":  0.57735,
+                                                             "min":  6040,
+                                                             "max":  6041
+                                                         },
+                                      "allPassed":  true
+                                  }
+                              ],
+               "comparisons":  [
+                                   {
+                                       "endpoint":  "course-analytics",
+                                       "latencyReductionPercent":  {
+                                                                       "p50":  23.378,
+                                                                       "p95":  18.981,
+                                                                       "p99":  19.994
+                                                                   },
+                                       "achievedRpsChangePercent":  0.011,
+                                       "hikariPeakChangePercent":  -40,
+                                       "mysqlSelectReductionPercent":  33.178
+                                   },
+                                   {
+                                       "endpoint":  "course-detail",
+                                       "latencyReductionPercent":  {
+                                                                       "p50":  23.431,
+                                                                       "p95":  25.344,
+                                                                       "p99":  29.161
+                                                                   },
+                                       "achievedRpsChangePercent":  -0.011,
+                                       "hikariPeakChangePercent":  -33.333,
+                                       "mysqlSelectReductionPercent":  49.68
+                                   }
+                               ]
+           },
+    "capacity":  {
+                     "summary":  [
+                                     {
+                                         "cacheState":  "miss",
+                                         "maxStableRps":  600,
+                                         "firstFailureRps":  700,
+                                         "firstFailureReason":  [
+                                                                    "p95",
+                                                                    "achieved_rps",
+                                                                    "dropped_iterations"
+                                                                ]
+                                     },
+                                     {
+                                         "cacheState":  "hit",
+                                         "maxStableRps":  600,
+                                         "firstFailureRps":  700,
+                                         "firstFailureReason":  [
+                                                                    "p95",
+                                                                    "achieved_rps",
+                                                                    "dropped_iterations"
+                                                                ]
+                                     }
+                                 ],
+                     "runs":  [
+                                  {
+                                      "startedAt":  "2026-08-09T11:33:21.7341400Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "hit",
+                                      "targetRps":  100,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  3001,
+                                      "achievedRps":  100.033333,
+                                      "latencyMs":  {
+                                                        "avg":  8.9943063008997051,
+                                                        "p50":  8.767391,
+                                                        "p95":  10.990297,
+                                                        "p99":  13.002454,
+                                                        "max":  26.087372
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.023210444788782342,
+                                                        "processCpuUsageAvg":  0.012965704726949377,
+                                                        "systemCpuUsageMax":  0.5418837566600847,
+                                                        "jvmHeapUsedMaxBytes":  114532248,
+                                                        "jvmGcPauseSeconds":  0.01100000000000001,
+                                                        "jvmThreadsLiveMax":  108,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  1,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  3001,
+                                                        "redisKeyspaceMissesDelta":  0,
+                                                        "redisCpuSecondsDelta":  0.36439599999999928,
+                                                        "mysqlComSelectDelta":  3041,
+                                                        "mysqlQuestionsDelta":  18064,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T113321Z-http-P3_HTTP-capacity-course-detail-hit-rps100-r1-k6.json",
+                                                    "prometheus":  "20260809T113321Z-http-P3_HTTP-capacity-course-detail-hit-rps100-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:36:34.0344061Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "hit",
+                                      "targetRps":  200,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  6001,
+                                      "achievedRps":  200.033333,
+                                      "latencyMs":  {
+                                                        "avg":  9.0278845084152657,
+                                                        "p50":  8.839317,
+                                                        "p95":  11.359828,
+                                                        "p99":  12.901985,
+                                                        "max":  32.328075
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.049820330419480648,
+                                                        "processCpuUsageAvg":  0.025786883839148025,
+                                                        "systemCpuUsageMax":  0.41371765222526835,
+                                                        "jvmHeapUsedMaxBytes":  115182472,
+                                                        "jvmGcPauseSeconds":  0.020000000000000018,
+                                                        "jvmThreadsLiveMax":  107,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  2,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  6001,
+                                                        "redisKeyspaceMissesDelta":  0,
+                                                        "redisCpuSecondsDelta":  0.7038499999999992,
+                                                        "mysqlComSelectDelta":  6038,
+                                                        "mysqlQuestionsDelta":  36058,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T113634Z-http-P3_HTTP-capacity-course-detail-hit-rps200-r1-k6.json",
+                                                    "prometheus":  "20260809T113634Z-http-P3_HTTP-capacity-course-detail-hit-rps200-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:40:06.5440538Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "hit",
+                                      "targetRps":  400,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  12001,
+                                      "achievedRps":  400.033333,
+                                      "latencyMs":  {
+                                                        "avg":  9.7894188305140926,
+                                                        "p50":  9.517892,
+                                                        "p95":  12.258021,
+                                                        "p99":  15.321332,
+                                                        "max":  38.542179
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.099879215833951665,
+                                                        "processCpuUsageAvg":  0.052354332083043541,
+                                                        "systemCpuUsageMax":  0.5217670341256242,
+                                                        "jvmHeapUsedMaxBytes":  114433272,
+                                                        "jvmGcPauseSeconds":  0.04599999999999993,
+                                                        "jvmThreadsLiveMax":  109,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  4,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  12001,
+                                                        "redisKeyspaceMissesDelta":  0,
+                                                        "redisCpuSecondsDelta":  1.4383049999999962,
+                                                        "mysqlComSelectDelta":  12038,
+                                                        "mysqlQuestionsDelta":  72058,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T114006Z-http-P3_HTTP-capacity-course-detail-hit-rps400-r1-k6.json",
+                                                    "prometheus":  "20260809T114006Z-http-P3_HTTP-capacity-course-detail-hit-rps400-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:50:37.1488246Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "hit",
+                                      "targetRps":  600,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  17998,
+                                      "achievedRps":  599.933333,
+                                      "latencyMs":  {
+                                                        "avg":  12.555277773530436,
+                                                        "p50":  11.591795,
+                                                        "p95":  18.521263649999995,
+                                                        "p99":  32.123872429999949,
+                                                        "max":  51.542626
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.16633603021937637,
+                                                        "processCpuUsageAvg":  0.088364596956386182,
+                                                        "systemCpuUsageMax":  0.74481511695302483,
+                                                        "jvmHeapUsedMaxBytes":  170097992,
+                                                        "jvmGcPauseSeconds":  0.070999999999999952,
+                                                        "jvmThreadsLiveMax":  139,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  10,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  17998,
+                                                        "redisKeyspaceMissesDelta":  0,
+                                                        "redisCpuSecondsDelta":  2.1614019999999918,
+                                                        "mysqlComSelectDelta":  18045,
+                                                        "mysqlQuestionsDelta":  108050,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T115037Z-http-P3_HTTP-capacity-course-detail-hit-rps600-r1-k6.json",
+                                                    "prometheus":  "20260809T115037Z-http-P3_HTTP-capacity-course-detail-hit-rps600-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T12:01:18.8865651Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "hit",
+                                      "targetRps":  700,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  17355,
+                                      "achievedRps":  578.5,
+                                      "latencyMs":  {
+                                                        "avg":  229.21272185145509,
+                                                        "p50":  236.092254,
+                                                        "p95":  530.7657153,
+                                                        "p99":  736.68535759999952,
+                                                        "max":  1515.026981
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  3646,
+                                      "result":  "FAIL",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.19256218732533154,
+                                                        "processCpuUsageAvg":  0.096600118255635734,
+                                                        "systemCpuUsageMax":  0.98813922734311244,
+                                                        "jvmHeapUsedMaxBytes":  141840288,
+                                                        "jvmGcPauseSeconds":  0.19899999999999984,
+                                                        "jvmThreadsLiveMax":  287,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  10,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  17355,
+                                                        "redisKeyspaceMissesDelta":  0,
+                                                        "redisCpuSecondsDelta":  2.1215830000000011,
+                                                        "mysqlComSelectDelta":  17390,
+                                                        "mysqlQuestionsDelta":  104179,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T120118Z-http-P3_HTTP-capacity-course-detail-hit-rps700-r1-k6.json",
+                                                    "prometheus":  "20260809T120118Z-http-P3_HTTP-capacity-course-detail-hit-rps700-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:44:26.6191573Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "hit",
+                                      "targetRps":  800,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  23589,
+                                      "achievedRps":  786.3,
+                                      "latencyMs":  {
+                                                        "avg":  60.6364208712959,
+                                                        "p50":  45.95592,
+                                                        "p95":  157.56042159999996,
+                                                        "p99":  217.6701648,
+                                                        "max":  405.804905
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  411,
+                                      "result":  "FAIL",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.2473795510636351,
+                                                        "processCpuUsageAvg":  0.12339462566421737,
+                                                        "systemCpuUsageMax":  0.939453409009061,
+                                                        "jvmHeapUsedMaxBytes":  161664256,
+                                                        "jvmGcPauseSeconds":  0.1339999999999999,
+                                                        "jvmThreadsLiveMax":  287,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  10,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  23589,
+                                                        "redisKeyspaceMissesDelta":  0,
+                                                        "redisCpuSecondsDelta":  2.6092869999999984,
+                                                        "mysqlComSelectDelta":  23626,
+                                                        "mysqlQuestionsDelta":  141586,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T114426Z-http-P3_HTTP-capacity-course-detail-hit-rps800-r1-k6.json",
+                                                    "prometheus":  "20260809T114426Z-http-P3_HTTP-capacity-course-detail-hit-rps800-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:31:47.8002237Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "miss",
+                                      "targetRps":  100,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  3000,
+                                      "achievedRps":  100,
+                                      "latencyMs":  {
+                                                        "avg":  10.711266834999993,
+                                                        "p50":  10.5498405,
+                                                        "p95":  12.4771836,
+                                                        "p99":  13.694597499999992,
+                                                        "max":  23.120759
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.029220878263945805,
+                                                        "processCpuUsageAvg":  0.01549001655952185,
+                                                        "systemCpuUsageMax":  0.38623101184896769,
+                                                        "jvmHeapUsedMaxBytes":  98983016,
+                                                        "jvmGcPauseSeconds":  0.01799999999999996,
+                                                        "jvmThreadsLiveMax":  98,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  2,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  0,
+                                                        "redisKeyspaceMissesDelta":  3000,
+                                                        "redisCpuSecondsDelta":  0.73528700000000313,
+                                                        "mysqlComSelectDelta":  6037,
+                                                        "mysqlQuestionsDelta":  21051,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T113147Z-http-P3_HTTP-capacity-course-detail-miss-rps100-r1-k6.json",
+                                                    "prometheus":  "20260809T113147Z-http-P3_HTTP-capacity-course-detail-miss-rps100-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:34:52.9079370Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "miss",
+                                      "targetRps":  200,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  6000,
+                                      "achievedRps":  200,
+                                      "latencyMs":  {
+                                                        "avg":  11.312609889999996,
+                                                        "p50":  11.0806165,
+                                                        "p95":  14.2070114,
+                                                        "p99":  16.625497250000006,
+                                                        "max":  33.11624
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.057060661347284845,
+                                                        "processCpuUsageAvg":  0.030245168164604083,
+                                                        "systemCpuUsageMax":  0.50359281373645914,
+                                                        "jvmHeapUsedMaxBytes":  114551488,
+                                                        "jvmGcPauseSeconds":  0.025999999999999968,
+                                                        "jvmThreadsLiveMax":  98,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  3,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  0,
+                                                        "redisKeyspaceMissesDelta":  6000,
+                                                        "redisCpuSecondsDelta":  1.5040380000000049,
+                                                        "mysqlComSelectDelta":  12039,
+                                                        "mysqlQuestionsDelta":  42057,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T113452Z-http-P3_HTTP-capacity-course-detail-miss-rps200-r1-k6.json",
+                                                    "prometheus":  "20260809T113452Z-http-P3_HTTP-capacity-course-detail-miss-rps200-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:38:10.2624560Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "miss",
+                                      "targetRps":  400,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  12000,
+                                      "achievedRps":  400,
+                                      "latencyMs":  {
+                                                        "avg":  14.189199603333345,
+                                                        "p50":  13.5234815,
+                                                        "p95":  19.0086092,
+                                                        "p99":  26.643855970000011,
+                                                        "max":  54.235507
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.14137637786068169,
+                                                        "processCpuUsageAvg":  0.068444179220992968,
+                                                        "systemCpuUsageMax":  0.74458563955229384,
+                                                        "jvmHeapUsedMaxBytes":  107591456,
+                                                        "jvmGcPauseSeconds":  0.061999999999999944,
+                                                        "jvmThreadsLiveMax":  109,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  5,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  0,
+                                                        "redisKeyspaceMissesDelta":  12000,
+                                                        "redisCpuSecondsDelta":  3.0321610000000021,
+                                                        "mysqlComSelectDelta":  24038,
+                                                        "mysqlQuestionsDelta":  84052,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T113810Z-http-P3_HTTP-capacity-course-detail-miss-rps400-r1-k6.json",
+                                                    "prometheus":  "20260809T113810Z-http-P3_HTTP-capacity-course-detail-miss-rps400-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:48:25.6546589Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "miss",
+                                      "targetRps":  600,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  18001,
+                                      "achievedRps":  600.033333,
+                                      "latencyMs":  {
+                                                        "avg":  18.47818419071168,
+                                                        "p50":  14.59481,
+                                                        "p95":  46.949813,
+                                                        "p99":  64.409544,
+                                                        "max":  121.638588
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  0,
+                                      "result":  "PASS",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.21044555169229681,
+                                                        "processCpuUsageAvg":  0.103556218332953,
+                                                        "systemCpuUsageMax":  0.84053541261796161,
+                                                        "jvmHeapUsedMaxBytes":  133772504,
+                                                        "jvmGcPauseSeconds":  0.086000000000000076,
+                                                        "jvmThreadsLiveMax":  139,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  10,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  0,
+                                                        "redisKeyspaceMissesDelta":  18001,
+                                                        "redisCpuSecondsDelta":  4.0480830000000019,
+                                                        "mysqlComSelectDelta":  36039,
+                                                        "mysqlQuestionsDelta":  126058,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T114825Z-http-P3_HTTP-capacity-course-detail-miss-rps600-r1-k6.json",
+                                                    "prometheus":  "20260809T114825Z-http-P3_HTTP-capacity-course-detail-miss-rps600-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:53:02.0661489Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "miss",
+                                      "targetRps":  700,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  19744,
+                                      "achievedRps":  658.133333,
+                                      "latencyMs":  {
+                                                        "avg":  221.95288725536773,
+                                                        "p50":  207.9790015,
+                                                        "p95":  355.07894904999995,
+                                                        "p99":  454.76003175,
+                                                        "max":  832.982214
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  1256,
+                                      "result":  "FAIL",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.25636340132238644,
+                                                        "processCpuUsageAvg":  0.12761035641379037,
+                                                        "systemCpuUsageMax":  0.93720975711528032,
+                                                        "jvmHeapUsedMaxBytes":  166079832,
+                                                        "jvmGcPauseSeconds":  0.23499999999999988,
+                                                        "jvmThreadsLiveMax":  287,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  10,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  0,
+                                                        "redisKeyspaceMissesDelta":  19744,
+                                                        "redisCpuSecondsDelta":  4.4208969999999965,
+                                                        "mysqlComSelectDelta":  39523,
+                                                        "mysqlQuestionsDelta":  138258,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T115302Z-http-P3_HTTP-capacity-course-detail-miss-rps700-r1-k6.json",
+                                                    "prometheus":  "20260809T115302Z-http-P3_HTTP-capacity-course-detail-miss-rps700-r1-prometheus.json"
+                                                }
+                                  },
+                                  {
+                                      "startedAt":  "2026-08-09T11:41:53.9050228Z",
+                                      "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                                      "experimentPhase":  "capacity",
+                                      "endpoint":  "course-detail",
+                                      "cacheState":  "miss",
+                                      "targetRps":  800,
+                                      "durationSeconds":  30,
+                                      "runNumber":  1,
+                                      "requestCount":  19566,
+                                      "achievedRps":  652.2,
+                                      "latencyMs":  {
+                                                        "avg":  360.88778804063321,
+                                                        "p50":  355.59665199999995,
+                                                        "p95":  589.11021099999994,
+                                                        "p99":  688.98937109999986,
+                                                        "max":  971.441871
+                                                    },
+                                      "errorRate":  0,
+                                      "droppedIterations":  4435,
+                                      "result":  "FAIL",
+                                      "resources":  {
+                                                        "processCpuUsageMax":  0.2377320980001516,
+                                                        "processCpuUsageAvg":  0.12208489393917187,
+                                                        "systemCpuUsageMax":  0.93195973731307535,
+                                                        "jvmHeapUsedMaxBytes":  126318032,
+                                                        "jvmGcPauseSeconds":  0.29299999999999993,
+                                                        "jvmThreadsLiveMax":  288,
+                                                        "tomcatThreadsBusyMax":  null,
+                                                        "tomcatThreadsConfiguredMax":  null,
+                                                        "hikariActiveMax":  10,
+                                                        "hikariConfiguredMax":  10,
+                                                        "http5xxCount":  null,
+                                                        "redisKeyspaceHitsDelta":  0,
+                                                        "redisKeyspaceMissesDelta":  19566,
+                                                        "redisCpuSecondsDelta":  4.3003289999999978,
+                                                        "mysqlComSelectDelta":  39168,
+                                                        "mysqlQuestionsDelta":  137015,
+                                                        "mysqlSlowQueriesDelta":  0,
+                                                        "mysqlBufferPoolReadsDelta":  0
+                                                    },
+                                      "files":  {
+                                                    "k6":  "20260809T114153Z-http-P3_HTTP-capacity-course-detail-miss-rps800-r1-k6.json",
+                                                    "prometheus":  "20260809T114153Z-http-P3_HTTP-capacity-course-detail-miss-rps800-r1-prometheus.json"
+                                                }
+                                  }
+                              ]
+                 },
+    "bottleneck":  {
+                       "conclusion":  "Capacity boundary coincides with a saturated Hikari/MySQL request path and host-wide CPU contention.",
+                       "boundaryRuns":  [
+                                            {
+                                                "cacheState":  "miss",
+                                                "targetRps":  700,
+                                                "achievedRps":  658.133333,
+                                                "p95Ms":  355.07894904999995,
+                                                "systemCpuUsageMax":  0.93720975711528032,
+                                                "processCpuUsageMax":  0.25636340132238644,
+                                                "hikariActiveMax":  10,
+                                                "hikariConfiguredMax":  10,
+                                                "jvmHeapUsedMaxBytes":  166079832,
+                                                "jvmGcPauseSeconds":  0.23499999999999988,
+                                                "mysqlSlowQueriesDelta":  0,
+                                                "mysqlBufferPoolReadsDelta":  0,
+                                                "redisCpuSecondsDelta":  4.4208969999999965
+                                            },
+                                            {
+                                                "cacheState":  "hit",
+                                                "targetRps":  700,
+                                                "achievedRps":  578.5,
+                                                "p95Ms":  530.7657153,
+                                                "systemCpuUsageMax":  0.98813922734311244,
+                                                "processCpuUsageMax":  0.19256218732533154,
+                                                "hikariActiveMax":  10,
+                                                "hikariConfiguredMax":  10,
+                                                "jvmHeapUsedMaxBytes":  141840288,
+                                                "jvmGcPauseSeconds":  0.19899999999999984,
+                                                "mysqlSlowQueriesDelta":  0,
+                                                "mysqlBufferPoolReadsDelta":  0,
+                                                "redisCpuSecondsDelta":  2.1215830000000011
+                                            }
+                                        ],
+                       "ruledOutByCurrentEvidence":  [
+                                                         "JVM GC/heap pressure: low pause increase and modest heap at the boundary.",
+                                                         "HTTP 5xx: zero in every capacity run.",
+                                                         "MySQL disk-buffer misses/slow queries: both observed deltas were zero."
+                                                     ],
+                       "limitation":  "No MySQL/Redis container CPU exporter and no usable Tomcat thread metric were available; host CPU cannot be attributed to one process, and Hikari cap versus downstream MySQL CPU cannot be isolated."
+                   },
+    "consoleObservations":  {
+                                "schemaVersion":  1,
+                                "experimentId":  "P3_HTTP",
+                                "observations":  [
+                                                     {
+                                                         "k6File":  "20260809T115037Z-http-P3_HTTP-capacity-course-detail-hit-rps600-r1-k6.json",
+                                                         "source":  "captured k6 console final progress line",
+                                                         "interruptedIterations":  2,
+                                                         "note":  "The run still met the predeclared \u003e=99% achieved-RPS SLO; interruption is disclosed separately."
+                                                     },
+                                                     {
+                                                         "scope":  "pilot run 1",
+                                                         "source":  "k6 summary plus cache precondition artifact",
+                                                         "excludedFromFormalResults":  true,
+                                                         "note":  "The first pilot prewarmed 1000 keys but scheduled 1001 queries; the formal runner added 10 guard keys before formal runs."
+                                                     }
+                                                 ]
+                            },
+    "runs":  [
+                 {
+                     "startedAt":  "2026-08-09T11:06:29.2840286Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "pilot",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  10,
+                     "runNumber":  1,
+                     "requestCount":  1001,
+                     "achievedRps":  100.1,
+                     "latencyMs":  {
+                                       "avg":  10.732133680319675,
+                                       "p50":  10.448276,
+                                       "p95":  13.254876,
+                                       "p99":  16.74276,
+                                       "max":  23.190816
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.02192394738671985,
+                                       "processCpuUsageAvg":  0.0078724490892430766,
+                                       "systemCpuUsageMax":  0.26709275463736781,
+                                       "jvmHeapUsedMaxBytes":  81715824,
+                                       "jvmGcPauseSeconds":  0.010000000000000002,
+                                       "jvmThreadsLiveMax":  98,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  1001,
+                                       "redisCpuSecondsDelta":  0.24746200000000051,
+                                       "mysqlComSelectDelta":  2018,
+                                       "mysqlQuestionsDelta":  7033,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T110629Z-http-P3_HTTP-pilot-course-detail-miss-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T110629Z-http-P3_HTTP-pilot-course-detail-miss-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:07:28.7573459Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "pilot",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  10,
+                     "runNumber":  1,
+                     "requestCount":  1001,
+                     "achievedRps":  100.1,
+                     "latencyMs":  {
+                                       "avg":  8.64895509190808,
+                                       "p50":  8.499441,
+                                       "p95":  10.724563,
+                                       "p99":  12.466432,
+                                       "max":  15.133376
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.015426051168378247,
+                                       "processCpuUsageAvg":  0.005923415384737632,
+                                       "systemCpuUsageMax":  0.28182719074758478,
+                                       "jvmHeapUsedMaxBytes":  96003528,
+                                       "jvmGcPauseSeconds":  0.0070000000000000062,
+                                       "jvmThreadsLiveMax":  107,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  1001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.12385300000000043,
+                                       "mysqlComSelectDelta":  1016,
+                                       "mysqlQuestionsDelta":  6030,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T110728Z-http-P3_HTTP-pilot-course-detail-hit-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T110728Z-http-P3_HTTP-pilot-course-detail-hit-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:10:26.9330457Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "pilot",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  10,
+                     "runNumber":  2,
+                     "requestCount":  1001,
+                     "achievedRps":  100.1,
+                     "latencyMs":  {
+                                       "avg":  10.890316673326687,
+                                       "p50":  10.762395,
+                                       "p95":  13.634667,
+                                       "p99":  15.442114,
+                                       "max":  17.992661
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.020945580970621561,
+                                       "processCpuUsageAvg":  0.0076768818149210889,
+                                       "systemCpuUsageMax":  0.29624884464085355,
+                                       "jvmHeapUsedMaxBytes":  80915808,
+                                       "jvmGcPauseSeconds":  0.0079999999999999932,
+                                       "jvmThreadsLiveMax":  99,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  1001,
+                                       "redisCpuSecondsDelta":  0.24454899999999924,
+                                       "mysqlComSelectDelta":  2018,
+                                       "mysqlQuestionsDelta":  7032,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T111026Z-http-P3_HTTP-pilot-course-detail-miss-rps100-r2-k6.json",
+                                   "prometheus":  "20260809T111026Z-http-P3_HTTP-pilot-course-detail-miss-rps100-r2-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:11:26.6170627Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "pilot",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  10,
+                     "runNumber":  2,
+                     "requestCount":  1001,
+                     "achievedRps":  100.1,
+                     "latencyMs":  {
+                                       "avg":  8.6363706833167,
+                                       "p50":  8.584729,
+                                       "p95":  10.44494,
+                                       "p99":  12.291529,
+                                       "max":  22.123426
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.016907384877360418,
+                                       "processCpuUsageAvg":  0.0064828690418242017,
+                                       "systemCpuUsageMax":  0.29531583225970426,
+                                       "jvmHeapUsedMaxBytes":  103887960,
+                                       "jvmGcPauseSeconds":  0.0060000000000000053,
+                                       "jvmThreadsLiveMax":  107,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  1001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.12530899999999967,
+                                       "mysqlComSelectDelta":  1016,
+                                       "mysqlQuestionsDelta":  6030,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T111126Z-http-P3_HTTP-pilot-course-detail-hit-rps100-r2-k6.json",
+                                   "prometheus":  "20260809T111126Z-http-P3_HTTP-pilot-course-detail-hit-rps100-r2-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:12:48.7850270Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  10.696839522159298,
+                                       "p50":  10.627208,
+                                       "p95":  12.722698,
+                                       "p99":  14.50087,
+                                       "max":  33.812015
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.031826916690912574,
+                                       "processCpuUsageAvg":  0.020528743082556426,
+                                       "systemCpuUsageMax":  0.2802559886068704,
+                                       "jvmHeapUsedMaxBytes":  103313968,
+                                       "jvmGcPauseSeconds":  0.017,
+                                       "jvmThreadsLiveMax":  98,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  3001,
+                                       "redisCpuSecondsDelta":  0.71773300000000084,
+                                       "mysqlComSelectDelta":  6039,
+                                       "mysqlQuestionsDelta":  21058,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T111248Z-http-P3_HTTP-ab-course-detail-miss-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T111248Z-http-P3_HTTP-ab-course-detail-miss-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:14:22.0876152Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  8.6823670766411247,
+                                       "p50":  8.487243,
+                                       "p95":  10.859839,
+                                       "p99":  12.735251,
+                                       "max":  18.340406
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.025237704415206608,
+                                       "processCpuUsageAvg":  0.012929871796391712,
+                                       "systemCpuUsageMax":  0.24440568135561092,
+                                       "jvmHeapUsedMaxBytes":  101419344,
+                                       "jvmGcPauseSeconds":  0.010999999999999982,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  3001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.35431499999999794,
+                                       "mysqlComSelectDelta":  3040,
+                                       "mysqlQuestionsDelta":  18063,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T111422Z-http-P3_HTTP-ab-course-detail-hit-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T111422Z-http-P3_HTTP-ab-course-detail-hit-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:15:49.2772531Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  2,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  12.422789264245267,
+                                       "p50":  11.897746,
+                                       "p95":  17.365789,
+                                       "p99":  23.254493,
+                                       "max":  40.19234
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.034936526417351489,
+                                       "processCpuUsageAvg":  0.017132674148949929,
+                                       "systemCpuUsageMax":  0.38200090862888059,
+                                       "jvmHeapUsedMaxBytes":  109836192,
+                                       "jvmGcPauseSeconds":  0.014000000000000012,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  3001,
+                                       "redisCpuSecondsDelta":  0.80823299999999954,
+                                       "mysqlComSelectDelta":  6039,
+                                       "mysqlQuestionsDelta":  21058,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T111549Z-http-P3_HTTP-ab-course-detail-miss-rps100-r2-k6.json",
+                                   "prometheus":  "20260809T111549Z-http-P3_HTTP-ab-course-detail-miss-rps100-r2-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:17:22.7214661Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  2,
+                     "requestCount":  3000,
+                     "achievedRps":  100,
+                     "latencyMs":  {
+                                       "avg":  8.6381949250000076,
+                                       "p50":  8.5156680000000016,
+                                       "p95":  10.5569737,
+                                       "p99":  11.900264689999988,
+                                       "max":  15.106817
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.024539377517860422,
+                                       "processCpuUsageAvg":  0.012630379520479308,
+                                       "systemCpuUsageMax":  0.34929955841229526,
+                                       "jvmHeapUsedMaxBytes":  103726680,
+                                       "jvmGcPauseSeconds":  0.01100000000000001,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  3000,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.36097299999999954,
+                                       "mysqlComSelectDelta":  3039,
+                                       "mysqlQuestionsDelta":  18056,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T111722Z-http-P3_HTTP-ab-course-detail-hit-rps100-r2-k6.json",
+                                   "prometheus":  "20260809T111722Z-http-P3_HTTP-ab-course-detail-hit-rps100-r2-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:18:50.2056518Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  3,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  10.78792557280905,
+                                       "p50":  10.81675,
+                                       "p95":  12.852099,
+                                       "p99":  14.348489,
+                                       "max":  21.590935
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.028801225458207323,
+                                       "processCpuUsageAvg":  0.015053577248072936,
+                                       "systemCpuUsageMax":  0.3088368645495092,
+                                       "jvmHeapUsedMaxBytes":  97522200,
+                                       "jvmGcPauseSeconds":  0.014000000000000012,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  3001,
+                                       "redisCpuSecondsDelta":  0.71315000000000062,
+                                       "mysqlComSelectDelta":  6040,
+                                       "mysqlQuestionsDelta":  21059,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T111850Z-http-P3_HTTP-ab-course-detail-miss-rps100-r3-k6.json",
+                                   "prometheus":  "20260809T111850Z-http-P3_HTTP-ab-course-detail-miss-rps100-r3-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:20:24.0950614Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  3,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  8.7533284475175179,
+                                       "p50":  8.526617,
+                                       "p95":  10.640889,
+                                       "p99":  12.274438,
+                                       "max":  18.319433
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.025198407704413027,
+                                       "processCpuUsageAvg":  0.013301120297922993,
+                                       "systemCpuUsageMax":  0.450897353773624,
+                                       "jvmHeapUsedMaxBytes":  116500912,
+                                       "jvmGcPauseSeconds":  0.01100000000000001,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  3001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.36295499999999947,
+                                       "mysqlComSelectDelta":  3038,
+                                       "mysqlQuestionsDelta":  18057,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T112024Z-http-P3_HTTP-ab-course-detail-hit-rps100-r3-k6.json",
+                                   "prometheus":  "20260809T112024Z-http-P3_HTTP-ab-course-detail-hit-rps100-r3-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:21:52.0057554Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-analytics",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  13.141447943685431,
+                                       "p50":  12.879734,
+                                       "p95":  15.073048,
+                                       "p99":  16.952484,
+                                       "max":  64.172406
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.036304759015066176,
+                                       "processCpuUsageAvg":  0.0196049554380216,
+                                       "systemCpuUsageMax":  0.30098415495820019,
+                                       "jvmHeapUsedMaxBytes":  112668096,
+                                       "jvmGcPauseSeconds":  0.01999999999999999,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  2,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  3001,
+                                       "redisCpuSecondsDelta":  0.768599,
+                                       "mysqlComSelectDelta":  9042,
+                                       "mysqlQuestionsDelta":  24064,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T112152Z-http-P3_HTTP-ab-course-analytics-miss-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T112152Z-http-P3_HTTP-ab-course-analytics-miss-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:23:26.7376322Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-analytics",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  10.634464676774421,
+                                       "p50":  10.368024,
+                                       "p95":  13.450925,
+                                       "p99":  15.351968,
+                                       "max":  22.348202
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.02927777925163131,
+                                       "processCpuUsageAvg":  0.015935266130496537,
+                                       "systemCpuUsageMax":  0.40620357416889,
+                                       "jvmHeapUsedMaxBytes":  115096336,
+                                       "jvmGcPauseSeconds":  0.01699999999999996,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  3001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.377478,
+                                       "mysqlComSelectDelta":  6040,
+                                       "mysqlQuestionsDelta":  21060,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T112326Z-http-P3_HTTP-ab-course-analytics-hit-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T112326Z-http-P3_HTTP-ab-course-analytics-hit-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:24:54.3011261Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-analytics",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  2,
+                     "requestCount":  3000,
+                     "achievedRps":  100,
+                     "latencyMs":  {
+                                       "avg":  13.013188122666641,
+                                       "p50":  12.848912,
+                                       "p95":  15.04768125,
+                                       "p99":  16.411015029999998,
+                                       "max":  28.110052
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.037173919575263996,
+                                       "processCpuUsageAvg":  0.01875173234239598,
+                                       "systemCpuUsageMax":  0.37473792973112746,
+                                       "jvmHeapUsedMaxBytes":  104484648,
+                                       "jvmGcPauseSeconds":  0.017000000000000015,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  2,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  3000,
+                                       "redisCpuSecondsDelta":  0.76375999999999955,
+                                       "mysqlComSelectDelta":  9037,
+                                       "mysqlQuestionsDelta":  24051,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T112454Z-http-P3_HTTP-ab-course-analytics-miss-rps100-r2-k6.json",
+                                   "prometheus":  "20260809T112454Z-http-P3_HTTP-ab-course-analytics-miss-rps100-r2-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:26:29.4595642Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-analytics",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  2,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  9.8293579166944536,
+                                       "p50":  9.644914,
+                                       "p95":  11.591474,
+                                       "p99":  12.873009,
+                                       "max":  19.685994
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.024878597031442663,
+                                       "processCpuUsageAvg":  0.013913105815884161,
+                                       "systemCpuUsageMax":  0.482826025823338,
+                                       "jvmHeapUsedMaxBytes":  104849648,
+                                       "jvmGcPauseSeconds":  0.011999999999999955,
+                                       "jvmThreadsLiveMax":  110,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  3001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.35776499999999878,
+                                       "mysqlComSelectDelta":  6041,
+                                       "mysqlQuestionsDelta":  21064,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T112629Z-http-P3_HTTP-ab-course-analytics-hit-rps100-r2-k6.json",
+                                   "prometheus":  "20260809T112629Z-http-P3_HTTP-ab-course-analytics-hit-rps100-r2-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:27:56.8713927Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-analytics",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  3,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  13.26380879073643,
+                                       "p50":  13.186559,
+                                       "p95":  15.634693,
+                                       "p99":  18.764077,
+                                       "max":  27.003691
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.0360764912753893,
+                                       "processCpuUsageAvg":  0.01817799779474057,
+                                       "systemCpuUsageMax":  0.62386214206695234,
+                                       "jvmHeapUsedMaxBytes":  117532016,
+                                       "jvmGcPauseSeconds":  0.019000000000000017,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  3001,
+                                       "redisCpuSecondsDelta":  0.768891,
+                                       "mysqlComSelectDelta":  9041,
+                                       "mysqlQuestionsDelta":  24060,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T112756Z-http-P3_HTTP-ab-course-analytics-miss-rps100-r3-k6.json",
+                                   "prometheus":  "20260809T112756Z-http-P3_HTTP-ab-course-analytics-miss-rps100-r3-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:29:32.0398619Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "ab",
+                     "endpoint":  "course-analytics",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  3,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  9.9737942745751642,
+                                       "p50":  9.804538,
+                                       "p95":  12.028277,
+                                       "p99":  13.480344,
+                                       "max":  19.892653
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.02722338183026303,
+                                       "processCpuUsageAvg":  0.014351560342241445,
+                                       "systemCpuUsageMax":  0.38873941687987035,
+                                       "jvmHeapUsedMaxBytes":  99069744,
+                                       "jvmGcPauseSeconds":  0.013000000000000012,
+                                       "jvmThreadsLiveMax":  110,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  3001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.37207999999999686,
+                                       "mysqlComSelectDelta":  6041,
+                                       "mysqlQuestionsDelta":  21063,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T112932Z-http-P3_HTTP-ab-course-analytics-hit-rps100-r3-k6.json",
+                                   "prometheus":  "20260809T112932Z-http-P3_HTTP-ab-course-analytics-hit-rps100-r3-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:31:47.8002237Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  3000,
+                     "achievedRps":  100,
+                     "latencyMs":  {
+                                       "avg":  10.711266834999993,
+                                       "p50":  10.5498405,
+                                       "p95":  12.4771836,
+                                       "p99":  13.694597499999992,
+                                       "max":  23.120759
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.029220878263945805,
+                                       "processCpuUsageAvg":  0.01549001655952185,
+                                       "systemCpuUsageMax":  0.38623101184896769,
+                                       "jvmHeapUsedMaxBytes":  98983016,
+                                       "jvmGcPauseSeconds":  0.01799999999999996,
+                                       "jvmThreadsLiveMax":  98,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  2,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  3000,
+                                       "redisCpuSecondsDelta":  0.73528700000000313,
+                                       "mysqlComSelectDelta":  6037,
+                                       "mysqlQuestionsDelta":  21051,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T113147Z-http-P3_HTTP-capacity-course-detail-miss-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T113147Z-http-P3_HTTP-capacity-course-detail-miss-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:33:21.7341400Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  100,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  3001,
+                     "achievedRps":  100.033333,
+                     "latencyMs":  {
+                                       "avg":  8.9943063008997051,
+                                       "p50":  8.767391,
+                                       "p95":  10.990297,
+                                       "p99":  13.002454,
+                                       "max":  26.087372
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.023210444788782342,
+                                       "processCpuUsageAvg":  0.012965704726949377,
+                                       "systemCpuUsageMax":  0.5418837566600847,
+                                       "jvmHeapUsedMaxBytes":  114532248,
+                                       "jvmGcPauseSeconds":  0.01100000000000001,
+                                       "jvmThreadsLiveMax":  108,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  1,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  3001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.36439599999999928,
+                                       "mysqlComSelectDelta":  3041,
+                                       "mysqlQuestionsDelta":  18064,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T113321Z-http-P3_HTTP-capacity-course-detail-hit-rps100-r1-k6.json",
+                                   "prometheus":  "20260809T113321Z-http-P3_HTTP-capacity-course-detail-hit-rps100-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:34:52.9079370Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  200,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  6000,
+                     "achievedRps":  200,
+                     "latencyMs":  {
+                                       "avg":  11.312609889999996,
+                                       "p50":  11.0806165,
+                                       "p95":  14.2070114,
+                                       "p99":  16.625497250000006,
+                                       "max":  33.11624
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.057060661347284845,
+                                       "processCpuUsageAvg":  0.030245168164604083,
+                                       "systemCpuUsageMax":  0.50359281373645914,
+                                       "jvmHeapUsedMaxBytes":  114551488,
+                                       "jvmGcPauseSeconds":  0.025999999999999968,
+                                       "jvmThreadsLiveMax":  98,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  3,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  6000,
+                                       "redisCpuSecondsDelta":  1.5040380000000049,
+                                       "mysqlComSelectDelta":  12039,
+                                       "mysqlQuestionsDelta":  42057,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T113452Z-http-P3_HTTP-capacity-course-detail-miss-rps200-r1-k6.json",
+                                   "prometheus":  "20260809T113452Z-http-P3_HTTP-capacity-course-detail-miss-rps200-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:36:34.0344061Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  200,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  6001,
+                     "achievedRps":  200.033333,
+                     "latencyMs":  {
+                                       "avg":  9.0278845084152657,
+                                       "p50":  8.839317,
+                                       "p95":  11.359828,
+                                       "p99":  12.901985,
+                                       "max":  32.328075
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.049820330419480648,
+                                       "processCpuUsageAvg":  0.025786883839148025,
+                                       "systemCpuUsageMax":  0.41371765222526835,
+                                       "jvmHeapUsedMaxBytes":  115182472,
+                                       "jvmGcPauseSeconds":  0.020000000000000018,
+                                       "jvmThreadsLiveMax":  107,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  2,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  6001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  0.7038499999999992,
+                                       "mysqlComSelectDelta":  6038,
+                                       "mysqlQuestionsDelta":  36058,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T113634Z-http-P3_HTTP-capacity-course-detail-hit-rps200-r1-k6.json",
+                                   "prometheus":  "20260809T113634Z-http-P3_HTTP-capacity-course-detail-hit-rps200-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:38:10.2624560Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  400,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  12000,
+                     "achievedRps":  400,
+                     "latencyMs":  {
+                                       "avg":  14.189199603333345,
+                                       "p50":  13.5234815,
+                                       "p95":  19.0086092,
+                                       "p99":  26.643855970000011,
+                                       "max":  54.235507
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.14137637786068169,
+                                       "processCpuUsageAvg":  0.068444179220992968,
+                                       "systemCpuUsageMax":  0.74458563955229384,
+                                       "jvmHeapUsedMaxBytes":  107591456,
+                                       "jvmGcPauseSeconds":  0.061999999999999944,
+                                       "jvmThreadsLiveMax":  109,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  5,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  12000,
+                                       "redisCpuSecondsDelta":  3.0321610000000021,
+                                       "mysqlComSelectDelta":  24038,
+                                       "mysqlQuestionsDelta":  84052,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T113810Z-http-P3_HTTP-capacity-course-detail-miss-rps400-r1-k6.json",
+                                   "prometheus":  "20260809T113810Z-http-P3_HTTP-capacity-course-detail-miss-rps400-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:40:06.5440538Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  400,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  12001,
+                     "achievedRps":  400.033333,
+                     "latencyMs":  {
+                                       "avg":  9.7894188305140926,
+                                       "p50":  9.517892,
+                                       "p95":  12.258021,
+                                       "p99":  15.321332,
+                                       "max":  38.542179
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.099879215833951665,
+                                       "processCpuUsageAvg":  0.052354332083043541,
+                                       "systemCpuUsageMax":  0.5217670341256242,
+                                       "jvmHeapUsedMaxBytes":  114433272,
+                                       "jvmGcPauseSeconds":  0.04599999999999993,
+                                       "jvmThreadsLiveMax":  109,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  4,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  12001,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  1.4383049999999962,
+                                       "mysqlComSelectDelta":  12038,
+                                       "mysqlQuestionsDelta":  72058,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T114006Z-http-P3_HTTP-capacity-course-detail-hit-rps400-r1-k6.json",
+                                   "prometheus":  "20260809T114006Z-http-P3_HTTP-capacity-course-detail-hit-rps400-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:41:53.9050228Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  800,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  19566,
+                     "achievedRps":  652.2,
+                     "latencyMs":  {
+                                       "avg":  360.88778804063321,
+                                       "p50":  355.59665199999995,
+                                       "p95":  589.11021099999994,
+                                       "p99":  688.98937109999986,
+                                       "max":  971.441871
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  4435,
+                     "result":  "FAIL",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.2377320980001516,
+                                       "processCpuUsageAvg":  0.12208489393917187,
+                                       "systemCpuUsageMax":  0.93195973731307535,
+                                       "jvmHeapUsedMaxBytes":  126318032,
+                                       "jvmGcPauseSeconds":  0.29299999999999993,
+                                       "jvmThreadsLiveMax":  288,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  10,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  19566,
+                                       "redisCpuSecondsDelta":  4.3003289999999978,
+                                       "mysqlComSelectDelta":  39168,
+                                       "mysqlQuestionsDelta":  137015,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T114153Z-http-P3_HTTP-capacity-course-detail-miss-rps800-r1-k6.json",
+                                   "prometheus":  "20260809T114153Z-http-P3_HTTP-capacity-course-detail-miss-rps800-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:44:26.6191573Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  800,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  23589,
+                     "achievedRps":  786.3,
+                     "latencyMs":  {
+                                       "avg":  60.6364208712959,
+                                       "p50":  45.95592,
+                                       "p95":  157.56042159999996,
+                                       "p99":  217.6701648,
+                                       "max":  405.804905
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  411,
+                     "result":  "FAIL",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.2473795510636351,
+                                       "processCpuUsageAvg":  0.12339462566421737,
+                                       "systemCpuUsageMax":  0.939453409009061,
+                                       "jvmHeapUsedMaxBytes":  161664256,
+                                       "jvmGcPauseSeconds":  0.1339999999999999,
+                                       "jvmThreadsLiveMax":  287,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  10,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  23589,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  2.6092869999999984,
+                                       "mysqlComSelectDelta":  23626,
+                                       "mysqlQuestionsDelta":  141586,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T114426Z-http-P3_HTTP-capacity-course-detail-hit-rps800-r1-k6.json",
+                                   "prometheus":  "20260809T114426Z-http-P3_HTTP-capacity-course-detail-hit-rps800-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:48:25.6546589Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  600,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  18001,
+                     "achievedRps":  600.033333,
+                     "latencyMs":  {
+                                       "avg":  18.47818419071168,
+                                       "p50":  14.59481,
+                                       "p95":  46.949813,
+                                       "p99":  64.409544,
+                                       "max":  121.638588
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.21044555169229681,
+                                       "processCpuUsageAvg":  0.103556218332953,
+                                       "systemCpuUsageMax":  0.84053541261796161,
+                                       "jvmHeapUsedMaxBytes":  133772504,
+                                       "jvmGcPauseSeconds":  0.086000000000000076,
+                                       "jvmThreadsLiveMax":  139,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  10,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  18001,
+                                       "redisCpuSecondsDelta":  4.0480830000000019,
+                                       "mysqlComSelectDelta":  36039,
+                                       "mysqlQuestionsDelta":  126058,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T114825Z-http-P3_HTTP-capacity-course-detail-miss-rps600-r1-k6.json",
+                                   "prometheus":  "20260809T114825Z-http-P3_HTTP-capacity-course-detail-miss-rps600-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:50:37.1488246Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  600,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  17998,
+                     "achievedRps":  599.933333,
+                     "latencyMs":  {
+                                       "avg":  12.555277773530436,
+                                       "p50":  11.591795,
+                                       "p95":  18.521263649999995,
+                                       "p99":  32.123872429999949,
+                                       "max":  51.542626
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  0,
+                     "result":  "PASS",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.16633603021937637,
+                                       "processCpuUsageAvg":  0.088364596956386182,
+                                       "systemCpuUsageMax":  0.74481511695302483,
+                                       "jvmHeapUsedMaxBytes":  170097992,
+                                       "jvmGcPauseSeconds":  0.070999999999999952,
+                                       "jvmThreadsLiveMax":  139,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  10,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  17998,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  2.1614019999999918,
+                                       "mysqlComSelectDelta":  18045,
+                                       "mysqlQuestionsDelta":  108050,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T115037Z-http-P3_HTTP-capacity-course-detail-hit-rps600-r1-k6.json",
+                                   "prometheus":  "20260809T115037Z-http-P3_HTTP-capacity-course-detail-hit-rps600-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T11:53:02.0661489Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "miss",
+                     "targetRps":  700,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  19744,
+                     "achievedRps":  658.133333,
+                     "latencyMs":  {
+                                       "avg":  221.95288725536773,
+                                       "p50":  207.9790015,
+                                       "p95":  355.07894904999995,
+                                       "p99":  454.76003175,
+                                       "max":  832.982214
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  1256,
+                     "result":  "FAIL",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.25636340132238644,
+                                       "processCpuUsageAvg":  0.12761035641379037,
+                                       "systemCpuUsageMax":  0.93720975711528032,
+                                       "jvmHeapUsedMaxBytes":  166079832,
+                                       "jvmGcPauseSeconds":  0.23499999999999988,
+                                       "jvmThreadsLiveMax":  287,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  10,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  0,
+                                       "redisKeyspaceMissesDelta":  19744,
+                                       "redisCpuSecondsDelta":  4.4208969999999965,
+                                       "mysqlComSelectDelta":  39523,
+                                       "mysqlQuestionsDelta":  138258,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T115302Z-http-P3_HTTP-capacity-course-detail-miss-rps700-r1-k6.json",
+                                   "prometheus":  "20260809T115302Z-http-P3_HTTP-capacity-course-detail-miss-rps700-r1-prometheus.json"
+                               }
+                 },
+                 {
+                     "startedAt":  "2026-08-09T12:01:18.8865651Z",
+                     "gitCommit":  "2134d241734f24595c48d49df7b679a5200a1f7b",
+                     "experimentPhase":  "capacity",
+                     "endpoint":  "course-detail",
+                     "cacheState":  "hit",
+                     "targetRps":  700,
+                     "durationSeconds":  30,
+                     "runNumber":  1,
+                     "requestCount":  17355,
+                     "achievedRps":  578.5,
+                     "latencyMs":  {
+                                       "avg":  229.21272185145509,
+                                       "p50":  236.092254,
+                                       "p95":  530.7657153,
+                                       "p99":  736.68535759999952,
+                                       "max":  1515.026981
+                                   },
+                     "errorRate":  0,
+                     "droppedIterations":  3646,
+                     "result":  "FAIL",
+                     "resources":  {
+                                       "processCpuUsageMax":  0.19256218732533154,
+                                       "processCpuUsageAvg":  0.096600118255635734,
+                                       "systemCpuUsageMax":  0.98813922734311244,
+                                       "jvmHeapUsedMaxBytes":  141840288,
+                                       "jvmGcPauseSeconds":  0.19899999999999984,
+                                       "jvmThreadsLiveMax":  287,
+                                       "tomcatThreadsBusyMax":  null,
+                                       "tomcatThreadsConfiguredMax":  null,
+                                       "hikariActiveMax":  10,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  null,
+                                       "redisKeyspaceHitsDelta":  17355,
+                                       "redisKeyspaceMissesDelta":  0,
+                                       "redisCpuSecondsDelta":  2.1215830000000011,
+                                       "mysqlComSelectDelta":  17390,
+                                       "mysqlQuestionsDelta":  104179,
+                                       "mysqlSlowQueriesDelta":  0,
+                                       "mysqlBufferPoolReadsDelta":  0
+                                   },
+                     "files":  {
+                                   "k6":  "20260809T120118Z-http-P3_HTTP-capacity-course-detail-hit-rps700-r1-k6.json",
+                                   "prometheus":  "20260809T120118Z-http-P3_HTTP-capacity-course-detail-hit-rps700-r1-prometheus.json"
+                               }
+                 }
+             ],
+    "resumeSafe":  [
+                       "A/B aggregate numbers only: identical open-model workload, 3 repeats, complete conditions.",
+                       "Capacity breakpoint values are single runs per level and are not labeled resume-safe."
+                   ]
+}
