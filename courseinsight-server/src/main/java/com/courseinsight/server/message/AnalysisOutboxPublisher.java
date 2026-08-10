@@ -11,13 +11,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -82,8 +82,7 @@ public class AnalysisOutboxPublisher {
             return;
         }
         try {
-            LocalDateTime selectedAt = LocalDateTime.now();
-            publishBatch(attemptService.findPublishable(batchSize, selectedAt));
+            publishBatch(attemptService.findPublishable(batchSize));
         } finally {
             cycleRunning.set(false);
         }
@@ -98,11 +97,19 @@ public class AnalysisOutboxPublisher {
             while (submitted < events.size()
                     && submitted - completed < publishConcurrency
                     && !shuttingDown.get()) {
-                AnalysisOutboxEvent event = events.get(submitted++);
-                completions.submit(() -> {
-                    publishOne(event);
-                    return null;
-                });
+                AnalysisOutboxEvent event = events.get(submitted);
+                try {
+                    completions.submit(() -> {
+                        publishOne(event);
+                        return null;
+                    });
+                    submitted++;
+                } catch (RejectedExecutionException exception) {
+                    if (shuttingDown.get()) {
+                        return;
+                    }
+                    throw exception;
+                }
             }
             if (completed == submitted) {
                 return;
@@ -123,11 +130,9 @@ public class AnalysisOutboxPublisher {
     private void publishOne(AnalysisOutboxEvent event) {
         Long outboxId = event.getId();
         String publishToken = UUID.randomUUID().toString().replace("-", "");
-        LocalDateTime claimedAt = LocalDateTime.now();
         if (!attemptService.claim(
                 outboxId,
                 publishToken,
-                claimedAt,
                 recoveryTimeoutSeconds)) {
             return;
         }
@@ -151,8 +156,7 @@ public class AnalysisOutboxPublisher {
             if (attemptService.markSent(
                     outboxId,
                     publishToken,
-                    messageId,
-                    LocalDateTime.now())) {
+                    messageId)) {
                 metrics.outboxPublishSucceeded();
             } else {
                 log.info(
@@ -183,7 +187,7 @@ public class AnalysisOutboxPublisher {
                     event.getId(),
                     publishToken,
                     reason,
-                    LocalDateTime.now().plusSeconds(retryDelaySeconds)
+                    retryDelaySeconds
             );
             if (!marked) {
                 log.info(

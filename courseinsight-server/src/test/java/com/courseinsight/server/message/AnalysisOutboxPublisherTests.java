@@ -10,19 +10,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -60,13 +63,13 @@ class AnalysisOutboxPublisherTests {
         List<AnalysisOutboxEvent> events = createEvents(2);
         CountDownLatch bothSending = new CountDownLatch(2);
         CountDownLatch release = new CountDownLatch(1);
-        given(attemptService.findPublishable(anyInt(), any(LocalDateTime.class)))
+        given(attemptService.findPublishable(anyInt()))
                 .willReturn(events);
         given(attemptService.claim(
-                anyLong(), anyString(), any(LocalDateTime.class), anyLong()))
+                anyLong(), anyString(), anyLong()))
                 .willReturn(true);
         given(attemptService.markSent(
-                anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+                anyLong(), anyString(), anyString()))
                 .willReturn(true);
         executeMetricSupplier();
         given(messageProducer.send(any(AnalysisTaskCreatedEvent.class)))
@@ -90,7 +93,7 @@ class AnalysisOutboxPublisherTests {
 
         verify(messageProducer, times(2)).send(any(AnalysisTaskCreatedEvent.class));
         verify(attemptService, times(2)).markSent(
-                anyLong(), anyString(), anyString(), any(LocalDateTime.class));
+                anyLong(), anyString(), anyString());
     }
 
     @Test
@@ -101,13 +104,13 @@ class AnalysisOutboxPublisherTests {
         CountDownLatch release = new CountDownLatch(1);
         AtomicInteger active = new AtomicInteger();
         AtomicInteger peak = new AtomicInteger();
-        given(attemptService.findPublishable(anyInt(), any(LocalDateTime.class)))
+        given(attemptService.findPublishable(anyInt()))
                 .willReturn(createEvents(10));
         given(attemptService.claim(
-                anyLong(), anyString(), any(LocalDateTime.class), anyLong()))
+                anyLong(), anyString(), anyLong()))
                 .willReturn(true);
         given(attemptService.markSent(
-                anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+                anyLong(), anyString(), anyString()))
                 .willReturn(true);
         executeMetricSupplier();
         given(messageProducer.send(any(AnalysisTaskCreatedEvent.class)))
@@ -143,13 +146,13 @@ class AnalysisOutboxPublisherTests {
     @Test
     void shouldMarkSentOnlyForClaimedAttempt() {
         AnalysisOutboxPublisher publisher = createPublisher(2);
-        given(attemptService.findPublishable(anyInt(), any(LocalDateTime.class)))
+        given(attemptService.findPublishable(anyInt()))
                 .willReturn(List.of(createEvent(1)));
         given(attemptService.claim(
-                anyLong(), anyString(), any(LocalDateTime.class), anyLong()))
+                anyLong(), anyString(), anyLong()))
                 .willReturn(true);
         given(attemptService.markSent(
-                anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+                anyLong(), anyString(), anyString()))
                 .willReturn(true);
         executeMetricSupplier();
         given(messageProducer.send(any(AnalysisTaskCreatedEvent.class)))
@@ -159,13 +162,12 @@ class AnalysisOutboxPublisherTests {
 
         ArgumentCaptor<String> token = ArgumentCaptor.forClass(String.class);
         verify(attemptService).claim(
-                eq(1L), token.capture(), any(LocalDateTime.class), eq(300L));
+                eq(1L), token.capture(), eq(300L));
         assertThat(token.getValue()).hasSize(32);
         verify(attemptService).markSent(
                 eq(1L),
                 eq(token.getValue()),
-                eq("message-1"),
-                any(LocalDateTime.class)
+                eq("message-1")
         );
         verify(metrics).outboxPublishSucceeded();
     }
@@ -173,44 +175,39 @@ class AnalysisOutboxPublisherTests {
     @Test
     void shouldMarkFailedAndScheduleRetryOnlyForClaimedAttempt() {
         AnalysisOutboxPublisher publisher = createPublisher(2);
-        given(attemptService.findPublishable(anyInt(), any(LocalDateTime.class)))
+        given(attemptService.findPublishable(anyInt()))
                 .willReturn(List.of(createEvent(1)));
         given(attemptService.claim(
-                anyLong(), anyString(), any(LocalDateTime.class), anyLong()))
+                anyLong(), anyString(), anyLong()))
                 .willReturn(true);
         given(attemptService.markFailed(
-                anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+                anyLong(), anyString(), anyString(), anyLong()))
                 .willReturn(true);
         executeMetricSupplier();
         willThrow(new MessageQueueException("RocketMQ unavailable"))
                 .given(messageProducer).send(any(AnalysisTaskCreatedEvent.class));
 
-        LocalDateTime before = LocalDateTime.now().plusSeconds(29);
         publisher.publishPending();
-        LocalDateTime after = LocalDateTime.now().plusSeconds(31);
 
         ArgumentCaptor<String> token = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<LocalDateTime> retryAt =
-                ArgumentCaptor.forClass(LocalDateTime.class);
         verify(attemptService).claim(
-                eq(1L), token.capture(), any(LocalDateTime.class), eq(300L));
+                eq(1L), token.capture(), eq(300L));
         verify(attemptService).markFailed(
                 eq(1L),
                 eq(token.getValue()),
                 eq("RocketMQ unavailable"),
-                retryAt.capture()
+                eq(30L)
         );
-        assertThat(retryAt.getValue()).isBetween(before, after);
         verify(metrics).outboxPublishFailed();
     }
 
     @Test
     void shouldSkipEventWhenAnotherPublisherOwnsTheAttempt() {
         AnalysisOutboxPublisher publisher = createPublisher(2);
-        given(attemptService.findPublishable(anyInt(), any(LocalDateTime.class)))
+        given(attemptService.findPublishable(anyInt()))
                 .willReturn(List.of(createEvent(1)));
         given(attemptService.claim(
-                anyLong(), anyString(), any(LocalDateTime.class), anyLong()))
+                anyLong(), anyString(), anyLong()))
                 .willReturn(false);
 
         publisher.publishPending();
@@ -222,13 +219,13 @@ class AnalysisOutboxPublisherTests {
     void shouldLeavePublishingForRecoveryWhenBrokerAcceptedButMarkSentFailed() {
         AnalysisOutboxPublisher publisher = createPublisher(2);
         AnalysisOutboxEvent event = createEvent(1);
-        given(attemptService.findPublishable(anyInt(), any(LocalDateTime.class)))
+        given(attemptService.findPublishable(anyInt()))
                 .willReturn(List.of(event));
         given(attemptService.claim(
-                anyLong(), anyString(), any(LocalDateTime.class), anyLong()))
+                anyLong(), anyString(), anyLong()))
                 .willReturn(true);
         given(attemptService.markSent(
-                anyLong(), anyString(), anyString(), any(LocalDateTime.class)))
+                anyLong(), anyString(), anyString()))
                 .willThrow(new IllegalStateException("database unavailable"))
                 .willReturn(true);
         executeMetricSupplier();
@@ -244,9 +241,30 @@ class AnalysisOutboxPublisherTests {
                 )
         );
         verify(attemptService, never()).markFailed(
-                anyLong(), anyString(), anyString(), any(LocalDateTime.class));
+                anyLong(), anyString(), anyString(), anyLong());
         verify(metrics).outboxPublishSucceeded();
         verify(metrics).outboxPublishFailed();
+    }
+
+    @Test
+    void rejectedSubmissionNeverClaimsOutbox() {
+        AnalysisOutboxPublisher publisher = createPublisher(1);
+        ThreadPoolExecutor rejectingExecutor =
+                (ThreadPoolExecutor) ReflectionTestUtils.getField(
+                        publisher,
+                        "publishExecutor"
+                );
+        assertThat(rejectingExecutor).isNotNull();
+        rejectingExecutor.shutdown();
+        given(attemptService.findPublishable(anyInt()))
+                .willReturn(List.of(createEvent(1)));
+
+        assertThatThrownBy(publisher::publishPending)
+                .isInstanceOf(RejectedExecutionException.class);
+
+        verify(attemptService, never()).claim(
+                anyLong(), anyString(), anyLong());
+        verifyNoInteractions(messageProducer);
     }
 
     @SuppressWarnings("unchecked")
@@ -290,7 +308,6 @@ class AnalysisOutboxPublisherTests {
         event.setEventType(AnalysisTaskCreatedEvent.EVENT_TYPE);
         event.setStatus(AnalysisOutboxStatus.PENDING.name());
         event.setRetryCount(0);
-        event.setNextRetryAt(LocalDateTime.now().minusSeconds(1));
         return event;
     }
 }
