@@ -89,13 +89,17 @@ Invoke-RestMethod http://localhost:3000/api/health
 
 Dashboard 包含 HTTP 请求速率、p95 延迟、5xx，JVM heap、GC pause，HikariCP
 active/max，以及 AI 请求速率/p95/失败、Analysis Task 生命周期事件和 Outbox 发布
-结果。自定义指标只使用固定的 `outcome` tag：
+结果。自定义 Timer / Counter 只使用固定的 `outcome` tag，publisher 并发 Gauge 不含
+用户、任务或其他高基数标签：
 
 - `courseinsight.ai.request`：Timer，区分 `success`、`retryable_failure`、
   `terminal_failure`；
 - `courseinsight.analysis.task`：Counter，区分 `success`、`retryable_failure`、
   `terminal_failure`、`lease_recovery`、`dlq_terminal`；
-- `courseinsight.outbox.publish`：Counter，区分 `success`、`failure`。
+- `courseinsight.outbox.publish`：Counter，区分 `success`、`failure`；
+- `courseinsight.outbox.send`：Timer，记录 RocketMQ 发送延迟并区分 `success`、`failure`；
+- `courseinsight.outbox.publish.configured.concurrency`、`active`、`peak.active`：
+  Gauge，记录 publisher 配置并发、当前并发和进程内观测峰值。
 
 本阶段没有增加任务状态或 Outbox backlog Gauge。现有实现没有可复用的低成本聚合，
 为这些 Gauge 在每次 Prometheus 抓取时扫描业务表不适合本地开发基线。
