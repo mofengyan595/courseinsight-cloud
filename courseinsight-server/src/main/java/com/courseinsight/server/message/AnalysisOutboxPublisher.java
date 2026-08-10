@@ -1,11 +1,8 @@
 package com.courseinsight.server.message;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.courseinsight.server.entity.AnalysisOutboxEvent;
-import com.courseinsight.server.entity.AnalysisOutboxStatus;
-import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.metrics.CourseInsightMetrics;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +13,16 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 @ConditionalOnProperty(
@@ -26,27 +33,44 @@ import java.util.List;
 public class AnalysisOutboxPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(AnalysisOutboxPublisher.class);
+    private static final AtomicInteger THREAD_SEQUENCE = new AtomicInteger();
 
-    private final AnalysisOutboxEventMapper outboxEventMapper;
+    private final AnalysisOutboxAttemptService attemptService;
     private final AnalysisTaskMessageProducer messageProducer;
     private final int batchSize;
+    private final int publishConcurrency;
     private final long retryDelaySeconds;
     private final long recoveryTimeoutSeconds;
+    private final long shutdownTimeoutSeconds;
     private final CourseInsightMetrics metrics;
+    private final ThreadPoolExecutor publishExecutor;
+    private final AtomicBoolean cycleRunning = new AtomicBoolean();
+    private final AtomicBoolean shuttingDown = new AtomicBoolean();
 
     public AnalysisOutboxPublisher(
-            AnalysisOutboxEventMapper outboxEventMapper,
+            AnalysisOutboxAttemptService attemptService,
             AnalysisTaskMessageProducer messageProducer,
             @Value("${courseinsight.outbox.batch-size:20}") int batchSize,
+            @Value("${courseinsight.outbox.publish-concurrency:2}") int publishConcurrency,
             @Value("${courseinsight.outbox.retry-delay-seconds:30}") long retryDelaySeconds,
             @Value("${courseinsight.outbox.recovery-timeout-seconds:300}") long recoveryTimeoutSeconds,
+            @Value("${courseinsight.outbox.shutdown-timeout-seconds:30}") long shutdownTimeoutSeconds,
             CourseInsightMetrics metrics) {
-        this.outboxEventMapper = outboxEventMapper;
+        if (batchSize < 1 || publishConcurrency < 1) {
+            throw new IllegalArgumentException(
+                    "Outbox batch size and publish concurrency must be positive"
+            );
+        }
+        this.attemptService = attemptService;
         this.messageProducer = messageProducer;
         this.batchSize = batchSize;
+        this.publishConcurrency = publishConcurrency;
         this.retryDelaySeconds = retryDelaySeconds;
         this.recoveryTimeoutSeconds = recoveryTimeoutSeconds;
+        this.shutdownTimeoutSeconds = shutdownTimeoutSeconds;
         this.metrics = metrics;
+        this.publishExecutor = createExecutor(publishConcurrency);
+        this.metrics.configureOutboxPublishConcurrency(publishConcurrency);
     }
 
     @Scheduled(
@@ -54,98 +78,132 @@ public class AnalysisOutboxPublisher {
             initialDelayString = "${courseinsight.outbox.initial-delay-ms:1000}"
     )
     public void publishPending() {
-        LocalDateTime now = LocalDateTime.now();
-        LambdaQueryWrapper<AnalysisOutboxEvent> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(AnalysisOutboxEvent::getStatus, List.of(
-                        AnalysisOutboxStatus.PENDING.name(),
-                        AnalysisOutboxStatus.FAILED.name(),
-                        AnalysisOutboxStatus.PUBLISHING.name()
-                ))
-                .le(AnalysisOutboxEvent::getNextRetryAt, now)
-                .orderByAsc(AnalysisOutboxEvent::getId)
-                .last("LIMIT " + batchSize);
-
-        for (AnalysisOutboxEvent event : outboxEventMapper.selectList(wrapper)) {
-            publishOne(event, now);
+        if (shuttingDown.get() || !cycleRunning.compareAndSet(false, true)) {
+            return;
+        }
+        try {
+            LocalDateTime selectedAt = LocalDateTime.now();
+            publishBatch(attemptService.findPublishable(batchSize, selectedAt));
+        } finally {
+            cycleRunning.set(false);
         }
     }
 
-    private void publishOne(AnalysisOutboxEvent event, LocalDateTime now) {
+    private void publishBatch(List<AnalysisOutboxEvent> events) {
+        ExecutorCompletionService<Void> completions =
+                new ExecutorCompletionService<>(publishExecutor);
+        int submitted = 0;
+        int completed = 0;
+        while (completed < events.size() && !Thread.currentThread().isInterrupted()) {
+            while (submitted < events.size()
+                    && submitted - completed < publishConcurrency
+                    && !shuttingDown.get()) {
+                AnalysisOutboxEvent event = events.get(submitted++);
+                completions.submit(() -> {
+                    publishOne(event);
+                    return null;
+                });
+            }
+            if (completed == submitted) {
+                return;
+            }
+            try {
+                Future<Void> completedPublish = completions.take();
+                completedPublish.get();
+                completed++;
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+            } catch (ExecutionException exception) {
+                completed++;
+                log.error("Unexpected Outbox publisher worker failure", exception.getCause());
+            }
+        }
+    }
+
+    private void publishOne(AnalysisOutboxEvent event) {
         Long outboxId = event.getId();
-        if (!claim(outboxId, now)) {
+        String publishToken = UUID.randomUUID().toString().replace("-", "");
+        LocalDateTime claimedAt = LocalDateTime.now();
+        if (!attemptService.claim(
+                outboxId,
+                publishToken,
+                claimedAt,
+                recoveryTimeoutSeconds)) {
+            return;
+        }
+
+        AnalysisTaskCreatedEvent message = new AnalysisTaskCreatedEvent(
+                event.getEventId(),
+                event.getTaskId(),
+                event.getCommentId(),
+                event.getEventType(),
+                Instant.now().toString()
+        );
+        final String messageId;
+        try {
+            messageId = metrics.recordOutboxSend(() -> messageProducer.send(message));
+        } catch (RuntimeException sendException) {
+            handleSendFailure(event, publishToken, sendException);
             return;
         }
 
         try {
-            AnalysisTaskCreatedEvent message = new AnalysisTaskCreatedEvent(
-                    event.getEventId(),
-                    event.getTaskId(),
-                    event.getCommentId(),
-                    event.getEventType(),
-                    Instant.now().toString()
-            );
-            String messageId = messageProducer.send(message);
-            markSent(outboxId, messageId);
-            metrics.outboxPublishSucceeded();
-        } catch (RuntimeException exception) {
-            markFailed(outboxId, event.getEventId(), exception);
+            if (attemptService.markSent(
+                    outboxId,
+                    publishToken,
+                    messageId,
+                    LocalDateTime.now())) {
+                metrics.outboxPublishSucceeded();
+            } else {
+                log.info(
+                        "Ignoring late Outbox publish success, outboxId={}, eventId={}",
+                        outboxId,
+                        event.getEventId()
+                );
+            }
+        } catch (RuntimeException markException) {
             metrics.outboxPublishFailed();
+            log.error(
+                    "Broker accepted Outbox event but SENT persistence failed; "
+                            + "stale recovery may resend it, outboxId={}, eventId={}",
+                    outboxId,
+                    event.getEventId(),
+                    markException
+            );
         }
     }
 
-    private boolean claim(Long outboxId, LocalDateTime now) {
-        LambdaUpdateWrapper<AnalysisOutboxEvent> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(AnalysisOutboxEvent::getId, outboxId)
-                .in(AnalysisOutboxEvent::getStatus, List.of(
-                        AnalysisOutboxStatus.PENDING.name(),
-                        AnalysisOutboxStatus.FAILED.name(),
-                        AnalysisOutboxStatus.PUBLISHING.name()
-                ))
-                .le(AnalysisOutboxEvent::getNextRetryAt, now)
-                .set(AnalysisOutboxEvent::getStatus, AnalysisOutboxStatus.PUBLISHING.name())
-                .set(AnalysisOutboxEvent::getFailureReason, null)
-                .set(AnalysisOutboxEvent::getNextRetryAt,
-                        now.plusSeconds(recoveryTimeoutSeconds));
-        return outboxEventMapper.update(null, wrapper) == 1;
-    }
-
-    private void markSent(Long outboxId, String messageId) {
-        LambdaUpdateWrapper<AnalysisOutboxEvent> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(AnalysisOutboxEvent::getId, outboxId)
-                .eq(AnalysisOutboxEvent::getStatus, AnalysisOutboxStatus.PUBLISHING.name())
-                .set(AnalysisOutboxEvent::getStatus, AnalysisOutboxStatus.SENT.name())
-                .set(AnalysisOutboxEvent::getMessageId, messageId)
-                .set(AnalysisOutboxEvent::getFailureReason, null)
-                .set(AnalysisOutboxEvent::getSentAt, LocalDateTime.now());
-        if (outboxEventMapper.update(null, wrapper) != 1) {
-            throw new IllegalStateException("Outbox 事件发布状态更新失败");
-        }
-    }
-
-    private void markFailed(
-            Long outboxId,
-            String eventId,
-            RuntimeException originalException) {
-        String reason = failureReason(originalException);
-        LambdaUpdateWrapper<AnalysisOutboxEvent> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(AnalysisOutboxEvent::getId, outboxId)
-                .eq(AnalysisOutboxEvent::getStatus, AnalysisOutboxStatus.PUBLISHING.name())
-                .set(AnalysisOutboxEvent::getStatus, AnalysisOutboxStatus.FAILED.name())
-                .set(AnalysisOutboxEvent::getFailureReason, reason)
-                .set(AnalysisOutboxEvent::getNextRetryAt,
-                        LocalDateTime.now().plusSeconds(retryDelaySeconds))
-                .setSql("retry_count = retry_count + 1");
+    private void handleSendFailure(
+            AnalysisOutboxEvent event,
+            String publishToken,
+            RuntimeException sendException) {
+        String reason = failureReason(sendException);
         try {
-            outboxEventMapper.update(null, wrapper);
+            boolean marked = attemptService.markFailed(
+                    event.getId(),
+                    publishToken,
+                    reason,
+                    LocalDateTime.now().plusSeconds(retryDelaySeconds)
+            );
+            if (!marked) {
+                log.info(
+                        "Ignoring late Outbox publish failure, outboxId={}, eventId={}",
+                        event.getId(),
+                        event.getEventId()
+                );
+                return;
+            }
         } catch (RuntimeException updateException) {
-            originalException.addSuppressed(updateException);
+            sendException.addSuppressed(updateException);
         }
+        metrics.outboxPublishFailed();
         log.error(
-                "Outbox 事件发布失败, outboxId={}, eventId={}, reason={}",
-                outboxId,
-                eventId,
+                "Outbox event publish failed, outboxId={}, eventId={}, reason={}",
+                event.getId(),
+                event.getEventId(),
                 reason,
-                originalException);
+                sendException
+        );
     }
 
     private String failureReason(RuntimeException exception) {
@@ -154,5 +212,43 @@ public class AnalysisOutboxPublisher {
             reason = exception.getClass().getSimpleName();
         }
         return reason.length() > 1000 ? reason.substring(0, 1000) : reason;
+    }
+
+    @PreDestroy
+    void shutdown() {
+        shuttingDown.set(true);
+        publishExecutor.shutdown();
+        try {
+            if (!publishExecutor.awaitTermination(
+                    shutdownTimeoutSeconds,
+                    TimeUnit.SECONDS)) {
+                publishExecutor.shutdownNow();
+            }
+        } catch (InterruptedException exception) {
+            publishExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private ThreadPoolExecutor createExecutor(int concurrency) {
+        ThreadFactory threadFactory = task -> {
+            Thread thread = new Thread(
+                    task,
+                    "analysis-outbox-publisher-" + THREAD_SEQUENCE.incrementAndGet()
+            );
+            thread.setDaemon(false);
+            return thread;
+        };
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                concurrency,
+                concurrency,
+                0L,
+                TimeUnit.MILLISECONDS,
+                new ArrayBlockingQueue<>(concurrency),
+                threadFactory,
+                new ThreadPoolExecutor.AbortPolicy()
+        );
+        executor.prestartAllCoreThreads();
+        return executor;
     }
 }

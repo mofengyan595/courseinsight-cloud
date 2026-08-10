@@ -1,0 +1,926 @@
+{
+    "schemaVersion":  1,
+    "generatedAt":  "2026-08-09T16:59:23.9281043Z",
+    "experimentId":  "P7_OUTBOX",
+    "gitHead":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+    "candidateWorkingTree":  "uncommitted Phase 7 implementation on the recorded Git HEAD",
+    "workload":  {
+                     "fixture":  "performance/k6/data/batch-200.csv",
+                     "batches":  5,
+                     "rowsPerBatch":  200,
+                     "taskCount":  1000,
+                     "repetitionsPerCandidate":  3,
+                     "aiStubDelayMs":  100,
+                     "consumerConcurrency":  8,
+                     "outboxBatchSize":  100,
+                     "outboxPublishIntervalMs":  1000
+                 },
+    "before":  {
+                   "source":  "2026-08-10-phase-6-consumer-capacity-P6_CONSUMER.json",
+                   "benchmarkGitCommit":  "00ba94e140d35c638ac2322142cd7232be35b583",
+                   "serverImplementationNote":  "Only performance harness/results changed between the Phase 6 benchmark commit and current HEAD; server implementation was unchanged before Phase 7.",
+                   "aggregate":  {
+                                     "consumerConcurrency":  8,
+                                     "runCount":  3,
+                                     "completionTimeMs":  {
+                                                              "count":  3,
+                                                              "average":  27559.333333333332,
+                                                              "standardDeviationSample":  3204.6892725088551,
+                                                              "coefficientOfVariation":  0.11628326540949908,
+                                                              "min":  25566,
+                                                              "p50":  25856,
+                                                              "p95":  30716,
+                                                              "p99":  31148,
+                                                              "max":  31256
+                                                          },
+                                     "throughputTasksPerSecond":  {
+                                                                      "count":  3,
+                                                                      "average":  36.594682877031431,
+                                                                      "standardDeviationSample":  3.990465340025922,
+                                                                      "coefficientOfVariation":  0.10904494932870502,
+                                                                      "min":  31.99385717942155,
+                                                                      "p50":  38.67574257425742,
+                                                                      "p95":  39.070578247099526,
+                                                                      "p99":  39.105674751352161,
+                                                                      "max":  39.11444887741532
+                                                                  },
+                                     "resultPersistenceRateProxyPerSecond":  {
+                                                                                 "count":  3,
+                                                                                 "average":  38.253748192640437,
+                                                                                 "standardDeviationSample":  2.5408317912998624,
+                                                                                 "coefficientOfVariation":  0.066420466263974839,
+                                                                                 "min":  35.323690245193156,
+                                                                                 "p50":  39.5887905896308,
+                                                                                 "p95":  39.8227664277507,
+                                                                                 "p99":  39.843564280028026,
+                                                                                 "max":  39.848763743097358
+                                                                             },
+                                     "endToEndDrainTimeMs":  {
+                                                                 "count":  3,
+                                                                 "average":  25806.666666666668,
+                                                                 "standardDeviationSample":  3060.6666485152109,
+                                                                 "coefficientOfVariation":  0.11859984429792859,
+                                                                 "min":  23767,
+                                                                 "p50":  24327,
+                                                                 "p95":  28826.1,
+                                                                 "p99":  29226.02,
+                                                                 "max":  29326
+                                                             },
+                                     "outboxPendingDrainRatePerSecond":  {
+                                                                             "count":  3,
+                                                                             "average":  40.80234138479517,
+                                                                             "standardDeviationSample":  4.5488875353447025,
+                                                                             "coefficientOfVariation":  0.11148594372184306,
+                                                                             "min":  35.596055956999962,
+                                                                             "p50":  42.8027222531353,
+                                                                             "p95":  43.887693575138748,
+                                                                             "p99":  43.984135470427944,
+                                                                             "max":  44.008245944250248
+                                                                         },
+                                     "outboxPendingDrainSeconds":  {
+                                                                       "count":  3,
+                                                                       "average":  24.590000000000003,
+                                                                       "standardDeviationSample":  3.0786940413103738,
+                                                                       "coefficientOfVariation":  0.12520105902034864,
+                                                                       "min":  22.314,
+                                                                       "p50":  23.363,
+                                                                       "p95":  27.619999999999997,
+                                                                       "p99":  27.9984,
+                                                                       "max":  28.093
+                                                                   },
+                                     "rocketMqReadyPeak":  {
+                                                               "count":  3,
+                                                               "average":  0,
+                                                               "standardDeviationSample":  0,
+                                                               "coefficientOfVariation":  0,
+                                                               "min":  0,
+                                                               "p50":  0,
+                                                               "p95":  0,
+                                                               "p99":  0,
+                                                               "max":  0
+                                                           },
+                                     "rocketMqInflightPeak":  {
+                                                                  "count":  3,
+                                                                  "average":  22.666666666666668,
+                                                                  "standardDeviationSample":  2.3094010767585034,
+                                                                  "coefficientOfVariation":  0.10188534162169867,
+                                                                  "min":  20,
+                                                                  "p50":  24,
+                                                                  "p95":  24,
+                                                                  "p99":  24,
+                                                                  "max":  24
+                                                              },
+                                     "rocketMqInflightDrainSeconds":  {
+                                                                          "count":  3,
+                                                                          "average":  6,
+                                                                          "standardDeviationSample":  1.7320508075688772,
+                                                                          "coefficientOfVariation":  0.28867513459481287,
+                                                                          "min":  4,
+                                                                          "p50":  7,
+                                                                          "p95":  7,
+                                                                          "p99":  7,
+                                                                          "max":  7
+                                                                      },
+                                     "rocketMqLagPeak":  {
+                                                             "count":  3,
+                                                             "average":  22.666666666666668,
+                                                             "standardDeviationSample":  2.3094010767585034,
+                                                             "coefficientOfVariation":  0.10188534162169867,
+                                                             "min":  20,
+                                                             "p50":  24,
+                                                             "p95":  24,
+                                                             "p99":  24,
+                                                             "max":  24
+                                                         },
+                                     "rocketMqMessagesInActiveAveragePerSecond":  {
+                                                                                      "count":  3,
+                                                                                      "average":  35.36211701322879,
+                                                                                      "standardDeviationSample":  1.8771722793509724,
+                                                                                      "coefficientOfVariation":  0.053084273168620862,
+                                                                                      "min":  33.333369605777555,
+                                                                                      "p50":  35.7154962132453,
+                                                                                      "p95":  36.905286319921693,
+                                                                                      "p99":  37.011045440515154,
+                                                                                      "max":  37.037485220663513
+                                                                                  },
+                                     "rocketMqMessagesOutActiveAveragePerSecond":  {
+                                                                                       "count":  3,
+                                                                                       "average":  35.362116214252495,
+                                                                                       "standardDeviationSample":  1.8771704235447804,
+                                                                                       "coefficientOfVariation":  0.053084221887947917,
+                                                                                       "min":  33.333369605777555,
+                                                                                       "p50":  35.715498445946338,
+                                                                                       "p95":  36.905282376524859,
+                                                                                       "p99":  37.011040948131836,
+                                                                                       "max":  37.037480591033585
+                                                                                   },
+                                     "aiAverageMs":  {
+                                                         "count":  3,
+                                                         "average":  105.352686577,
+                                                         "standardDeviationSample":  0.46991030233268821,
+                                                         "coefficientOfVariation":  0.0044603542406034509,
+                                                         "min":  105.079916414,
+                                                         "p50":  105.08285371100001,
+                                                         "p95":  105.81404601650001,
+                                                         "p99":  105.87904088810001,
+                                                         "max":  105.895289606
+                                                     },
+                                     "aiP95Ms":  {
+                                                     "count":  3,
+                                                     "average":  110.99505890627692,
+                                                     "standardDeviationSample":  0.045308507814879925,
+                                                     "coefficientOfVariation":  0.00040820292598013716,
+                                                     "min":  110.94428292929292,
+                                                     "p50":  111.00952851570416,
+                                                     "p95":  111.02918159802073,
+                                                     "p99":  111.03092853867109,
+                                                     "max":  111.03136527383367
+                                                 },
+                                     "aiP99Ms":  {
+                                                     "count":  3,
+                                                     "average":  116.05435952136753,
+                                                     "standardDeviationSample":  3.8190840129237746,
+                                                     "coefficientOfVariation":  0.032907716941220272,
+                                                     "min":  111.848106,
+                                                     "p50":  117.01032623076924,
+                                                     "p95":  119.07521432307692,
+                                                     "p99":  119.25875993128206,
+                                                     "max":  119.30464633333334
+                                                 },
+                                     "taskRetryCount":  0,
+                                     "outboxRetryCount":  0,
+                                     "terminalFailureCount":  0,
+                                     "outboxFailureCount":  0,
+                                     "outboxPublishSuccessRate":  1,
+                                     "http5xxCount":  0,
+                                     "processCpuUsagePeak":  0.0646658400475444,
+                                     "jvmHeapPeakBytes":  84556368,
+                                     "jvmGcPauseSeconds":  0.15200000000000002,
+                                     "hikariActivePeak":  3,
+                                     "hikariConfiguredMax":  10,
+                                     "nativeBackfilledRunCount":  0
+                                 }
+               },
+    "runs":  [
+                 {
+                     "candidate":  "bounded-c2",
+                     "runNumber":  1,
+                     "gitCommit":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+                     "taskCount":  1000,
+                     "completionTimeMs":  26826,
+                     "throughputTasksPerSecond":  37.277268321777377,
+                     "steadyCompletionThroughputTasksPerSecond":  44.0885072655218,
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  998,
+                                           "drainSeconds":  23.008,
+                                           "drainRatePerSecond":  43.376216968011128
+                                       },
+                     "outboxSend":  {
+                                        "count":  1000,
+                                        "averageMs":  7.577443676,
+                                        "p95Ms":  3.5243780833333331,
+                                        "p99Ms":  5.2111047272727271,
+                                        "configuredConcurrency":  2,
+                                        "observedPeakConcurrency":  2
+                                    },
+                     "rocketMq":  {
+                                      "readyPeak":  1,
+                                      "inflightPeak":  44,
+                                      "inflightDrainSeconds":  18,
+                                      "messagesInActiveAveragePerSecond":  40.00196574512286,
+                                      "messagesOutActiveAveragePerSecond":  40.00196574512286
+                                  },
+                     "ai":  {
+                                "p95Ms":  111.05324637055838,
+                                "p99Ms":  123.0329165
+                            },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.05135910938691312,
+                                       "jvmHeapPeakBytes":  82648336,
+                                       "jvmGcPauseSeconds":  0.053,
+                                       "hikariActivePeak":  4,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T164249Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r1-outcome.json",
+                                       "k6":  "20260809T164249Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r1-k6.json",
+                                       "prometheus":  "20260809T164249Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r1-prometheus.json",
+                                       "backlog":  "20260809T164249Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r1-backlog.json",
+                                       "rocketMqNative":  "20260809T164249Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r1-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "candidate":  "bounded-c2",
+                     "runNumber":  2,
+                     "gitCommit":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+                     "taskCount":  1000,
+                     "completionTimeMs":  26143,
+                     "throughputTasksPerSecond":  38.2511570975022,
+                     "steadyCompletionThroughputTasksPerSecond":  41.558576320431669,
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "drainSeconds":  22.863,
+                                           "drainRatePerSecond":  43.73879193456677
+                                       },
+                     "outboxSend":  {
+                                        "count":  1000,
+                                        "averageMs":  2.2562331780000004,
+                                        "p95Ms":  4.0894456,
+                                        "p99Ms":  6.7363058181818181,
+                                        "configuredConcurrency":  2,
+                                        "observedPeakConcurrency":  2
+                                    },
+                     "rocketMq":  {
+                                      "readyPeak":  1,
+                                      "inflightPeak":  47,
+                                      "inflightDrainSeconds":  7,
+                                      "messagesInActiveAveragePerSecond":  38.461765695101917,
+                                      "messagesOutActiveAveragePerSecond":  38.461765695101917
+                                  },
+                     "ai":  {
+                                "p95Ms":  111.00952851570416,
+                                "p99Ms":  117.01032623076924
+                            },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.0451666630627189,
+                                       "jvmHeapPeakBytes":  137353360,
+                                       "jvmGcPauseSeconds":  0.036000000000000004,
+                                       "hikariActivePeak":  5,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T164358Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r2-outcome.json",
+                                       "k6":  "20260809T164358Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r2-k6.json",
+                                       "prometheus":  "20260809T164358Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r2-prometheus.json",
+                                       "backlog":  "20260809T164358Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r2-backlog.json",
+                                       "rocketMqNative":  "20260809T164358Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r2-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "candidate":  "bounded-c2",
+                     "runNumber":  3,
+                     "gitCommit":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+                     "taskCount":  1000,
+                     "completionTimeMs":  23602,
+                     "throughputTasksPerSecond":  42.369290738073047,
+                     "steadyCompletionThroughputTasksPerSecond":  46.215093468728362,
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "drainSeconds":  20.318,
+                                           "drainRatePerSecond":  49.217442661679293
+                                       },
+                     "outboxSend":  {
+                                        "count":  1000,
+                                        "averageMs":  1.8988912750000004,
+                                        "p95Ms":  2.6948894057971016,
+                                        "p99Ms":  3.1290819523809525,
+                                        "configuredConcurrency":  2,
+                                        "observedPeakConcurrency":  2
+                                    },
+                     "rocketMq":  {
+                                      "readyPeak":  1,
+                                      "inflightPeak":  44,
+                                      "inflightDrainSeconds":  15,
+                                      "messagesInActiveAveragePerSecond":  41.6700761080452,
+                                      "messagesOutActiveAveragePerSecond":  41.67007871156099
+                                  },
+                     "ai":  {
+                                "p95Ms":  110.94428292929292,
+                                "p99Ms":  111.848106
+                            },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.038799187879272529,
+                                       "jvmHeapPeakBytes":  76786464,
+                                       "jvmGcPauseSeconds":  0.023999999999999994,
+                                       "hikariActivePeak":  4,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T164506Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r3-outcome.json",
+                                       "k6":  "20260809T164506Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r3-k6.json",
+                                       "prometheus":  "20260809T164506Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r3-prometheus.json",
+                                       "backlog":  "20260809T164506Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r3-backlog.json",
+                                       "rocketMqNative":  "20260809T164506Z-phase7-P7_OUTBOX-bounded-c2-scaling-c8-r3-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "candidate":  "bounded-c4",
+                     "runNumber":  1,
+                     "gitCommit":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+                     "taskCount":  1000,
+                     "completionTimeMs":  22481,
+                     "throughputTasksPerSecond":  44.482007028157106,
+                     "steadyCompletionThroughputTasksPerSecond":  59.5849140816782,
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "drainSeconds":  18.807,
+                                           "drainRatePerSecond":  53.171691391503167
+                                       },
+                     "outboxSend":  {
+                                        "count":  1000,
+                                        "averageMs":  13.340373809,
+                                        "p95Ms":  4.063231,
+                                        "p99Ms":  6.5244723333333328,
+                                        "configuredConcurrency":  4,
+                                        "observedPeakConcurrency":  4
+                                    },
+                     "rocketMq":  {
+                                      "readyPeak":  0,
+                                      "inflightPeak":  77,
+                                      "inflightDrainSeconds":  10,
+                                      "messagesInActiveAveragePerSecond":  49.999082626388038,
+                                      "messagesOutActiveAveragePerSecond":  49.999082626388038
+                                  },
+                     "ai":  {
+                                "p95Ms":  111.40948598039216,
+                                "p99Ms":  132.27254256521741
+                            },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.086029000444873174,
+                                       "jvmHeapPeakBytes":  66122752,
+                                       "jvmGcPauseSeconds":  0.077,
+                                       "hikariActivePeak":  10,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T165056Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r1-outcome.json",
+                                       "k6":  "20260809T165056Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r1-k6.json",
+                                       "prometheus":  "20260809T165056Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r1-prometheus.json",
+                                       "backlog":  "20260809T165056Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r1-backlog.json",
+                                       "rocketMqNative":  "20260809T165056Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r1-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "candidate":  "bounded-c4",
+                     "runNumber":  2,
+                     "gitCommit":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+                     "taskCount":  1000,
+                     "completionTimeMs":  19000,
+                     "throughputTasksPerSecond":  52.631578947368418,
+                     "steadyCompletionThroughputTasksPerSecond":  60.439145853768963,
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "drainSeconds":  15.446,
+                                           "drainRatePerSecond":  64.741680694030819
+                                       },
+                     "outboxSend":  {
+                                        "count":  1000,
+                                        "averageMs":  2.1292424999999984,
+                                        "p95Ms":  3.364179125,
+                                        "p99Ms":  4.038958222222222,
+                                        "configuredConcurrency":  4,
+                                        "observedPeakConcurrency":  4
+                                    },
+                     "rocketMq":  {
+                                      "readyPeak":  0,
+                                      "inflightPeak":  77,
+                                      "inflightDrainSeconds":  6,
+                                      "messagesInActiveAveragePerSecond":  50.0006577016036,
+                                      "messagesOutActiveAveragePerSecond":  50.0006577016036
+                                  },
+                     "ai":  {
+                                "p95Ms":  110.8149708935743,
+                                "p99Ms":  111.71334924698795
+                            },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.042147942750796953,
+                                       "jvmHeapPeakBytes":  90732576,
+                                       "jvmGcPauseSeconds":  0.039000000000000007,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-outcome.json",
+                                       "k6":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-k6.json",
+                                       "prometheus":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-prometheus.json",
+                                       "backlog":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-backlog.json",
+                                       "rocketMqNative":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-rocketmq-native.json"
+                                   }
+                 },
+                 {
+                     "candidate":  "bounded-c4",
+                     "runNumber":  3,
+                     "gitCommit":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+                     "taskCount":  1000,
+                     "completionTimeMs":  19497,
+                     "throughputTasksPerSecond":  51.289942042365496,
+                     "steadyCompletionThroughputTasksPerSecond":  59.722636444974647,
+                     "successCount":  1000,
+                     "terminalFailureCount":  0,
+                     "taskRetryCount":  0,
+                     "outboxRetryCount":  0,
+                     "outboxFailureCount":  0,
+                     "outboxPending":  {
+                                           "peak":  1000,
+                                           "drainSeconds":  16.129,
+                                           "drainRatePerSecond":  62.000124000247993
+                                       },
+                     "outboxSend":  {
+                                        "count":  1000,
+                                        "averageMs":  2.1758374939999996,
+                                        "p95Ms":  3.07914980952381,
+                                        "p99Ms":  4.1943040000000007,
+                                        "configuredConcurrency":  4,
+                                        "observedPeakConcurrency":  4
+                                    },
+                     "rocketMq":  {
+                                      "readyPeak":  0,
+                                      "inflightPeak":  74,
+                                      "inflightDrainSeconds":  8,
+                                      "messagesInActiveAveragePerSecond":  50.002323493113963,
+                                      "messagesOutActiveAveragePerSecond":  50.00232661889541
+                                  },
+                     "ai":  {
+                                "p95Ms":  110.92262218466195,
+                                "p99Ms":  111.82553322401614
+                            },
+                     "resources":  {
+                                       "processCpuUsagePeak":  0.056178068699904465,
+                                       "jvmHeapPeakBytes":  69716480,
+                                       "jvmGcPauseSeconds":  0.041999999999999982,
+                                       "hikariActivePeak":  0,
+                                       "hikariConfiguredMax":  10,
+                                       "http5xxCount":  0
+                                   },
+                     "artifacts":  {
+                                       "outcome":  "20260809T165312Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r3-outcome.json",
+                                       "k6":  "20260809T165312Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r3-k6.json",
+                                       "prometheus":  "20260809T165312Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r3-prometheus.json",
+                                       "backlog":  "20260809T165312Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r3-backlog.json",
+                                       "rocketMqNative":  "20260809T165312Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r3-rocketmq-native.json"
+                                   }
+                 }
+             ],
+    "candidates":  [
+                       {
+                           "candidate":  "bounded-c2",
+                           "publishConcurrency":  2,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  25523.666666666668,
+                                                    "standardDeviationSample":  1698.8891468643071,
+                                                    "coefficientOfVariation":  0.066561327925623553,
+                                                    "min":  23602,
+                                                    "p50":  26143,
+                                                    "p95":  26757.7,
+                                                    "p99":  26812.34,
+                                                    "max":  26826
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  39.299238719117547,
+                                                            "standardDeviationSample":  2.7029667748957404,
+                                                            "coefficientOfVariation":  0.068779112852912661,
+                                                            "min":  37.277268321777377,
+                                                            "p50":  38.2511570975022,
+                                                            "p95":  41.957477374015959,
+                                                            "p99":  42.286928065261634,
+                                                            "max":  42.369290738073047
+                                                        },
+                           "steadyCompletionThroughputTasksPerSecond":  {
+                                                                            "count":  3,
+                                                                            "average":  43.954059018227277,
+                                                                            "standardDeviationSample":  2.3311682128271478,
+                                                                            "coefficientOfVariation":  0.053036471827560619,
+                                                                            "min":  41.558576320431669,
+                                                                            "p50":  44.0885072655218,
+                                                                            "p95":  46.0024348484077,
+                                                                            "p99":  46.172561744664229,
+                                                                            "max":  46.215093468728362
+                                                                        },
+                           "outboxDrainRatePerSecond":  {
+                                                            "count":  3,
+                                                            "average":  45.444150521419061,
+                                                            "standardDeviationSample":  3.2727916727780615,
+                                                            "coefficientOfVariation":  0.07201788646561906,
+                                                            "min":  43.376216968011128,
+                                                            "p50":  43.73879193456677,
+                                                            "p95":  48.669577588968039,
+                                                            "p99":  49.107869647137044,
+                                                            "max":  49.217442661679293
+                                                        },
+                           "outboxDrainSeconds":  {
+                                                      "count":  3,
+                                                      "average":  22.063,
+                                                      "standardDeviationSample":  1.5129524116772464,
+                                                      "coefficientOfVariation":  0.068574192615566631,
+                                                      "min":  20.318,
+                                                      "p50":  22.863,
+                                                      "p95":  22.993499999999997,
+                                                      "p99":  23.0051,
+                                                      "max":  23.008
+                                                  },
+                           "outboxSendAverageMs":  {
+                                                       "count":  3,
+                                                       "average":  3.9108560430000003,
+                                                       "standardDeviationSample":  3.1803807887989324,
+                                                       "coefficientOfVariation":  0.81321857767980543,
+                                                       "min":  1.8988912750000004,
+                                                       "p50":  2.2562331780000004,
+                                                       "p95":  7.045322626199999,
+                                                       "p99":  7.47101946604,
+                                                       "max":  7.577443676
+                                                   },
+                           "outboxSendP95Ms":  {
+                                                   "count":  3,
+                                                   "average":  3.436237696376812,
+                                                   "standardDeviationSample":  0.70144371873804123,
+                                                   "coefficientOfVariation":  0.20413131474509094,
+                                                   "min":  2.6948894057971016,
+                                                   "p50":  3.5243780833333331,
+                                                   "p95":  4.032938848333333,
+                                                   "p99":  4.0781442496666669,
+                                                   "max":  4.0894456
+                                               },
+                           "outboxSendP99Ms":  {
+                                                   "count":  3,
+                                                   "average":  5.0254974992784991,
+                                                   "standardDeviationSample":  1.8107604857665773,
+                                                   "coefficientOfVariation":  0.36031467253272831,
+                                                   "min":  3.1290819523809525,
+                                                   "p50":  5.2111047272727271,
+                                                   "p95":  6.5837857090909093,
+                                                   "p99":  6.7058017963636365,
+                                                   "max":  6.7363058181818181
+                                               },
+                           "observedPublishConcurrencyPeak":  2,
+                           "rocketMqReadyPeak":  {
+                                                     "count":  3,
+                                                     "average":  1,
+                                                     "standardDeviationSample":  0,
+                                                     "coefficientOfVariation":  0,
+                                                     "min":  1,
+                                                     "p50":  1,
+                                                     "p95":  1,
+                                                     "p99":  1,
+                                                     "max":  1
+                                                 },
+                           "rocketMqInflightPeak":  {
+                                                        "count":  3,
+                                                        "average":  45,
+                                                        "standardDeviationSample":  1.7320508075688772,
+                                                        "coefficientOfVariation":  0.03849001794597505,
+                                                        "min":  44,
+                                                        "p50":  44,
+                                                        "p95":  46.7,
+                                                        "p99":  46.940000000000005,
+                                                        "max":  47
+                                                    },
+                           "rocketMqInflightDrainSeconds":  {
+                                                                "count":  3,
+                                                                "average":  13.333333333333334,
+                                                                "standardDeviationSample":  5.6862407030773268,
+                                                                "coefficientOfVariation":  0.42646805273079946,
+                                                                "min":  7,
+                                                                "p50":  15,
+                                                                "p95":  17.7,
+                                                                "p99":  17.94,
+                                                                "max":  18
+                                                            },
+                           "rocketMqMessagesInActiveAveragePerSecond":  {
+                                                                            "count":  3,
+                                                                            "average":  40.044602516089988,
+                                                                            "standardDeviationSample":  1.604580115522112,
+                                                                            "coefficientOfVariation":  0.040069822515466071,
+                                                                            "min":  38.461765695101917,
+                                                                            "p50":  40.00196574512286,
+                                                                            "p95":  41.503265071752963,
+                                                                            "p99":  41.636713900786752,
+                                                                            "max":  41.6700761080452
+                                                                        },
+                           "rocketMqMessagesOutActiveAveragePerSecond":  {
+                                                                             "count":  3,
+                                                                             "average":  40.044603383928589,
+                                                                             "standardDeviationSample":  1.6045814342305518,
+                                                                             "coefficientOfVariation":  0.040069854578071086,
+                                                                             "min":  38.461765695101917,
+                                                                             "p50":  40.00196574512286,
+                                                                             "p95":  41.503267414917175,
+                                                                             "p99":  41.636716452232228,
+                                                                             "max":  41.67007871156099
+                                                                         },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  111.00235260518515,
+                                           "standardDeviationSample":  0.054835008452040535,
+                                           "coefficientOfVariation":  0.00049399861503006631,
+                                           "min":  110.94428292929292,
+                                           "p50":  111.00952851570416,
+                                           "p95":  111.04887458507297,
+                                           "p99":  111.05237201346131,
+                                           "max":  111.05324637055838
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  117.29711624358974,
+                                           "standardDeviationSample":  5.5979177257099577,
+                                           "coefficientOfVariation":  0.047724257040427306,
+                                           "min":  111.848106,
+                                           "p50":  117.01032623076924,
+                                           "p95":  122.43065747307693,
+                                           "p99":  122.91246469461538,
+                                           "max":  123.0329165
+                                       },
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "outboxFailureCount":  0,
+                           "http5xxCount":  0,
+                           "processCpuUsagePeak":  0.05135910938691312,
+                           "jvmHeapPeakBytes":  137353360,
+                           "jvmGcPauseSeconds":  0.11299999999999999,
+                           "hikariActivePeak":  5,
+                           "hikariConfiguredMax":  10
+                       },
+                       {
+                           "candidate":  "bounded-c4",
+                           "publishConcurrency":  4,
+                           "runCount":  3,
+                           "completionTimeMs":  {
+                                                    "count":  3,
+                                                    "average":  20326,
+                                                    "standardDeviationSample":  1882.7562242627164,
+                                                    "coefficientOfVariation":  0.092627975217097133,
+                                                    "min":  19000,
+                                                    "p50":  19497,
+                                                    "p95":  22182.6,
+                                                    "p99":  22421.32,
+                                                    "max":  22481
+                                                },
+                           "throughputTasksPerSecond":  {
+                                                            "count":  3,
+                                                            "average":  49.467842672630333,
+                                                            "standardDeviationSample":  4.3696584765278077,
+                                                            "coefficientOfVariation":  0.088333313935791691,
+                                                            "min":  44.482007028157106,
+                                                            "p50":  51.289942042365496,
+                                                            "p95":  52.497415256868123,
+                                                            "p99":  52.604746209268356,
+                                                            "max":  52.631578947368418
+                                                        },
+                           "steadyCompletionThroughputTasksPerSecond":  {
+                                                                            "count":  3,
+                                                                            "average":  59.915565460140606,
+                                                                            "standardDeviationSample":  0.45863295104256385,
+                                                                            "coefficientOfVariation":  0.0076546544711770057,
+                                                                            "min":  59.5849140816782,
+                                                                            "p50":  59.722636444974647,
+                                                                            "p95":  60.367494912889526,
+                                                                            "p99":  60.424815665593073,
+                                                                            "max":  60.439145853768963
+                                                                        },
+                           "outboxDrainRatePerSecond":  {
+                                                            "count":  3,
+                                                            "average":  59.971165361927319,
+                                                            "standardDeviationSample":  6.04596294912259,
+                                                            "coefficientOfVariation":  0.10081449831156471,
+                                                            "min":  53.171691391503167,
+                                                            "p50":  62.000124000247993,
+                                                            "p95":  64.467525024652545,
+                                                            "p99":  64.686849560155167,
+                                                            "max":  64.741680694030819
+                                                        },
+                           "outboxDrainSeconds":  {
+                                                      "count":  3,
+                                                      "average":  16.794,
+                                                      "standardDeviationSample":  1.7764427939002136,
+                                                      "coefficientOfVariation":  0.10577842050138225,
+                                                      "min":  15.446,
+                                                      "p50":  16.129,
+                                                      "p95":  18.5392,
+                                                      "p99":  18.753439999999998,
+                                                      "max":  18.807
+                                                  },
+                           "outboxSendAverageMs":  {
+                                                       "count":  3,
+                                                       "average":  5.8818179343333332,
+                                                       "standardDeviationSample":  6.4593408777529282,
+                                                       "coefficientOfVariation":  1.0981878306787565,
+                                                       "min":  2.1292424999999984,
+                                                       "p50":  2.1758374939999996,
+                                                       "p95":  12.2239201775,
+                                                       "p99":  13.1170830827,
+                                                       "max":  13.340373809
+                                                   },
+                           "outboxSendP95Ms":  {
+                                                   "count":  3,
+                                                   "average":  3.50218664484127,
+                                                   "standardDeviationSample":  0.506348204313803,
+                                                   "coefficientOfVariation":  0.14458058797627341,
+                                                   "min":  3.07914980952381,
+                                                   "p50":  3.364179125,
+                                                   "p95":  3.9933258125,
+                                                   "p99":  4.0492499625,
+                                                   "max":  4.063231
+                                               },
+                           "outboxSendP99Ms":  {
+                                                   "count":  3,
+                                                   "average":  4.9192448518518521,
+                                                   "standardDeviationSample":  1.3923359968577553,
+                                                   "coefficientOfVariation":  0.28303856359855917,
+                                                   "min":  4.038958222222222,
+                                                   "p50":  4.1943040000000007,
+                                                   "p95":  6.2914555,
+                                                   "p99":  6.4778689666666658,
+                                                   "max":  6.5244723333333328
+                                               },
+                           "observedPublishConcurrencyPeak":  4,
+                           "rocketMqReadyPeak":  {
+                                                     "count":  3,
+                                                     "average":  0,
+                                                     "standardDeviationSample":  0,
+                                                     "coefficientOfVariation":  0,
+                                                     "min":  0,
+                                                     "p50":  0,
+                                                     "p95":  0,
+                                                     "p99":  0,
+                                                     "max":  0
+                                                 },
+                           "rocketMqInflightPeak":  {
+                                                        "count":  3,
+                                                        "average":  76,
+                                                        "standardDeviationSample":  1.7320508075688772,
+                                                        "coefficientOfVariation":  0.022790142204853647,
+                                                        "min":  74,
+                                                        "p50":  77,
+                                                        "p95":  77,
+                                                        "p99":  77,
+                                                        "max":  77
+                                                    },
+                           "rocketMqInflightDrainSeconds":  {
+                                                                "count":  3,
+                                                                "average":  8,
+                                                                "standardDeviationSample":  2,
+                                                                "coefficientOfVariation":  0.25,
+                                                                "min":  6,
+                                                                "p50":  8,
+                                                                "p95":  9.8,
+                                                                "p99":  9.96,
+                                                                "max":  10
+                                                            },
+                           "rocketMqMessagesInActiveAveragePerSecond":  {
+                                                                            "count":  3,
+                                                                            "average":  50.000687940368529,
+                                                                            "standardDeviationSample":  0.0016206449552508453,
+                                                                            "coefficientOfVariation":  3.2412453148317631E-05,
+                                                                            "min":  49.999082626388038,
+                                                                            "p50":  50.0006577016036,
+                                                                            "p95":  50.002156913962921,
+                                                                            "p99":  50.002290177283754,
+                                                                            "max":  50.002323493113963
+                                                                        },
+                           "rocketMqMessagesOutActiveAveragePerSecond":  {
+                                                                             "count":  3,
+                                                                             "average":  50.000688982295685,
+                                                                             "standardDeviationSample":  0.001622222459542413,
+                                                                             "coefficientOfVariation":  3.244400212398697E-05,
+                                                                             "min":  49.999082626388038,
+                                                                             "p50":  50.0006577016036,
+                                                                             "p95":  50.002159727166223,
+                                                                             "p99":  50.002293240549577,
+                                                                             "max":  50.00232661889541
+                                                                         },
+                           "aiP95Ms":  {
+                                           "count":  3,
+                                           "average":  111.04902635287613,
+                                           "standardDeviationSample":  0.31677366907613064,
+                                           "coefficientOfVariation":  0.0028525569244482289,
+                                           "min":  110.8149708935743,
+                                           "p50":  110.92262218466195,
+                                           "p95":  111.36079960081913,
+                                           "p99":  111.39974870447756,
+                                           "max":  111.40948598039216
+                                       },
+                           "aiP99Ms":  {
+                                           "count":  3,
+                                           "average":  118.60380834540717,
+                                           "standardDeviationSample":  11.837603967443501,
+                                           "coefficientOfVariation":  0.099807958383335518,
+                                           "min":  111.71334924698795,
+                                           "p50":  111.82553322401614,
+                                           "p95":  130.22784163109728,
+                                           "p99":  131.86360237839338,
+                                           "max":  132.27254256521741
+                                       },
+                           "taskRetryCount":  0,
+                           "outboxRetryCount":  0,
+                           "terminalFailureCount":  0,
+                           "outboxFailureCount":  0,
+                           "http5xxCount":  0,
+                           "processCpuUsagePeak":  0.086029000444873174,
+                           "jvmHeapPeakBytes":  90732576,
+                           "jvmGcPauseSeconds":  0.15799999999999997,
+                           "hikariActivePeak":  10,
+                           "hikariConfiguredMax":  10
+                       }
+                   ],
+    "selectedCandidate":  "bounded-c4",
+    "comparison":  {
+                       "completionReductionPercent":  26.246401702992328128227664090,
+                       "throughputIncreasePercent":  35.177678240460114218555142210,
+                       "outboxDrainIncreasePercent":  46.979715689245509584979620840,
+                       "mqInflightPeakChangePercent":  235.29411764705880380622837370,
+                       "c2ThroughputIncreasePercent":  7.3905705131375172752313826500,
+                       "c2CompletionReductionPercent":  7.3864873364134307741593815200
+                   },
+    "correctness":  {
+                        "totalCandidateTasks":  6000,
+                        "successCount":  6000,
+                        "terminalFailureCount":  0,
+                        "taskRetryCount":  0,
+                        "outboxRetryCount":  0,
+                        "outboxFailureCount":  0
+                    },
+    "conclusion":  {
+                       "keepOptimization":  true,
+                       "reason":  "Publish concurrency 4 materially improves repeated completion, throughput and Outbox drain with no lost task, retry or failure.",
+                       "defaultConcurrency":  2,
+                       "benchmarkConcurrency":  4,
+                       "newBoundary":  "The broker is not the limiter: ready remains zero and messages in/out match. Inflight now accumulates while one run observes Hikari 10/10, so the next boundary is downstream consumer/result persistence plus shared database-pool contention; the available data cannot separate those two more finely.",
+                       "productionDefaultDecision":  "Keep the bounded pipeline and conservative default 2. Do not promote 4 as a production default from a local Stub benchmark because one run observed Hikari at 10/10."
+                   },
+    "resumeSafe":  {
+                       "eligible":  true,
+                       "numbers":  {
+                                       "completionBeforeSeconds":  27.559333333333332,
+                                       "completionAfterSeconds":  20.326,
+                                       "throughputBeforeTasksPerSecond":  36.594682877031431,
+                                       "throughputAfterTasksPerSecond":  49.467842672630333,
+                                       "throughputIncreasePercent":  35.177678240460114218555142210,
+                                       "completionReductionPercent":  26.246401702992328128227664090,
+                                       "outboxDrainIncreasePercent":  46.979715689245509584979620840
+                                   },
+                       "caveat":  "Single local machine, deterministic 100ms HTTP AI Stub, explicit publish concurrency 4, three repeated 1000-task runs; not real BERT/LLM or production cluster capacity."
+                   }
+}

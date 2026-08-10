@@ -54,4 +54,23 @@ class AnalysisOutboxSchemaTests {
         assertEquals(0, obsoleteUniqueIndexCount);
         assertEquals(1, replayLookupIndexCount);
     }
+
+    @Test
+    void outboxHasPublishAttemptFencingToken() {
+        Integer tokenColumnCount = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'analysis_outbox_event'
+                  AND column_name = 'publish_token'
+                  AND data_type = 'char'
+                  AND character_maximum_length = 32
+                  AND is_nullable = 'YES'
+                """,
+                Integer.class
+        );
+
+        assertEquals(1, tokenColumnCount);
+    }
 }

@@ -1,0 +1,68 @@
+{
+    "schemaVersion":  1,
+    "gitCommit":  "d51fe5844c08e3b0000e1d902357a34b5986bcf2",
+    "experimentId":  "P7_OUTBOX",
+    "experimentPhase":  7,
+    "configurationLabel":  "bounded-c4",
+    "scenario":  "scaling",
+    "runNumber":  2,
+    "consumerConcurrency":  8,
+    "outboxBatchSize":  100,
+    "outboxPublishIntervalMs":  1000,
+    "outboxPublishConcurrency":  4,
+    "aiStubDelayMs":  100,
+    "taskCount":  1000,
+    "batchCount":  5,
+    "batchIds":  [
+                     249,
+                     250,
+                     248,
+                     246,
+                     247
+                 ],
+    "productionDurationMs":  1764,
+    "createLatencyMs":  [
+                            1756.108733,
+                            1761.433425,
+                            1750.642495,
+                            1750.926647,
+                            1759.120178
+                        ],
+    "totalCompletionMs":  19000,
+    "drainTimeMs":  17236,
+    "throughputTasksPerSecond":  52.631578947368418,
+    "steadyCompletionThroughputTasksPerSecond":  60.439145853768956,
+    "steadyThroughputDefinition":  "completed tasks between the 10th and 90th percentile completion timestamps divided by that window",
+    "taskCompletionLatencyMs":  {
+                                    "count":  1000,
+                                    "average":  9760.614,
+                                    "min":  2328,
+                                    "p50":  9735.5,
+                                    "p95":  16420.3,
+                                    "p99":  17004.010000000002,
+                                    "max":  17126
+                                },
+    "successCount":  1000,
+    "terminalFailureCount":  0,
+    "taskRetryCount":  0,
+    "outboxRetryCount":  0,
+    "outboxSentCount":  1000,
+    "outboxFailureCount":  0,
+    "peakProxyBacklog":  1000,
+    "peakOutboxPending":  1000,
+    "http5xxSource":  "Prometheus artifact",
+    "aiStub":  {
+                   "status":  "UP",
+                   "service":  "courseinsight-performance-ai-stub",
+                   "delayMs":  100,
+                   "deterministic":  true,
+                   "bertEnabled":  false,
+                   "llmEnabled":  false
+               },
+    "artifacts":  {
+                      "k6":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-k6.json",
+                      "prometheus":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-prometheus.json",
+                      "backlog":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-backlog.json",
+                      "rocketMqNative":  "20260809T165204Z-phase7-P7_OUTBOX-bounded-c4-scaling-c8-r2-rocketmq-native.json"
+                  }
+}

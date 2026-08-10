@@ -21,6 +21,7 @@ public class AnalysisOutboxEvent {
     private Long commentId;
     private String eventType;
     private String status;
+    private String publishToken;
     private Integer retryCount;
     private LocalDateTime nextRetryAt;
     private String messageId;

@@ -13,7 +13,7 @@ param(
     [string]$Scenario = 'scaling',
     [ValidateRange(0, 60000)]
     [int]$AiStubDelayMs = 100,
-    [ValidateSet(4, 5, 6)]
+    [ValidateSet(4, 5, 6, 7)]
     [int]$ExperimentPhase = 4,
     [ValidatePattern('^[A-Za-z0-9_-]{0,30}$')]
     [string]$ConfigurationLabel = '',
@@ -21,6 +21,8 @@ param(
     [int]$OutboxBatchSize = 20,
     [ValidateRange(10, 60000)]
     [int]$OutboxPublishIntervalMs = 1000,
+    [ValidateRange(1, 64)]
+    [int]$OutboxPublishConcurrency = 2,
     [string]$ContextPath = '',
     [string]$BaseUrl = 'http://host.docker.internal:8080',
     [string]$PrometheusUrl = 'http://127.0.0.1:9090'
@@ -209,6 +211,7 @@ $envValues = [ordered]@{
     CONFIGURATION_LABEL = $ConfigurationLabel
     OUTBOX_BATCH_SIZE = [string]$OutboxBatchSize
     OUTBOX_PUBLISH_INTERVAL_MS = [string]$OutboxPublishIntervalMs
+    OUTBOX_PUBLISH_CONCURRENCY = [string]$OutboxPublishConcurrency
     RUN_NUMBER = [string]$RunNumber
     TASK_COUNT = '1000'
     BATCH_COUNT = '5'
@@ -298,6 +301,13 @@ $queries = [ordered]@{
     aiP99SecondsByOutcome = "histogram_quantile(0.99, sum by (le,outcome) (courseinsight_ai_request_seconds_bucket @ $endEpoch - courseinsight_ai_request_seconds_bucket @ $startEpoch))"
     analysisTaskCountByOutcome = "sum by (outcome) (courseinsight_analysis_task_total @ $endEpoch - courseinsight_analysis_task_total @ $startEpoch)"
     outboxPublishCountByOutcome = "sum by (outcome) (courseinsight_outbox_publish_total @ $endEpoch - courseinsight_outbox_publish_total @ $startEpoch)"
+    outboxSendCountByOutcome = "sum by (outcome) (courseinsight_outbox_send_seconds_count @ $endEpoch - courseinsight_outbox_send_seconds_count @ $startEpoch)"
+    outboxSendTotalSecondsByOutcome = "sum by (outcome) (courseinsight_outbox_send_seconds_sum @ $endEpoch - courseinsight_outbox_send_seconds_sum @ $startEpoch)"
+    outboxSendP95SecondsByOutcome = "histogram_quantile(0.95, sum by (le,outcome) (courseinsight_outbox_send_seconds_bucket @ $endEpoch - courseinsight_outbox_send_seconds_bucket @ $startEpoch))"
+    outboxSendP99SecondsByOutcome = "histogram_quantile(0.99, sum by (le,outcome) (courseinsight_outbox_send_seconds_bucket @ $endEpoch - courseinsight_outbox_send_seconds_bucket @ $startEpoch))"
+    outboxPublishConfiguredConcurrency = 'max(courseinsight_outbox_publish_configured_concurrency)'
+    outboxPublishActiveMax = "max(max_over_time(courseinsight_outbox_publish_active[${range}]))"
+    outboxPublishPeakActive = 'max(courseinsight_outbox_publish_peak_active)'
 }
 $prometheusResults = [ordered]@{}
 foreach ($entry in $queries.GetEnumerator()) {
@@ -336,6 +346,7 @@ if ($ExperimentPhase -ge 5) {
         runNumber = $RunNumber; consumerConcurrency = $ConsumerConcurrency
         outboxBatchSize = $OutboxBatchSize
         outboxPublishIntervalMs = $OutboxPublishIntervalMs
+        outboxPublishConcurrency = $OutboxPublishConcurrency
         scrapeIntervalSeconds = 1
         startEpochSeconds = $startEpoch; endEpochSeconds = $endEpoch
         source = 'RocketMQ 5.3.2 built-in PROM exporter on broker port 5557'
@@ -426,6 +437,7 @@ $outcome = [ordered]@{
     scenario = $Scenario; runNumber = $RunNumber; consumerConcurrency = $ConsumerConcurrency
     outboxBatchSize = $OutboxBatchSize
     outboxPublishIntervalMs = $OutboxPublishIntervalMs
+    outboxPublishConcurrency = $OutboxPublishConcurrency
     aiStubDelayMs = $AiStubDelayMs; taskCount = 1000; batchCount = 5
     batchIds = @($k6Outcome.batchIds); productionDurationMs = [double]$k6Outcome.productionDurationMs
     createLatencyMs = @($k6Outcome.createLatencyMs)

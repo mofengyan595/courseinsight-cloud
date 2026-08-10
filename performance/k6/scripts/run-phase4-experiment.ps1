@@ -12,7 +12,7 @@ param(
     [int]$ControlStubDelayMs = 10,
     [ValidateRange(1, 64)]
     [int]$BacklogConcurrency = 4,
-    [ValidateSet(4, 5, 6)]
+    [ValidateSet(4, 5, 6, 7)]
     [int]$ExperimentPhase = 4,
     [ValidatePattern('^[A-Za-z0-9_-]{0,30}$')]
     [string]$ConfigurationLabel = '',
@@ -20,6 +20,8 @@ param(
     [int]$OutboxBatchSize = 20,
     [ValidateRange(10, 60000)]
     [int]$OutboxPublishIntervalMs = 1000,
+    [ValidateRange(1, 64)]
+    [int]$OutboxPublishConcurrency = 2,
     [ValidatePattern('^[A-Za-z][A-Za-z0-9_]{2,20}$')]
     [string]$UserPrefix = 'perf_p4',
     [ValidatePattern('^[A-Za-z0-9_-]{3,20}$')]
@@ -80,6 +82,8 @@ function Start-CourseInsightServer {
         'OUTBOX_BATCH_SIZE', [string]$OutboxBatchSize, 'Process')
     [Environment]::SetEnvironmentVariable(
         'OUTBOX_PUBLISH_INTERVAL_MS', [string]$OutboxPublishIntervalMs, 'Process')
+    [Environment]::SetEnvironmentVariable(
+        'OUTBOX_PUBLISH_CONCURRENCY', [string]$OutboxPublishConcurrency, 'Process')
     $stdout = Join-Path $env:TEMP "courseinsight-phase4-$ExperimentId-c$Concurrency-stdout.log"
     $stderr = Join-Path $env:TEMP "courseinsight-phase4-$ExperimentId-c$Concurrency-stderr.log"
     $process = Start-Process -FilePath (Join-Path $serverRoot 'mvnw.cmd') `
@@ -144,7 +148,8 @@ try {
                 -ContextPath $ContextPath -ExperimentPhase $ExperimentPhase `
                 -ConfigurationLabel $ConfigurationLabel `
                 -OutboxBatchSize $OutboxBatchSize `
-                -OutboxPublishIntervalMs $OutboxPublishIntervalMs
+                -OutboxPublishIntervalMs $OutboxPublishIntervalMs `
+                -OutboxPublishConcurrency $OutboxPublishConcurrency
         }
         if ($concurrency -eq $BacklogConcurrency) {
             & $runScript -ConsumerConcurrency $concurrency -ExperimentId $ExperimentId `
@@ -152,7 +157,8 @@ try {
                 -ContextPath $ContextPath -ExperimentPhase $ExperimentPhase `
                 -ConfigurationLabel $ConfigurationLabel `
                 -OutboxBatchSize $OutboxBatchSize `
-                -OutboxPublishIntervalMs $OutboxPublishIntervalMs
+                -OutboxPublishIntervalMs $OutboxPublishIntervalMs `
+                -OutboxPublishConcurrency $OutboxPublishConcurrency
         }
     }
 
@@ -164,7 +170,8 @@ try {
             -ContextPath $ContextPath -ExperimentPhase $ExperimentPhase `
             -ConfigurationLabel $ConfigurationLabel `
             -OutboxBatchSize $OutboxBatchSize `
-            -OutboxPublishIntervalMs $OutboxPublishIntervalMs
+            -OutboxPublishIntervalMs $OutboxPublishIntervalMs `
+            -OutboxPublishConcurrency $OutboxPublishConcurrency
     }
 } finally {
     Stop-CourseInsightServer

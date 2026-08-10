@@ -59,6 +59,7 @@ export function performanceSummary(data) {
     configurationLabel: __ENV.CONFIGURATION_LABEL || null,
     outboxBatchSize: Number(__ENV.OUTBOX_BATCH_SIZE || '0') || null,
     outboxPublishIntervalMs: Number(__ENV.OUTBOX_PUBLISH_INTERVAL_MS || '0') || null,
+    outboxPublishConcurrency: Number(__ENV.OUTBOX_PUBLISH_CONCURRENCY || '0') || null,
   };
   const result = {
     metadata,

@@ -1,0 +1,38 @@
+{
+    "schemaVersion":  1,
+    "preparedAt":  "2026-08-09T16:49:58.9901551Z",
+    "baseUrl":  "http://127.0.0.1:8080",
+    "userPrefix":  "perf_p7c4",
+    "datasetPrefix":  "PERF_P7C4",
+    "principalCount":  5,
+    "batchCountPerRun":  5,
+    "rowsPerBatch":  200,
+    "taskCountPerRun":  1000,
+    "principals":  [
+                       {
+                           "username":  "perf_p7c4_01",
+                           "courseId":  65899,
+                           "courseCode":  "PERF_P7C4-01"
+                       },
+                       {
+                           "username":  "perf_p7c4_02",
+                           "courseId":  65900,
+                           "courseCode":  "PERF_P7C4-02"
+                       },
+                       {
+                           "username":  "perf_p7c4_03",
+                           "courseId":  65901,
+                           "courseCode":  "PERF_P7C4-03"
+                       },
+                       {
+                           "username":  "perf_p7c4_04",
+                           "courseId":  65902,
+                           "courseCode":  "PERF_P7C4-04"
+                       },
+                       {
+                           "username":  "perf_p7c4_05",
+                           "courseId":  65903,
+                           "courseCode":  "PERF_P7C4-05"
+                       }
+                   ]
+}

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 @Component
@@ -16,17 +17,24 @@ public class CourseInsightMetrics {
     static final String AI_REQUEST_METRIC = "courseinsight.ai.request";
     static final String ANALYSIS_TASK_METRIC = "courseinsight.analysis.task";
     static final String OUTBOX_PUBLISH_METRIC = "courseinsight.outbox.publish";
+    static final String OUTBOX_SEND_METRIC = "courseinsight.outbox.send";
 
     private final MeterRegistry meterRegistry;
     private final Map<AiRequestOutcome, Timer> aiRequestTimers;
     private final Map<AnalysisTaskOutcome, Counter> analysisTaskCounters;
     private final Map<OutboxPublishOutcome, Counter> outboxPublishCounters;
+    private final Map<OutboxPublishOutcome, Timer> outboxSendTimers;
+    private final AtomicInteger outboxPublishConcurrency = new AtomicInteger();
+    private final AtomicInteger outboxPublishActive = new AtomicInteger();
+    private final AtomicInteger outboxPublishPeakActive = new AtomicInteger();
 
     public CourseInsightMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
         this.aiRequestTimers = registerAiRequestTimers(meterRegistry);
         this.analysisTaskCounters = registerAnalysisTaskCounters(meterRegistry);
         this.outboxPublishCounters = registerOutboxPublishCounters(meterRegistry);
+        this.outboxSendTimers = registerOutboxSendTimers(meterRegistry);
+        registerOutboxPublishGauges(meterRegistry);
     }
 
     public <T> T recordAiRequest(Supplier<T> request) {
@@ -74,6 +82,25 @@ public class CourseInsightMetrics {
         outboxPublishCounters.get(OutboxPublishOutcome.FAILURE).increment();
     }
 
+    public void configureOutboxPublishConcurrency(int concurrency) {
+        outboxPublishConcurrency.set(concurrency);
+    }
+
+    public <T> T recordOutboxSend(Supplier<T> send) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        OutboxPublishOutcome outcome = OutboxPublishOutcome.FAILURE;
+        int active = outboxPublishActive.incrementAndGet();
+        outboxPublishPeakActive.accumulateAndGet(active, Math::max);
+        try {
+            T result = send.get();
+            outcome = OutboxPublishOutcome.SUCCESS;
+            return result;
+        } finally {
+            outboxPublishActive.decrementAndGet();
+            sample.stop(outboxSendTimers.get(outcome));
+        }
+    }
+
     private Map<AiRequestOutcome, Timer> registerAiRequestTimers(
             MeterRegistry registry) {
         Map<AiRequestOutcome, Timer> timers = new EnumMap<>(AiRequestOutcome.class);
@@ -119,6 +146,37 @@ public class CourseInsightMetrics {
             );
         }
         return counters;
+    }
+
+    private Map<OutboxPublishOutcome, Timer> registerOutboxSendTimers(
+            MeterRegistry registry) {
+        Map<OutboxPublishOutcome, Timer> timers =
+                new EnumMap<>(OutboxPublishOutcome.class);
+        for (OutboxPublishOutcome outcome : OutboxPublishOutcome.values()) {
+            timers.put(
+                    outcome,
+                    Timer.builder(OUTBOX_SEND_METRIC)
+                            .description("RocketMQ Outbox send latency and outcome")
+                            .tag("outcome", outcome.tagValue)
+                            .register(registry)
+            );
+        }
+        return timers;
+    }
+
+    private void registerOutboxPublishGauges(MeterRegistry registry) {
+        registry.gauge(
+                "courseinsight.outbox.publish.configured.concurrency",
+                outboxPublishConcurrency
+        );
+        registry.gauge(
+                "courseinsight.outbox.publish.active",
+                outboxPublishActive
+        );
+        registry.gauge(
+                "courseinsight.outbox.publish.peak.active",
+                outboxPublishPeakActive
+        );
     }
 
     private enum AiRequestOutcome {

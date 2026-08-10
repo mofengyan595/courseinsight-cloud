@@ -77,6 +77,33 @@ class CourseInsightMetricsTests {
         )).isEqualTo(1);
     }
 
+    @Test
+    void shouldRecordOutboxSendLatencyAndBoundedConcurrencyGauges() {
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        CourseInsightMetrics metrics = new CourseInsightMetrics(registry);
+        metrics.configureOutboxPublishConcurrency(2);
+
+        assertThat(metrics.recordOutboxSend(() -> "message-id"))
+                .isEqualTo("message-id");
+        assertThatThrownBy(() -> metrics.recordOutboxSend(() -> {
+            throw new IllegalStateException("send failed");
+        })).isInstanceOf(IllegalStateException.class);
+
+        assertThat(registry.get(CourseInsightMetrics.OUTBOX_SEND_METRIC)
+                .tag("outcome", "success").timer().count()).isEqualTo(1);
+        assertThat(registry.get(CourseInsightMetrics.OUTBOX_SEND_METRIC)
+                .tag("outcome", "failure").timer().count()).isEqualTo(1);
+        assertThat(registry.get(
+                "courseinsight.outbox.publish.configured.concurrency"
+        ).gauge().value()).isEqualTo(2);
+        assertThat(registry.get(
+                "courseinsight.outbox.publish.active"
+        ).gauge().value()).isZero();
+        assertThat(registry.get(
+                "courseinsight.outbox.publish.peak.active"
+        ).gauge().value()).isEqualTo(1);
+    }
+
     private long timerCount(SimpleMeterRegistry registry, String outcome) {
         return registry.get(CourseInsightMetrics.AI_REQUEST_METRIC)
                 .tag("outcome", outcome)

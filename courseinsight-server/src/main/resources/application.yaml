@@ -71,8 +71,10 @@ courseinsight:
     publish-interval-ms: ${OUTBOX_PUBLISH_INTERVAL_MS:1000}
     initial-delay-ms: ${OUTBOX_INITIAL_DELAY_MS:1000}
     batch-size: ${OUTBOX_BATCH_SIZE:20}
+    publish-concurrency: ${OUTBOX_PUBLISH_CONCURRENCY:2}
     retry-delay-seconds: ${OUTBOX_RETRY_DELAY_SECONDS:30}
     recovery-timeout-seconds: ${OUTBOX_RECOVERY_TIMEOUT_SECONDS:300}
+    shutdown-timeout-seconds: ${OUTBOX_SHUTDOWN_TIMEOUT_SECONDS:30}
 
 management:
   endpoints:
@@ -99,3 +101,4 @@ management:
       percentiles-histogram:
         http.server.requests: true
         courseinsight.ai.request: true
+        courseinsight.outbox.send: true
