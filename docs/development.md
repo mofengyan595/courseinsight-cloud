@@ -1,5 +1,8 @@
 # CourseInsight 本地开发与测试
 
+面向 reviewer 的最短确定性流程请直接使用根目录 README 的 **Quick Start** 和 `demo` profile。
+本页主要说明完整本地 AI 环境、分层测试和可选监控；它们都不是 recruiting demo 的前置条件。
+
 ## Java 测试
 
 测试不读取根目录 `.env`，也不会启动根目录的完整 Compose 栈。MySQL 和 Redis

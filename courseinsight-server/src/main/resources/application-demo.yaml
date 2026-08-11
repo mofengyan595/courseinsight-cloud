@@ -1,0 +1,19 @@
+spring:
+  config:
+    import: "file:../demo.env[.properties]"
+
+  docker:
+    compose:
+      enabled: false
+
+  datasource:
+    url: jdbc:mysql://127.0.0.1:${MYSQL_PORT:3307}/${MYSQL_DATABASE:courseinsight_demo}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+
+courseinsight:
+  ai-service:
+    base-url: ${AI_SERVICE_BASE_URL:http://127.0.0.1:8002}
+
+management:
+  endpoint:
+    health:
+      show-components: always

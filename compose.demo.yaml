@@ -1,0 +1,62 @@
+name: courseinsight-demo
+
+# Minimal recruiting-demo topology. It reuses the real infrastructure definitions
+# and swaps only the AI boundary for the repository's deterministic HTTP Stub.
+services:
+  mysql:
+    extends:
+      file: compose.yaml
+      service: mysql
+    container_name: courseinsight-demo-mysql
+
+  redis:
+    extends:
+      file: compose.yaml
+      service: redis
+    container_name: courseinsight-demo-redis
+
+  rocketmq-volume-init:
+    extends:
+      file: compose.yaml
+      service: rocketmq-volume-init
+    container_name: courseinsight-demo-rocketmq-volume-init
+
+  rocketmq-nameserver:
+    extends:
+      file: compose.yaml
+      service: rocketmq-nameserver
+    container_name: courseinsight-demo-rocketmq-nameserver
+
+  rocketmq-broker:
+    extends:
+      file: compose.yaml
+      service: rocketmq-broker
+    container_name: courseinsight-demo-rocketmq-broker
+
+  ai-service:
+    build:
+      context: ./performance/ai-stub
+    container_name: courseinsight-demo-ai-stub
+    restart: unless-stopped
+    environment:
+      AI_STUB_DELAY_MS: ${AI_STUB_DELAY_MS:-100}
+    ports:
+      - "127.0.0.1:${AI_STUB_PORT:-8002}:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+volumes:
+  mysql_data:
+  redis_data:
+  rocketmq_nameserver_logs:
+  rocketmq_broker_logs:
+  rocketmq_broker_store:
+
