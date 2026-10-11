@@ -62,18 +62,21 @@ export const batchResults = (
     params,
     signal,
   })
-export const retryBatch = (id: string) =>
+export const retryBatch = (id: string, signal?: AbortSignal) =>
   request<BatchRetry>({
     method: 'POST',
     url: `/analysis-batches/${id}/retry-failed`,
+    signal,
   })
 export const analytics = (id: number, signal?: AbortSignal) =>
   request<Analytics>({ url: `/courses/${id}/analytics/summary`, signal })
-export async function exportBatch(id: string) {
+export async function exportBatch(id: string, signal?: AbortSignal) {
   const response = await http.get<Blob>(`/analysis-batches/${id}/export`, {
     responseType: 'blob',
     timeout: 60000,
+    signal,
   })
+  if (signal?.aborted) return
   const url = URL.createObjectURL(response.data)
   const link = document.createElement('a')
   link.href = url

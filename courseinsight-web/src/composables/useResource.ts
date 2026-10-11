@@ -11,6 +11,12 @@ export function useResource<T>(
   const loading = ref(false)
   const error = ref('')
   let controller: AbortController | undefined
+  function reset() {
+    controller?.abort()
+    data.value = undefined
+    error.value = ''
+    loading.value = false
+  }
   async function reload() {
     controller?.abort()
     const current = new AbortController()
@@ -36,5 +42,5 @@ export function useResource<T>(
     { immediate: true },
   )
   onScopeDispose(() => controller?.abort())
-  return { data, loading, error, reload }
+  return { data, loading, error, reload, reset }
 }

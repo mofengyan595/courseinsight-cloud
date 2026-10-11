@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, ref } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Refresh } from '@element-plus/icons-vue'
@@ -20,7 +20,8 @@ import PageHeading from '../components/PageHeading.vue'
 import ErrorNotice from '../components/ErrorNotice.vue'
 import PaginationBar from '../components/PaginationBar.vue'
 
-const batchId = String(useRoute().params.batchId)
+const route = useRoute()
+const batchId = computed(() => String(route.params.batchId))
 const progress = ref<BatchProgress>()
 const progressError = ref('')
 const paused = ref(false)
@@ -32,8 +33,9 @@ const resultsVersion = computed(() =>
     : '',
 )
 const results = useResource(
-  (signal) => api.batchResults(batchId, { page: page.value, size: 10 }, signal),
-  [page, resultsVersion],
+  (signal) =>
+    api.batchResults(batchId.value, { page: page.value, size: 10 }, signal),
+  [batchId, page, resultsVersion],
 )
 const { busy, error, run } = useAction()
 const selected = ref<BatchResult>()
@@ -76,7 +78,7 @@ const counts = computed(() =>
     : [],
 )
 const poller = createPoller({
-  fetch: (signal) => api.batchProgress(batchId, signal),
+  fetch: (signal) => api.batchProgress(batchId.value, signal),
   terminal: (data) => isTerminal(data.status),
   onData: (data) => {
     progress.value = data
@@ -97,9 +99,45 @@ function refresh() {
   poller.start()
   void results.reload()
 }
-poller.start()
-onScopeDispose(poller.stop)
+let actions = new AbortController()
+watch(
+  batchId,
+  (_, previousId) => {
+    poller.stop()
+    actions.abort()
+    actions = new AbortController()
+    if (previousId !== undefined) results.reset()
+    progress.value = undefined
+    progressError.value = ''
+    error.value = ''
+    paused.value = false
+    checking.value = true
+    page.value = 1
+    selected.value = undefined
+    showDetails.value = false
+    // 离开详情路由时，参数可能先清空，再卸载组件。
+    if (!/^\d+$/.test(batchId.value)) return
+    poller.start()
+  },
+  { immediate: true, flush: 'sync' },
+)
+onScopeDispose(() => {
+  poller.stop()
+  actions.abort()
+})
+function runBatchAction(signal: AbortSignal, action: () => Promise<void>) {
+  if (signal.aborted) return
+  return run(async () => {
+    try {
+      await action()
+    } catch (err) {
+      if (!signal.aborted) throw err
+    }
+  })
+}
 async function retry() {
+  const id = batchId.value
+  const signal = actions.signal
   try {
     await ElMessageBox.confirm(
       '仅重新入队后端判定可重试的死信任务，已成功结果会保留。确定继续？',
@@ -113,8 +151,9 @@ async function retry() {
   } catch {
     return
   }
-  await run(async () => {
-    const response = await api.retryBatch(batchId)
+  await runBatchAction(signal, async () => {
+    const response = await api.retryBatch(id, signal)
+    if (signal.aborted) return
     ElMessage.success(
       response.requeuedCount
         ? `已将 ${response.requeuedCount} 条任务重新入队，等待分析`
@@ -128,7 +167,9 @@ function details(item: BatchResult) {
   showDetails.value = true
 }
 function download() {
-  void run(() => api.exportBatch(batchId))
+  const id = batchId.value
+  const signal = actions.signal
+  void runBatchAction(signal, () => api.exportBatch(id, signal))
 }
 </script>
 <template>
