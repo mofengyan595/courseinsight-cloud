@@ -1,0 +1,20 @@
+# dist 内容部署到 /usr/share/nginx/html。
+# backend:8080 替换为实际 Spring Boot 上游；生产入口需要 HTTPS。
+server {
+    listen 80;
+    server_name localhost;
+    root /usr/share/nginx/html;
+    index index.html;
+    client_max_body_size 3m;
+
+    location /api/ {
+        proxy_pass http://backend:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_read_timeout 65s;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

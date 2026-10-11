@@ -8,3 +8,19 @@ __pycache__/
 .pytest_cache/
 .venv/
 courseinsight-ai-service/models/bert_model_final/model.safetensors
+
+# Frontend dependencies
+courseinsight-web/node_modules/
+
+# Frontend build and test outputs
+courseinsight-web/dist/
+courseinsight-web/coverage/
+courseinsight-web/*.tsbuildinfo
+courseinsight-web/playwright-report/
+courseinsight-web/test-results/
+
+# Frontend local environment variables and logs
+courseinsight-web/.env
+courseinsight-web/.env.local
+courseinsight-web/.env.*.local
+courseinsight-web/*.log
