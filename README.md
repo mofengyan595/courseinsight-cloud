@@ -1,10 +1,10 @@
 # CourseInsight Cloud
 
-CourseInsight Cloud 是一个面向课程评价与异步教学分析的 Java 后端：Spring Boot 提供业务 API，MySQL
+CourseInsight Cloud 是一个面向课程评价与异步教学分析的 Java + Vue 全栈项目：Vue 提供独立 Web 工作台，Spring Boot 提供业务 API，MySQL
 保存业务与任务状态，Redis 承担缓存、限流和排行榜，Transactional Outbox + RocketMQ 驱动异步分析，
 AI 通过独立 HTTP 边界接入。
 
-**核心栈：** Java 17 · Spring Boot 3.5.16 · MySQL 8.4 · Redis 7.2 · RocketMQ 5.3.2 · FastAPI
+**核心栈：** Java 17 · Spring Boot 3.5.16 · MySQL 8.4 · Redis 7.2 · RocketMQ 5.3.2 · FastAPI · Vue 3 · TypeScript · Vite
 
 ## Core Technical Highlights
 
@@ -26,7 +26,7 @@ AI 通过独立 HTTP 边界接入。
 
 ```mermaid
 flowchart LR
-    Client["Client / demo smoke"] --> Security["Spring Security<br/>JWT + current DB user state"]
+    Client["Vue Web / demo smoke"] --> Security["Spring Security<br/>JWT + current DB user state"]
     Security --> Controller["REST Controllers"]
     Controller --> Service["Services<br/>business + ownership + transactions"]
     Service <--> Redis["Redis<br/>cache / rate limit / ranking<br/>derived data"]
@@ -72,6 +72,26 @@ Demo 账号仅由 `demo` profile 在隔离数据库中创建：
 
 这些是提交在 [`demo.env`](demo.env) 中的 **PUBLIC、LOCAL、DEMO-ONLY** 凭据和演示 JWT secret，
 不是意外泄露的秘密，**绝不能复用于其他环境**。普通 `local` / production-like 配置不会默认启用该账号。
+
+## Web 前端快速启动
+
+先按下方 Quick Start 启动 Demo 依赖和 Java（`demo` profile），再开一个终端：
+
+```powershell
+Set-Location courseinsight-web
+npm ci
+npm run dev
+```
+
+需要 Node.js 22.12+。打开 <http://127.0.0.1:5173>，使用上面的本地 Demo 账号。
+网页登录 → 创建课程 → 课程详情 → 批量分析评价 → 上传 CSV → 等待异步处理 → 查看结果 / 下载 CSV。
+样例 CSV 可在上传页下载；开发请求由 Vite `/api` 代理到 `http://localhost:8080`。
+
+已实现登录、课程搜索/分页/创建/编辑、评价提交和个人评价管理、批次进度/结果/导出/重试、ECharts 看板及响应式布局。
+前端是与 `courseinsight-server/`、`courseinsight-ai-service/` 平级的独立工程，不改变后端部署、数据结构或原有性能脚本。
+
+详见 [前端 README](courseinsight-web/README.md)（接口、目录、安全边界、构建与部署）和 [验证记录](docs/frontend-validation.md)。
+前端检查：`npm run lint`、`npm run typecheck`、`npm test`、`npm run build`；原有 Java 测试命令保持不变。
 
 ## Quick Start
 
