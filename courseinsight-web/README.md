@@ -45,6 +45,7 @@ npm run dev
 | 课程列表 `/courses` | `GET /api/courses`、`POST /api/courses` | 关键词、分页、创建；创建响应 data 为课程 ID |
 | 课程详情 `/courses/:id` | `GET /api/courses/{id}`、`PUT /api/courses/{id}` | code/name/teacherName/description，编辑额外提交 status |
 | 课程评价 | `GET/POST /api/courses/{id}/comments` | 匿名评价列表、评分和评价提交 |
+| 单条评价分析 | `GET /api/comments/{commentId}/analysis` | 教师/管理员点击后查询；抽屉显示任务状态和完整分析 |
 | 个人信息 `/profile` | `GET /api/comments/me`、`DELETE /api/comments/{id}` | 登录身份信息、个人评价、确认删除 |
 | 上传 `/analysis` | `POST /api/courses/{id}/analysis-batches` | FormData 的 file 字段；读取 batchId 后跳转 |
 | 批次 `/analysis/:batchId` | `GET /api/analysis-batches/{id}` | 状态、waiting/processing/retrying/success/failed 与完成百分比 |
@@ -59,8 +60,9 @@ JSON 响应为 `{ code, message, data }`，成功码 0；分页为 `{ page, size
 ## 权限与会话边界
 
 - STUDENT：课程浏览、评价提交、个人评价管理。
-- TEACHER：额外创建/编辑课程、批量分析、看板；服务端限制为自己创建的课程。
+- TEACHER：额外创建/编辑课程、单条评价分析、批量分析、看板；服务端限制为自己创建的课程。
 - ADMIN：可管理所有课程。
+- 学生提交后提示“评价提交成功，感谢你的反馈。”，不展示分析入口或结果。完整分析接口明确拒绝学生，包括自己的评价；原有仅查询任务状态的 `/analysis-task` 权限保持兼容。返回评论不包含学生身份。
 - 课程 DTO 未暴露 ownerUserId，前端仅根据登录角色显示入口，不推测教师归属；对象权限由服务端独立校验，403 明确提示并保留登录状态。
 - 入口角色来自登录快照，后端每次校验数据库当前角色/状态；权限调整后可重新登录更新入口。前端守卫不能作为安全边界。
 - Token 只放在当前标签页 sessionStorage，不写入 URL、日志、源码或 localStorage。关闭标签页通常清除状态，但同源 JavaScript 仍可读取，无法防御 XSS，复制标签页也可能复制初始会话。本方案用于演示；生产需要 HTTPS、CSP、依赖审计与符合自身威胁模型的会话方案。
@@ -74,6 +76,8 @@ JSON 响应为 `{ code, message, data }`，成功码 0；分页为 `{ page, size
 网络失败后依次等待 4 秒、8 秒，连续 3 次失败暂停；401/403/404 立即暂停。页面销毁时取消在途请求与定时器并忽略迟到结果。刷新或重试重新入队后恢复查询。成功/失败计数变化时更新当前页结果，也可独立刷新结果。
 
 retry-failed 当前只恢复死信任务；requeuedCount=0 表示没有符合条件的任务，不代表分析成功。部分失败有独立提示和失败详情，不覆盖已有成功结果。
+
+单条评价分析按点击加载，列表不会逐条请求。WAITING/PROCESSING 显示“分析中”，按同样的间隔与退避规则轮询；SUCCESS/FAILED 停止。关闭抽屉、切换评论或离开课程页会取消请求并丢弃迟到响应。完整结果只在 SUCCESS 返回，其余状态 result 为 null；单条查询不提供虚构的完成百分比或重试接口。
 
 ## 目录
 
@@ -113,6 +117,8 @@ npm run test:e2e -- tests/e2e/ui-states.spec.ts
 $env:E2E_USERNAME = '<本地演示用户名>'
 $env:E2E_PASSWORD = '<本地演示密码>'
 npm run test:e2e -- tests/e2e/demo.spec.ts
+# 学生注册、管理员赋予测试教师角色，实际经过 MQ 和 Stub
+npm run test:e2e -- tests/e2e/comment-analysis-demo.spec.ts
 Remove-Item Env:E2E_USERNAME, Env:E2E_PASSWORD
 ```
 
@@ -120,10 +126,12 @@ Remove-Item Env:E2E_USERNAME, Env:E2E_PASSWORD
 
 本次实际结果、截图和验证边界见 [`../docs/frontend-validation.md`](../docs/frontend-validation.md)。AI Stub 验证完整 HTTP/异步链路，不代表真实 BERT 推理验证。
 
+学生反馈与教师分析的接口、权限和补充验证见 [`../docs/teacher-comment-analysis.md`](../docs/teacher-comment-analysis.md)。真实测试只应运行在隔离 Demo；每次注册 3 个随机测试账号，后端注册限流为每来源 10 分钟 5 次，重复运行需等待窗口恢复。测试不会绕过限流或删除账号、课程。
+
 ## 部署
 
 `npm run build` 生成 `dist/`。`npm run preview` 用于本机预览，包含本地 `/api` 代理，不作为生产服务。静态部署需同源代理 `/api` 到后端，并为 Vue Router history 配置 index.html 回退，见 [`deploy/nginx.conf.example`](deploy/nginx.conf.example)。生产不要暴露 Vite dev server，不使用公开 Demo 凭据。
 
-不修改后端安全配置、migration、Outbox、缓存、任务执行或性能测试；原有 Java 分层测试和 Demo 保持独立。
+单条分析新增后端只读查询和对应安全规则；不修改 migration、Outbox、缓存、任务执行或性能测试，原有 Java 分层测试和 Demo 保持独立。
 
 视觉参考：[Python CourseInsight](https://github.com/Wanny276/nlp_final/blob/main/app.py) 的品牌色与反馈信息层级，Vue 页面独立实现，不复制 Streamlit 或 NLP 调用。
