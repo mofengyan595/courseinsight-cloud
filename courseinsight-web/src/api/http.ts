@@ -50,8 +50,12 @@ function fail(status: number, message?: string): never {
 http.interceptors.response.use(
   async (response) => {
     const contentType = String(response.headers['content-type'])
-    if (response.config.responseType === 'blob' && !contentType.includes('json')) {
-      if (!contentType.includes('text/csv')) throw new ApiError('导出响应不是 CSV 文件，请检查后端服务', 502)
+    if (
+      response.config.responseType === 'blob' &&
+      !contentType.includes('json')
+    ) {
+      if (!contentType.includes('text/csv'))
+        throw new ApiError('导出响应不是 CSV 文件，请检查后端服务', 502)
       return response
     }
     const body = await envelope(response.data)

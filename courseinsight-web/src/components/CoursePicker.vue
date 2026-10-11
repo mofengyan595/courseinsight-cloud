@@ -14,13 +14,16 @@ const { data, loading, error, reload } = useResource(
   [page, search],
 )
 const selected = useResource(
-  (signal) => model.value ? api.course(model.value, signal) : Promise.resolve(undefined),
+  (signal) =>
+    model.value ? api.course(model.value, signal) : Promise.resolve(undefined),
   [model],
 )
 const options = computed(() => {
   const items = data.value?.items || []
   const current = selected.data.value
-  return current && !items.some(item => item.id === current.id) ? [current, ...items] : items
+  return current && !items.some((item) => item.id === current.id)
+    ? [current, ...items]
+    : items
 })
 function find() {
   page.value = 1

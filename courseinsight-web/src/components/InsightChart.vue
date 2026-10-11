@@ -29,7 +29,12 @@ let observer: ResizeObserver | undefined
 function render() {
   chart?.setOption(
     {
-      aria: { enabled: true },
+      aria: {
+        enabled: true,
+        label: {
+          description: `${props.title}：${props.values.map((value) => `${value.name} ${value.value}`).join('，')}`,
+        },
+      },
       tooltip: { trigger: props.kind === 'pie' ? 'item' : 'axis' },
       color: props.values.map((value) => value.color),
       legend:
