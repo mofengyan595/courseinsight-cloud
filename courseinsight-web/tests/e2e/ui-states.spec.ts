@@ -340,3 +340,142 @@ test('已有课程简介为 null 时仍可编辑保存', async ({ page }) => {
   await expect.poll(() => saved).toBe(true)
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
+
+const reviewCourse = {
+  id: 1,
+  code: 'REVIEW',
+  name: '评价课程',
+  teacherName: '测试教师',
+  description: '',
+  status: 1,
+  createdAt: '2026-10-11T12:00:00',
+  updatedAt: '2026-10-11T12:00:00',
+}
+const review = {
+  id: 10,
+  courseId: 1,
+  content: '匿名学习反馈',
+  rating: 5,
+  anonymous: true,
+  status: 1,
+  createdAt: '2026-10-11T12:00:00',
+  updatedAt: '2026-10-11T12:00:00',
+}
+test('学生提交只显示感谢反馈，不查询或展示教学分析', async ({ page }) => {
+  await signedIn(page, 'STUDENT')
+  let submitted = false
+  let analysisRequests = 0
+  await page.route('**/api/courses/1', (route) =>
+    route.fulfill({ json: { code: 0, data: reviewCourse } }),
+  )
+  await page.route('**/api/courses/1/comments?**', (route) =>
+    route.fulfill({
+      json: {
+        code: 0,
+        data: {
+          ...emptyPage,
+          total: submitted ? 1 : 0,
+          items: submitted ? [review] : [],
+        },
+      },
+    }),
+  )
+  await page.route('**/api/courses/1/comments', (route) => {
+    submitted = true
+    return route.fulfill({ status: 201, json: { code: 0, data: 10 } })
+  })
+  await page.route('**/api/comments/*/analysis', (route) => {
+    analysisRequests++
+    return route.fulfill({ status: 403, json: { code: 403 } })
+  })
+  await page.goto('/courses/1')
+  const rating = page.getByRole('slider', { name: /课程评分/ })
+  await rating.focus()
+  await rating.press('ArrowRight')
+  await page.getByRole('textbox', { name: '评价内容' }).fill(review.content)
+  await page.getByRole('button', { name: '提交评价', exact: true }).click()
+  await expect(page.getByText('评价提交成功，感谢你的反馈。')).toBeVisible()
+  await expect(page.getByText(review.content, { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '查看分析' })).toHaveCount(0)
+  await expect(
+    page.getByText(/分析任务已创建|置信度|教学改进建议/),
+  ).toHaveCount(0)
+  expect(analysisRequests).toBe(0)
+})
+
+for (const role of ['TEACHER', 'ADMIN']) {
+  test(`${role} 按点击查询单条分析，离开课程停止查询`, async ({ page }) => {
+    await signedIn(page, role)
+    let requests = 0
+    await page.route('**/api/courses?**', (route) =>
+      route.fulfill({
+        json: {
+          code: 0,
+          data: { ...emptyPage, total: 1, items: [reviewCourse] },
+        },
+      }),
+    )
+    await page.route('**/api/courses/1', (route) =>
+      route.fulfill({ json: { code: 0, data: reviewCourse } }),
+    )
+    await page.route('**/api/courses/1/comments?**', (route) =>
+      route.fulfill({
+        json: {
+          code: 0,
+          data: {
+            ...emptyPage,
+            total: 2,
+            items: [review, { ...review, id: 11, content: '另一条反馈' }],
+          },
+        },
+      }),
+    )
+    await page.route('**/api/comments/*/analysis', (route) => {
+      requests++
+      expect(route.request().url()).toMatch(/\/comments\/10\/analysis$/)
+      return route.fulfill({
+        json: {
+          code: 0,
+          data: {
+            comment: review,
+            task: {
+              id: 1,
+              status: 'WAITING',
+              retryCount: 0,
+              failureReason: null,
+              startedAt: null,
+              completedAt: null,
+            },
+            result: null,
+          },
+        },
+      })
+    })
+    await page.goto('/courses')
+    await page.getByRole('link', { name: '评价课程', exact: true }).click()
+    await expect(
+      page.getByRole('button', { name: '查看分析', exact: true }),
+    ).toHaveCount(2)
+    expect(requests).toBe(0)
+    await page
+      .getByRole('button', { name: '查看分析', exact: true })
+      .first()
+      .click()
+    await expect(page.getByRole('dialog', { name: '评价分析' })).toContainText(
+      '等待分析',
+    )
+    expect(requests).toBe(1)
+    if (role === 'TEACHER') {
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('dialog')).toHaveCount(0)
+      await page.getByRole('button', { name: '返回课程列表' }).click()
+    } else {
+      // 抽屉仍在等待时通过浏览器返回触发 SPA 路由卸载。
+      await page.goBack()
+    }
+    await expect(page).toHaveURL(/\/courses$/)
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await page.waitForTimeout(2300)
+    expect(requests).toBe(1)
+  })
+}

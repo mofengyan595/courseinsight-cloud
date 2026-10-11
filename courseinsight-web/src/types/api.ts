@@ -55,6 +55,43 @@ export interface Comment extends CommentCreate {
   createdAt: string
   updatedAt: string
 }
+export type AnalysisTaskStatus = 'WAITING' | 'PROCESSING' | 'SUCCESS' | 'FAILED'
+export interface AnalysisTask {
+  id: number
+  taskNo: string
+  commentId: number
+  courseId: number
+  status: AnalysisTaskStatus
+  retryCount: number
+  failureReason: string | null
+  startedAt: string | null
+  completedAt: string | null
+  deadLetteredAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+export interface AnalysisResult {
+  id: number
+  language: string | null
+  sentiment: string | null
+  confidence: number | null
+  sentimentSource: string | null
+  sentimentDevice: string | null
+  topics: JsonValue
+  topicEvidence: JsonValue
+  keywords: JsonValue
+  longTextHandled: boolean | null
+  longTextTruncated: boolean | null
+  advice: JsonValue
+  riskLevel: string | null
+  adviceSource: string | null
+  createdAt: string
+}
+export interface CommentAnalysis {
+  comment: Comment
+  task: AnalysisTask
+  result: AnalysisResult | null
+}
 export type BatchStatus =
   | 'PROCESSING'
   | 'COMPLETED'

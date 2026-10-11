@@ -88,6 +88,7 @@ npm run dev
 样例 CSV 可在上传页下载；开发请求由 Vite `/api` 代理到 `http://localhost:8080`。
 
 已实现登录、课程搜索/分页/创建/编辑、评价提交和个人评价管理、批次进度/结果/导出/重试、ECharts 看板及响应式布局。
+学生负责评分和匿名反馈；教师可在本人管理课程的评价区域点击“查看分析”，管理员可跨课程查看。分析抽屉按需查询并跟踪异步任务，学生不展示 AI 分析数据。原有整体看板和 CSV 批量分析保留，完整说明见 [学生反馈与教师分析](docs/teacher-comment-analysis.md)。
 前端是与 `courseinsight-server/`、`courseinsight-ai-service/` 平级的独立工程，不改变后端部署、数据结构或原有性能脚本。
 
 详见 [前端 README](courseinsight-web/README.md)（接口、目录、安全边界、构建与部署）和 [验证记录](docs/frontend-validation.md)。

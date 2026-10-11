@@ -1,0 +1,30 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'courseinsight-server/**'
+      - 'scripts/test.ps1'
+      - '.github/workflows/backend-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  fast-tests:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: courseinsight-server
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: courseinsight-server/pom.xml
+      - run: bash ./mvnw --batch-mode test '-Dgroups=!integration'
