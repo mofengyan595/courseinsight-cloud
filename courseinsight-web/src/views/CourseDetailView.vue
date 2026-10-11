@@ -12,10 +12,12 @@ import CourseForm from '../components/CourseForm.vue'
 import PageHeading from '../components/PageHeading.vue'
 import ErrorNotice from '../components/ErrorNotice.vue'
 import PaginationBar from '../components/PaginationBar.vue'
+import CommentAnalysisDrawer from '../components/CommentAnalysisDrawer.vue'
 const id = String(useRoute().params.id)
 const auth = useAuthStore()
 const open = ref(false)
 const page = ref(1)
+const selectedCommentId = ref<number>()
 const details = useResource((signal) => api.course(id, signal))
 const list = useResource(
   (signal) => api.comments(id, { page: page.value, size: 10 }, signal),
@@ -33,7 +35,7 @@ async function submit() {
     })
     form.content = ''
     form.rating = 0
-    ElMessage.success('评价已提交，分析任务已创建；分析将在后台异步进行')
+    ElMessage.success('评价提交成功，感谢你的反馈。')
     page.value = 1
     await list.reload()
   })
@@ -160,6 +162,14 @@ async function submit() {
             <time>{{ dateLabel(item.createdAt) }}</time>
           </div>
           <p class="preserve-text">{{ item.content }}</p>
+          <el-button
+            v-if="auth.canManage"
+            link
+            type="primary"
+            @click="selectedCommentId = item.id"
+          >
+            查看分析
+          </el-button>
         </article>
         <PaginationBar
           v-model:page="page"
@@ -174,4 +184,9 @@ async function submit() {
       @saved="details.reload"
     />
   </template>
+  <CommentAnalysisDrawer
+    v-if="auth.canManage && selectedCommentId !== undefined"
+    :comment-id="selectedCommentId"
+    @close="selectedCommentId = undefined"
+  />
 </template>

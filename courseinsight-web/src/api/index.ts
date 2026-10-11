@@ -7,6 +7,7 @@ import type {
   BatchRetry,
   Comment,
   CommentCreate,
+  CommentAnalysis,
   Course,
   CourseCreate,
   CourseUpdate,
@@ -40,6 +41,8 @@ export const createComment = (id: string, data: CommentCreate) =>
   request<number>({ method: 'POST', url: `/courses/${id}/comments`, data })
 export const deleteComment = (id: number) =>
   request<void>({ method: 'DELETE', url: `/comments/${id}` })
+export const commentAnalysis = (id: number, signal?: AbortSignal) =>
+  request<CommentAnalysis>({ url: `/comments/${id}/analysis`, signal })
 export const uploadBatch = (id: number, file: File) => {
   const data = new FormData()
   data.append('file', file)
