@@ -306,3 +306,37 @@ test('空看板显示空状态，不生成虚构指标', async ({ page }) => {
   await expect(page.getByText('暂无评分数据')).toBeVisible()
   await expect(page.locator('.insight-chart')).toHaveCount(0)
 })
+
+test('已有课程简介为 null 时仍可编辑保存', async ({ page }) => {
+  await signedIn(page)
+  const current = {
+    id: 1,
+    code: 'NULL-DESC',
+    name: '无简介课程',
+    teacherName: '测试教师',
+    description: null,
+    status: 1,
+    createdAt: '2026-10-11T10:00:00',
+    updatedAt: '2026-10-11T10:00:00',
+  }
+  let saved = false
+  await page.route('**/api/courses/1/comments?**', (route) =>
+    route.fulfill({ json: { code: 0, data: emptyPage } }),
+  )
+  await page.route('**/api/courses/1', (route) => {
+    if (route.request().method() === 'PUT') {
+      const body = route.request().postDataJSON()
+      expect(body.description).toBe('')
+      expect(body.status).toBe(1)
+      saved = true
+      return route.fulfill({ json: { code: 0, data: 1 } })
+    }
+    return route.fulfill({ json: { code: 0, data: current } })
+  })
+  await page.goto('/courses/1')
+  await page.getByRole('button', { name: '编辑课程' }).click()
+  await expect(page.getByRole('textbox', { name: '课程简介' })).toHaveValue('')
+  await page.getByRole('button', { name: '保存课程' }).click()
+  await expect.poll(() => saved).toBe(true)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+})

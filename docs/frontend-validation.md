@@ -11,7 +11,7 @@
 | `npm run build` | 通过；Vite 提示 Element Plus 与 ECharts 相关 chunk 超过 500KB，属于体积优化项 |
 | `npm test` | 4 个测试文件、24 项通过 |
 | Playwright 真实 Demo | 通过，使用真实 Spring Boot REST API 与隔离 Demo 依赖 |
-| Playwright 异常交互 | 8 项通过，契约响应仅在测试中注入 |
+| Playwright 异常交互 | 9 项通过，契约响应仅在测试中注入 |
 | `scripts/test.ps1 -Suite fast` | 193 项通过，0 失败 / 错误 / 跳过 |
 | `scripts/test.ps1 -Suite integration` | 73 项通过，真实 MySQL/Redis Testcontainers，0 失败 / 错误 / 跳过 |
 | `scripts/demo.ps1 smoke` | 通过；真实异步批次 COMPLETED，3 条结果 |
@@ -45,6 +45,7 @@
 - 错误文件扩展名、后端 CSV 表头校验错误。
 - PARTIAL_FAILED 显示独立提示、失败原因；终态不继续轮询，确认重试后显示重新入队并恢复状态查询。
 - 零数据看板显示空状态，不渲染虚构图表，平均评分显示缺省。
+- 已有课程简介为 null 时，编辑表单将其规范为空字符串，仍可正常保存。
 - 单元测试另覆盖 FAILED/COMPLETED 终态、慢请求不重叠、退避与三次失败暂停、卸载取消、业务错误和 Blob JSON 错误。
 
 ## 截图

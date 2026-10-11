@@ -37,7 +37,8 @@ export interface CourseCreate {
 export interface CourseUpdate extends CourseCreate {
   status: number
 }
-export interface Course extends CourseUpdate {
+export interface Course extends Omit<CourseUpdate, 'description'> {
+  description: string | null
   id: number
   createdAt: string
   updatedAt: string

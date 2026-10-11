@@ -30,6 +30,7 @@ watch(open, (value) => {
         status: 1,
       },
     )
+    form.description = props.course?.description ?? ''
     error.value = ''
     formRef.value?.clearValidate()
   }

@@ -28,7 +28,7 @@ Vite 将 `/api` 代理到 localhost:8080，无后端 CORS 改动。生产构建�
 - lint、TypeScript、生产构建通过；构建有 Element Plus/ECharts chunk 体积提示，未隐藏。
 - Vitest 24 项通过。
 - Playwright 真实 Demo 完整链路通过，包含创建/编辑课程、评价、CSV 异步分析、结果、下载、刷新恢复、看板、手机布局和删除自己的测试评价。
-- 8 项独立异常交互测试通过：登录错误、失效 Token、角色守卫、网络恢复、文件错误、部分失败重试、403、空看板。
+- 9 项独立异常交互测试通过：登录错误、失效 Token、角色守卫、网络恢复、文件错误、部分失败重试、403、空看板、可空课程简介编辑。
 - Java fast 193 项、integration 73 项通过。
 - 原有 Demo smoke 通过，批次完成并读取 3 条确定性结果。
 
