@@ -142,6 +142,8 @@ docker compose --profile observability stop grafana prometheus
 `X-Forwarded-For` 或 `X-Real-IP`。部署在反向代理之后时，需要先在容器/框架层配置明确
 可信的代理和 forwarded-header 处理，否则所有请求可能表现为同一个代理地址。
 
+## 停止本地服务
+
 Compose 生命周期为 `start-only`。停止 Java 不会停止或重建 MySQL、Redis、
 RocketMQ 和 AI 服务，下一次启动 Java 会复用已经运行的服务。需要手动停止共享服务时，
 在仓库根目录运行：
