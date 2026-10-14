@@ -1,6 +1,7 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
+import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CourseCreateRequest;
 import com.courseinsight.server.dto.CourseDetailResponse;
@@ -35,7 +36,7 @@ public class CourseController {
 
     @PutMapping("/{id}")
     public ApiResponse<Long> update(
-            @PathVariable Long id,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long id,
             Authentication authentication,
             @Valid @RequestBody CourseUpdateRequest request) {
         CurrentUser currentUser = CurrentUser.from(authentication);
@@ -48,7 +49,7 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<CourseDetailResponse> getById(@PathVariable Long id) {
+    public ApiResponse<CourseDetailResponse> getById(@PathVariable @Positive(message = "ID 必须是正整数") Long id) {
         return ApiResponse.success(courseService.getById(id));
     }
 

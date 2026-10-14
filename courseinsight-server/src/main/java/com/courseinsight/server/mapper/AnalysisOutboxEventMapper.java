@@ -5,10 +5,22 @@ import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.Delete;
 
 import java.util.List;
 
 public interface AnalysisOutboxEventMapper extends BaseMapper<AnalysisOutboxEvent> {
+
+    @Delete("""
+            DELETE FROM analysis_outbox_event
+            WHERE status = 'SENT'
+              AND sent_at < TIMESTAMPADD(DAY, -#{retentionDays}, CURRENT_TIMESTAMP(3))
+            ORDER BY sent_at ASC, id ASC
+            LIMIT #{batchSize}
+            """)
+    int deleteExpiredSent(
+            @Param("retentionDays") int retentionDays,
+            @Param("batchSize") int batchSize);
 
     @Select("""
             SELECT id, event_id, task_id, comment_id, event_type, status,

@@ -12,6 +12,25 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AnalysisBatchCsvParserTests {
 
+    @Test
+    void shouldCloseInputWhenStrictDecodingFailsBeforeReaderIsReturned() {
+        var closed = new java.util.concurrent.atomic.AtomicBoolean();
+        var input = new java.io.ByteArrayInputStream(new byte[]{(byte) 0xC3, 0x28}) {
+            @Override
+            public void close() {
+                closed.set(true);
+            }
+        };
+        var file = new MockMultipartFile("file", "comments.csv", "text/csv", new byte[]{1}) {
+            @Override
+            public java.io.InputStream getInputStream() {
+                return input;
+            }
+        };
+        assertThatThrownBy(() -> csvParser.parse(file)).isInstanceOf(InvalidCsvFileException.class);
+        assertThat(closed.get()).isTrue();
+    }
+
     private final AnalysisBatchCsvParser csvParser = new AnalysisBatchCsvParser();
 
     @Test
@@ -69,5 +88,33 @@ class AnalysisBatchCsvParserTests {
                 "text/csv",
                 content.getBytes(StandardCharsets.UTF_8)
         );
+    }
+
+    @Test
+    void shouldRejectUnclosedQuotedFieldAsInvalidCsv() {
+        assertThatThrownBy(() -> csvParser.parse(csvFile("content,rating\n\"unfinished,5\n")))
+                .isInstanceOf(InvalidCsvFileException.class);
+    }
+
+    @Test
+    void shouldRejectDuplicateHeaders() {
+        assertThatThrownBy(() -> csvParser.parse(csvFile("content,content,rating\nfirst,second,5\n")))
+                .isInstanceOf(InvalidCsvFileException.class);
+    }
+
+    @Test
+    void shouldRejectUnexpectedExtraColumns() {
+        assertThatThrownBy(() -> csvParser.parse(csvFile("content,rating\ncomment,5,unexpected\n")))
+                .isInstanceOf(InvalidCsvFileException.class);
+    }
+
+    @Test
+    void shouldRejectMalformedUtf8InsteadOfReplacingContent() {
+        byte[] header = "content,rating\n".getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = java.util.Arrays.copyOf(header, header.length + 5);
+        System.arraycopy(new byte[]{(byte) 0xC3, 0x28, ',', '5', '\n'}, 0, bytes, header.length, 5);
+        assertThatThrownBy(() -> csvParser.parse(new MockMultipartFile(
+                "file", "comments.csv", "text/csv", bytes)))
+                .isInstanceOf(InvalidCsvFileException.class);
     }
 }

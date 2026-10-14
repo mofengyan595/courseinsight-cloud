@@ -1,6 +1,7 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
+import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.dto.AnalysisExecutionResponse;
 import com.courseinsight.server.security.CurrentUser;
 import com.courseinsight.server.service.AnalysisExecutionService;
@@ -22,7 +23,7 @@ public class AnalysisExecutionController {
 
     @PostMapping("/{taskId}/execute")
     public ApiResponse<AnalysisExecutionResponse> execute(
-            @PathVariable Long taskId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long taskId,
             Authentication authentication) {
         CurrentUser currentUser = CurrentUser.from(authentication);
         return ApiResponse.success(analysisExecutionService.executeForUser(

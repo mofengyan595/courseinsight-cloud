@@ -74,6 +74,7 @@ public class AnalysisOutboxPublisher {
     }
 
     @Scheduled(
+            scheduler = "outboxPublishScheduler",
             fixedDelayString = "${courseinsight.outbox.publish-interval-ms:1000}",
             initialDelayString = "${courseinsight.outbox.initial-delay-ms:1000}"
     )

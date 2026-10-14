@@ -21,6 +21,7 @@ if ($courseIds.Count -ne 5 -or @($courseIds | Where-Object { $_ -le 0 }).Count -
 }
 $ids = $courseIds -join ','
 $userPrefix = [string]$context.userPrefix
+$escapedUserPrefix = $userPrefix.Replace('_', '!_')
 
 function Write-Utf8NoBom {
     param([string]$LiteralPath, [string]$Content)
@@ -62,7 +63,7 @@ DELETE FROM analysis_task WHERE course_id IN ($ids);
 DELETE FROM analysis_batch WHERE course_id IN ($ids);
 DELETE FROM course_comment WHERE course_id IN ($ids);
 DELETE FROM course WHERE id IN ($ids);
-DELETE FROM app_user WHERE username LIKE '${userPrefix}\_%';
+DELETE FROM app_user WHERE username LIKE '${escapedUserPrefix}!_%' ESCAPE '!';
 COMMIT;
 SELECT CONCAT('remainingCourses=', COUNT(*)) FROM course WHERE id IN ($ids);
 "@

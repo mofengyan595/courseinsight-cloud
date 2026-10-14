@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -66,12 +67,14 @@ class CourseAnalyticsCacheTests {
         courseAnalyticsCache.put(14L, createSummary());
 
         ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
         verify(valueOperations).set(
                 org.mockito.ArgumentMatchers.eq("course:analytics:summary:14"),
                 valueCaptor.capture(),
-                org.mockito.ArgumentMatchers.eq(CourseAnalyticsCache.SUMMARY_TTL)
+                ttlCaptor.capture()
         );
         assertThat(valueCaptor.getValue()).contains("totalComments", "completionPercentage");
+        assertThat(ttlCaptor.getValue()).isBetween(Duration.ofMinutes(4), Duration.ofMinutes(5));
     }
 
     @Test

@@ -181,8 +181,21 @@ Dockerfile 使用 Python 3.12 与 CPU 版 PyTorch。测试接口及降级行为�
 `publish_token`；`SENT / FAILED` 条件更新同时匹配事件 ID、`PUBLISHING` 状态和 token。
 token 保护的是数据库中的发布状态，不能撤销已经发出的消息。
 
+本地 Broker 使用单节点和异步刷盘。应用重发机制不能覆盖 Broker 已确认但持久化故障导致的消息丢失；
+目前租约恢复只扫描 `PROCESSING`，没有针对长期 `WAITING + SENT` 的自动投递对账。
+生产的消息持久化、复制和对账策略需要单独确定，不能仅凭 Outbox 承诺在所有 Broker 故障下都不丢任务。
+
 固定线程池与“已提交但未完成”的发送数量共同限制并发，调度周期还使用原子标记防止重叠。
 默认发布并发为 2，该上限仅作用于单个应用实例，不是集群全局限流。
+
+发布调度与租约恢复各使用独立的单线程调度器，避免发布等待整批 MQ 发送时阻塞恢复。
+发送仍由原有固定发布池执行，并发上限和防重叠保护保留。
+
+成功 Outbox 默认保留。可通过 `OUTBOX_CLEANUP_ENABLED=true` 显式开启分批清理：
+`OUTBOX_CLEANUP_RETENTION_DAYS` 默认 30，`OUTBOX_CLEANUP_BATCH_SIZE` 默认 500（1–1000），
+`OUTBOX_CLEANUP_INTERVAL_MS` 和 `OUTBOX_CLEANUP_INITIAL_DELAY_MS` 默认 3600000。
+清理仅删除保留期外的 `SENT` 元数据，使用独立调度器，不删除待发送/失败/发布中的事件。
+开启前按实际审计需求确定保留期和外部归档；当前未提供自动归档。
 
 源码入口：[评价事务](../courseinsight-server/src/main/java/com/courseinsight/server/service/CommentService.java)、
 [批次创建](../courseinsight-server/src/main/java/com/courseinsight/server/service/AnalysisBatchCreationService.java)、
@@ -216,13 +229,18 @@ token 保护的是数据库中的发布状态，不能撤销已经发出的消�
 
 ### 缓存一致性与降级
 
-课程详情使用 30 分钟 TTL 和 5 分钟空值缓存，统计摘要使用 5 分钟 TTL。
-相关业务事务提交后删除缓存，避免事务未提交时读请求回填旧数据；Redis 读写异常时业务仍使用 MySQL。
+课程详情 TTL 在 24–30 分钟间随机，空值与统计摘要 TTL 在 4–5 分钟间随机，降低集中失效风险。
+详情未命中使用固定数量的锁槽互斥重建并再次检查缓存；本实例的详情回填与提交后失效也互斥。
+详情单次查询不再开启数据库事务，缓存命中和锁等待不需要持有事务资源。
+相关业务事务提交后删除缓存，避免未提交就失效；Redis 读写异常时业务仍使用 MySQL。
 排行榜由 ZSet 与 READY key 共同表示，Lua 脚本先写数据和 TTL，最后发布 READY，支持空排行榜的就绪判断。
 
 事务后失效仍是尽力执行，没有持久化失效记录或可靠重试。失效失败或并发回填可能使缓存暂时保留旧值，
 需要后续失效、重新填充或 TTL 收敛，并不提供强一致性。Redis 故障时回源也会增加 MySQL 压力。
 JWT 请求仍查询当前用户状态，统计接口仍校验课程归属，因此缓存命中不等于零数据库查询。
+本地互斥不提供多实例全局一致性；当前未引入 Caffeine 或用户权限 Redis 缓存。
+
+完整审查、修改依据和验证范围见[后端工程审计](backend-audit.md)。
 
 源码入口：[详情缓存](../courseinsight-server/src/main/java/com/courseinsight/server/cache/CourseDetailCache.java)、
 [课程事务后失效](../courseinsight-server/src/main/java/com/courseinsight/server/service/CourseService.java)、

@@ -32,6 +32,28 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(classes = {AuthController.class, GlobalExceptionHandler.class})
 class AuthControllerTests {
 
+    @Test
+    void shouldRejectPasswordExceedingBcryptByteLimit() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"student_01\",\"password\":\""
+                                + "密".repeat(25) + "\",\"displayName\":\"学生\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+        verifyNoInteractions(registrationService);
+    }
+
+    @Test
+    void shouldRejectOversizedLoginBeforeCallingService() throws Exception {
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"username\":\"" + "a".repeat(33) + "\",\"password\":\""
+                                + "b".repeat(65) + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+        verifyNoInteractions(loginService, authenticationRateLimitService);
+    }
+
     @Autowired
     private MockMvc mockMvc;
 

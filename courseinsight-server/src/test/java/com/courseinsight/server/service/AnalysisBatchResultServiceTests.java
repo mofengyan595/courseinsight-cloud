@@ -38,6 +38,35 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @ExtendWith(MockitoExtension.class)
 class AnalysisBatchResultServiceTests {
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "=SUM(1,2)", "+cmd", "-cmd", "@cmd", "  =SUM(1,2)", "\n=SUM(1,2)", "\tvalue", "\rvalue"
+    })
+    void shouldEscapeEveryExportedTextField(String payload) throws Exception {
+        AnalysisBatchResultRow row = exportRow(60L, payload, "FAILED");
+        row.setLanguage(payload);
+        row.setSentiment(payload);
+        row.setRiskLevel(payload);
+        row.setKeywordsJson(payload);
+        row.setTopicsJson(payload);
+        row.setAdviceJson(payload);
+        row.setFailureReason(payload);
+        Page<AnalysisBatchResultRow> page = new Page<>(1, 100, false);
+        page.setRecords(List.of(row));
+        given(resultMapper.selectPageByBatchId(any(), eq(30L))).willReturn(page);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        resultService.writeCsv(30L, output);
+
+        try (CSVParser parser = CSVFormat.DEFAULT.builder().setHeader().get().parse(
+                new StringReader(output.toString(StandardCharsets.UTF_8).substring(1)))) {
+            var exported = parser.getRecords().get(0);
+            for (String header : List.of("评论内容", "语言", "情感", "风险等级", "关键词", "主题", "教学建议", "失败原因")) {
+                assertThat(exported.get(header)).isEqualTo("'" + payload);
+            }
+        }
+    }
+
     @Mock
     private AnalysisBatchMapper batchMapper;
 

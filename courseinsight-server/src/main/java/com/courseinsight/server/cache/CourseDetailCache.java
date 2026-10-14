@@ -54,7 +54,7 @@ public class CourseDetailCache {
     public void put(Long courseId, CourseDetailResponse course) {
         try {
             String value = objectMapper.writeValueAsString(course);
-            redisTemplate.opsForValue().set(buildKey(courseId), value, COURSE_TTL);
+            redisTemplate.opsForValue().set(buildKey(courseId), value, CacheTtl.jitter(COURSE_TTL));
         } catch (JsonProcessingException | RuntimeException exception) {
             LOGGER.warn("Redis write failed for courseId={}, response will still use MySQL data", courseId, exception);
         }
@@ -62,7 +62,7 @@ public class CourseDetailCache {
 
     public void putNotFound(Long courseId) {
         try {
-            redisTemplate.opsForValue().set(buildKey(courseId), NULL_VALUE, NULL_TTL);
+            redisTemplate.opsForValue().set(buildKey(courseId), NULL_VALUE, CacheTtl.jitter(NULL_TTL));
         } catch (RuntimeException exception) {
             LOGGER.warn("Redis null-cache write failed for courseId={}", courseId, exception);
         }

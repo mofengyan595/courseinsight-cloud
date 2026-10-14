@@ -6,6 +6,7 @@ import com.courseinsight.server.exception.InvalidCsvFileException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.csv.DuplicateHeaderMode;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PushbackReader;
+import java.io.UncheckedIOException;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +39,7 @@ public class AnalysisBatchCsvParser {
         try (PushbackReader reader = openUtf8ReaderWithoutBom(file);
              CSVParser parser = CSVFormat.DEFAULT.builder()
                      .setHeader()
+                     .setDuplicateHeaderMode(DuplicateHeaderMode.DISALLOW)
                      .setSkipHeaderRecord(true)
                      .setIgnoreHeaderCase(true)
                      .setIgnoreEmptyLines(true)
@@ -57,7 +61,7 @@ public class AnalysisBatchCsvParser {
             return new AnalysisBatchCsvData(originalFilename, rows);
         } catch (InvalidCsvFileException exception) {
             throw exception;
-        } catch (IOException | IllegalArgumentException exception) {
+        } catch (IOException | UncheckedIOException | IllegalArgumentException exception) {
             throw new InvalidCsvFileException("CSV 文件格式错误或无法读取", exception);
         }
     }
@@ -86,14 +90,25 @@ public class AnalysisBatchCsvParser {
 
     private PushbackReader openUtf8ReaderWithoutBom(MultipartFile file) throws IOException {
         PushbackReader reader = new PushbackReader(
-                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8),
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8.newDecoder()
+                        .onMalformedInput(CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(CodingErrorAction.REPORT)),
                 1
         );
-        int firstCharacter = reader.read();
-        if (firstCharacter != 0xFEFF && firstCharacter != -1) {
-            reader.unread(firstCharacter);
+        try {
+            int firstCharacter = reader.read();
+            if (firstCharacter != 0xFEFF && firstCharacter != -1) {
+                reader.unread(firstCharacter);
+            }
+            return reader;
+        } catch (IOException | RuntimeException exception) {
+            try {
+                reader.close();
+            } catch (IOException closeException) {
+                exception.addSuppressed(closeException);
+            }
+            throw exception;
         }
-        return reader;
     }
 
     private void validateHeaders(CSVParser parser) {
@@ -111,6 +126,9 @@ public class AnalysisBatchCsvParser {
 
     private AnalysisBatchCommentRow parseRow(CSVRecord record) {
         long rowNumber = record.getRecordNumber() + 1;
+        if (!record.isConsistent()) {
+            throw invalidRow(rowNumber, "列数与表头不一致");
+        }
         String content = record.get(CONTENT_HEADER).trim();
         if (content.isEmpty()) {
             throw invalidRow(rowNumber, "content 不能为空");

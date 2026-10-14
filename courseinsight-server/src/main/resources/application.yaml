@@ -75,6 +75,13 @@ courseinsight:
     retry-delay-seconds: ${OUTBOX_RETRY_DELAY_SECONDS:30}
     recovery-timeout-seconds: ${OUTBOX_RECOVERY_TIMEOUT_SECONDS:300}
     shutdown-timeout-seconds: ${OUTBOX_SHUTDOWN_TIMEOUT_SECONDS:30}
+    cleanup:
+      # 删除成功消息元数据前，先根据审计/归档要求显式启用。
+      enabled: ${OUTBOX_CLEANUP_ENABLED:false}
+      retention-days: ${OUTBOX_CLEANUP_RETENTION_DAYS:30}
+      batch-size: ${OUTBOX_CLEANUP_BATCH_SIZE:500}
+      interval-ms: ${OUTBOX_CLEANUP_INTERVAL_MS:3600000}
+      initial-delay-ms: ${OUTBOX_CLEANUP_INITIAL_DELAY_MS:3600000}
 
 management:
   endpoints:

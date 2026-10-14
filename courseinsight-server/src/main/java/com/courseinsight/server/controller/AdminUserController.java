@@ -1,6 +1,7 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
+import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.AdminUserPageQuery;
 import com.courseinsight.server.dto.AdminUserResponse;
@@ -35,7 +36,7 @@ public class AdminUserController {
 
     @PatchMapping("/{userId}/role")
     public ApiResponse<AdminUserResponse> updateRole(
-            @PathVariable Long userId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long userId,
             Principal principal,
             @Valid @RequestBody UserRoleUpdateRequest request) {
         return ApiResponse.success(adminUserService.updateRole(

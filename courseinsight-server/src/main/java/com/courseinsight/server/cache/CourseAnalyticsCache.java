@@ -57,7 +57,7 @@ public class CourseAnalyticsCache {
     public void put(Long courseId, CourseAnalyticsSummaryResponse summary) {
         try {
             String value = objectMapper.writeValueAsString(summary);
-            redisTemplate.opsForValue().set(buildKey(courseId), value, SUMMARY_TTL);
+            redisTemplate.opsForValue().set(buildKey(courseId), value, CacheTtl.jitter(SUMMARY_TTL));
         } catch (JsonProcessingException | RuntimeException exception) {
             LOGGER.warn(
                     "Redis analytics write failed for courseId={}, response still uses MySQL data",

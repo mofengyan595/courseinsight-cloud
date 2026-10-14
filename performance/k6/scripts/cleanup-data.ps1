@@ -50,12 +50,14 @@ if ($prefix -notmatch '^[A-Za-z0-9_-]{3,20}$' -or
     throw 'The context contains an unsafe prefix or username.'
 }
 
+$escapedPrefix = $prefix.Replace('_', '!_')
 $processingSql = @"
 SELECT COUNT(*)
 FROM analysis_task task
 INNER JOIN course ON course.id = task.course_id
-WHERE course.code LIKE '${prefix}-%'
-  AND task.status IN ('WAITING', 'PROCESSING');
+WHERE course.code LIKE '${escapedPrefix}-%' ESCAPE '!'
+  AND (task.status IN ('WAITING', 'PROCESSING')
+       OR (task.status = 'FAILED' AND task.dead_lettered_at IS NULL));
 "@
 $processingSqlBase64 = [Convert]::ToBase64String(
     [Text.Encoding]::UTF8.GetBytes($processingSql)
@@ -77,24 +79,26 @@ if (-not $PSCmdlet.ShouldProcess($target, 'Delete isolated performance rows and 
 }
 
 $cleanupSql = @"
+START TRANSACTION;
 DELETE result_row FROM analysis_result result_row
 INNER JOIN course ON course.id = result_row.course_id
-WHERE course.code LIKE '${prefix}-%';
+WHERE course.code LIKE '${escapedPrefix}-%' ESCAPE '!';
 DELETE outbox FROM analysis_outbox_event outbox
 INNER JOIN analysis_task task ON task.id = outbox.task_id
 INNER JOIN course ON course.id = task.course_id
-WHERE course.code LIKE '${prefix}-%';
+WHERE course.code LIKE '${escapedPrefix}-%' ESCAPE '!';
 DELETE task FROM analysis_task task
 INNER JOIN course ON course.id = task.course_id
-WHERE course.code LIKE '${prefix}-%';
+WHERE course.code LIKE '${escapedPrefix}-%' ESCAPE '!';
 DELETE batch_row FROM analysis_batch batch_row
 INNER JOIN course ON course.id = batch_row.course_id
-WHERE course.code LIKE '${prefix}-%';
+WHERE course.code LIKE '${escapedPrefix}-%' ESCAPE '!';
 DELETE comment_row FROM course_comment comment_row
 INNER JOIN course ON course.id = comment_row.course_id
-WHERE course.code LIKE '${prefix}-%';
-DELETE FROM course WHERE code LIKE '${prefix}-%';
+WHERE course.code LIKE '${escapedPrefix}-%' ESCAPE '!';
+DELETE FROM course WHERE code LIKE '${escapedPrefix}-%' ESCAPE '!';
 DELETE FROM app_user WHERE username = '$username';
+COMMIT;
 "@
 $cleanupSqlBase64 = [Convert]::ToBase64String(
     [Text.Encoding]::UTF8.GetBytes($cleanupSql)

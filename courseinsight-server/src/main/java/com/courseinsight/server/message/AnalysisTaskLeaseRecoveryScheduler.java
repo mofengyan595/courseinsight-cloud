@@ -31,6 +31,7 @@ public class AnalysisTaskLeaseRecoveryScheduler {
     }
 
     @Scheduled(
+            scheduler = "leaseRecoveryScheduler",
             fixedDelayString = "${courseinsight.analysis.lease-recovery-interval-ms:30000}",
             initialDelayString = "${courseinsight.analysis.lease-recovery-interval-ms:30000}"
     )

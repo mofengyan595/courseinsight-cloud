@@ -24,6 +24,9 @@ import java.util.List;
 @Service
 public class CourseService {
 
+    // 固定数量的锁，避免任意不存在 ID 使锁表无限增长。
+    private final Object[] detailLoadLocks = new Object[256];
+
     private final CourseMapper courseMapper;
     private final CourseDetailCache courseDetailCache;
     private final CoursePopularityRankingCache popularityRankingCache;
@@ -38,6 +41,9 @@ public class CourseService {
         this.courseDetailCache = courseDetailCache;
         this.popularityRankingCache = popularityRankingCache;
         this.managementAccessService = managementAccessService;
+        for (int index = 0; index < detailLoadLocks.length; index++) {
+            detailLoadLocks[index] = new Object();
+        }
     }
 
     @Transactional
@@ -83,25 +89,35 @@ public class CourseService {
         return id;
     }
 
-    @Transactional(readOnly = true)
     public CourseDetailResponse getById(Long id) {
         CourseCacheLookup cacheLookup = courseDetailCache.get(id);
         if (cacheLookup.hit()) {
-            if (cacheLookup.course() == null) {
+            return requireCachedCourse(cacheLookup);
+        }
+
+        synchronized (detailLoadLock(id)) {
+            cacheLookup = courseDetailCache.get(id);
+            if (cacheLookup.hit()) {
+                return requireCachedCourse(cacheLookup);
+            }
+
+            Course course = courseMapper.selectById(id);
+            if (course == null) {
+                courseDetailCache.putNotFound(id);
                 throw new ResourceNotFoundException("课程不存在");
             }
-            return cacheLookup.course();
-        }
 
-        Course course = courseMapper.selectById(id);
-        if (course == null) {
-            courseDetailCache.putNotFound(id);
+            CourseDetailResponse response = CourseDetailResponse.from(course);
+            courseDetailCache.put(id, response);
+            return response;
+        }
+    }
+
+    private CourseDetailResponse requireCachedCourse(CourseCacheLookup cacheLookup) {
+        if (cacheLookup.course() == null) {
             throw new ResourceNotFoundException("课程不存在");
         }
-
-        CourseDetailResponse response = CourseDetailResponse.from(course);
-        courseDetailCache.put(id, response);
-        return response;
+        return cacheLookup.course();
     }
 
     @Transactional(readOnly = true)
@@ -142,7 +158,7 @@ public class CourseService {
     private void evictCacheAfterCommit(Long courseId) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()
                 || !TransactionSynchronizationManager.isActualTransactionActive()) {
-            courseDetailCache.evict(courseId);
+            evictDetailCache(courseId);
             return;
         }
 
@@ -150,9 +166,20 @@ public class CourseService {
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        courseDetailCache.evict(courseId);
+                        evictDetailCache(courseId);
                     }
                 }
         );
+    }
+
+    private Object detailLoadLock(Long courseId) {
+        return detailLoadLocks[Math.floorMod(courseId.hashCode(), detailLoadLocks.length)];
+    }
+
+    private void evictDetailCache(Long courseId) {
+        // 与本实例的回填互斥，防止提交后删除早于旧查询回填。
+        synchronized (detailLoadLock(courseId)) {
+            courseDetailCache.evict(courseId);
+        }
     }
 }

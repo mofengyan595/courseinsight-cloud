@@ -1,6 +1,7 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
+import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.dto.CommentAnalysisResponse;
 import com.courseinsight.server.security.CurrentUser;
 import com.courseinsight.server.service.CommentAnalysisService;
@@ -20,7 +21,7 @@ public class CommentAnalysisController {
 
     @GetMapping("/api/comments/{commentId}/analysis")
     public ApiResponse<CommentAnalysisResponse> getByCommentId(
-            @PathVariable Long commentId, Authentication authentication) {
+            @PathVariable @Positive(message = "ID 必须是正整数") Long commentId, Authentication authentication) {
         CurrentUser user = CurrentUser.from(authentication);
         return ApiResponse.success(service.getByCommentId(commentId, user.id(), user.role()));
     }

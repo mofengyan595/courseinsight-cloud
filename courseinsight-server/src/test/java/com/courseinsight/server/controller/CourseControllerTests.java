@@ -39,6 +39,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(classes = {CourseController.class, GlobalExceptionHandler.class})
 class CourseControllerTests {
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"0", "-1", "abc", "9223372036854775808"})
+    void shouldRejectInvalidPathIdWithUnifiedResponse(String id) throws Exception {
+        mockMvc.perform(get("/api/courses/" + id))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+        verifyNoInteractions(courseService);
+    }
+
+    @Test
+    void shouldRejectMalformedJsonWithUnifiedResponse() throws Exception {
+        mockMvc.perform(post("/api/courses")
+                        .contentType(MediaType.APPLICATION_JSON).content("{"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400));
+        verifyNoInteractions(courseService);
+    }
+
     @Autowired
     private MockMvc mockMvc;
 

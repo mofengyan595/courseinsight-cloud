@@ -1,6 +1,7 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
+import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
@@ -33,7 +34,7 @@ public class CommentController {
     @PostMapping("/courses/{courseId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Long> create(
-            @PathVariable Long courseId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long courseId,
             Principal principal,
             @Valid @RequestBody CommentCreateRequest request) {
         return ApiResponse.success(commentService.create(
@@ -45,7 +46,7 @@ public class CommentController {
 
     @GetMapping("/courses/{courseId}/comments")
     public ApiResponse<PageResponse<CommentDetailResponse>> page(
-            @PathVariable Long courseId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long courseId,
             @Valid @ModelAttribute CommentPageQuery query) {
         return ApiResponse.success(commentService.page(courseId, query));
     }
@@ -62,7 +63,7 @@ public class CommentController {
 
     @DeleteMapping("/comments/{commentId}")
     public ApiResponse<Void> delete(
-            @PathVariable Long commentId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long commentId,
             Principal principal) {
         commentService.delete(commentId, currentUserId(principal));
         return ApiResponse.success(null);

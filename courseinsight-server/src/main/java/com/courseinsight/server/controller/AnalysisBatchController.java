@@ -1,6 +1,7 @@
 package com.courseinsight.server.controller;
 
 import com.courseinsight.server.common.ApiResponse;
+import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.AnalysisBatchCreateResponse;
 import com.courseinsight.server.dto.AnalysisBatchProgressResponse;
@@ -54,7 +55,7 @@ public class AnalysisBatchController {
     )
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<AnalysisBatchCreateResponse> upload(
-            @PathVariable Long courseId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long courseId,
             Authentication authentication,
             @RequestPart("file") MultipartFile file) {
         CurrentUser currentUser = CurrentUser.from(authentication);
@@ -68,7 +69,7 @@ public class AnalysisBatchController {
 
     @GetMapping("/analysis-batches/{batchId}")
     public ApiResponse<AnalysisBatchProgressResponse> getProgress(
-            @PathVariable Long batchId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication) {
         CurrentUser currentUser = CurrentUser.from(authentication);
         return ApiResponse.success(batchService.getProgress(
@@ -80,7 +81,7 @@ public class AnalysisBatchController {
 
     @GetMapping("/analysis-batches/{batchId}/results")
     public ApiResponse<PageResponse<AnalysisBatchResultItemResponse>> getResults(
-            @PathVariable Long batchId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication,
             @Valid @ModelAttribute AnalysisBatchResultPageQuery query) {
         CurrentUser currentUser = CurrentUser.from(authentication);
@@ -97,7 +98,7 @@ public class AnalysisBatchController {
             produces = "text/csv"
     )
     public void exportResults(
-            @PathVariable Long batchId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication,
             HttpServletResponse response) throws IOException {
         CurrentUser currentUser = CurrentUser.from(authentication);
@@ -122,7 +123,7 @@ public class AnalysisBatchController {
     @PostMapping("/analysis-batches/{batchId}/retry-failed")
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ApiResponse<AnalysisBatchRetryResponse> retryFailed(
-            @PathVariable Long batchId,
+            @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication) {
         CurrentUser currentUser = CurrentUser.from(authentication);
         return ApiResponse.success(recoveryService.retryDeadLettered(

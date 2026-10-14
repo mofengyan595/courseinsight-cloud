@@ -14,18 +14,26 @@ function formatNumber(current, digits = 2) {
 }
 
 function buildConsoleSummary(data, metadata) {
-  const requests = metricValues(data, 'http_reqs');
-  const duration = metricValues(data, 'http_req_duration');
-  const failed = metricValues(data, 'http_req_failed');
+  const queryOnly = Boolean(data.metrics.query_requests);
+  const requests = metricValues(data, queryOnly ? 'query_requests' : 'http_reqs');
+  const duration = metricValues(data, queryOnly ? 'query_latency' : 'http_req_duration');
+  const failed = metricValues(data, queryOnly ? 'query_http_errors' : 'http_req_failed');
+  const requestCount = value(requests, 'count');
+  const requestRate = queryOnly
+    ? (requestCount !== null && metadata.durationSeconds > 0
+      ? requestCount / metadata.durationSeconds : null)
+    : value(requests, 'rate');
+  const errorRate = value(failed, 'rate');
   const lines = [
     '',
     `CourseInsight performance result: ${metadata.scenario}`,
-    `  request count: ${formatNumber(value(requests, 'count'), 0)}`,
-    `  request rate:  ${formatNumber(value(requests, 'rate'))} req/s`,
+    `  metric scope:  ${queryOnly ? 'query only; count / configured duration' : 'all HTTP requests'}`,
+    `  request count: ${formatNumber(requestCount, 0)}`,
+    `  request rate:  ${formatNumber(requestRate)} req/s`,
     `  HTTP p50:      ${formatNumber(value(duration, 'p(50)'))} ms`,
     `  HTTP p95:      ${formatNumber(value(duration, 'p(95)'))} ms`,
     `  HTTP p99:      ${formatNumber(value(duration, 'p(99)'))} ms`,
-    `  HTTP errors:   ${formatNumber((value(failed, 'rate') || 0) * 100, 4)}%`,
+    `  HTTP errors:   ${formatNumber(errorRate === null ? null : errorRate * 100, 4)}%`,
     `  result file:   ${__ENV.RESULT_FILE || 'not configured'}`,
     '',
   ];

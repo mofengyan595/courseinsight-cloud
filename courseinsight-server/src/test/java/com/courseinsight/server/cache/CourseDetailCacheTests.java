@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -19,6 +20,18 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class CourseDetailCacheTests {
+
+    @Test
+    void redisReadFailureShouldFallBackToDatabase() {
+        given(redisTemplate.opsForValue()).willThrow(new IllegalStateException("Redis unavailable"));
+        assertThat(courseDetailCache.get(1L).hit()).isFalse();
+    }
+
+    @Test
+    void redisDeleteFailureShouldNotFailCommittedBusinessOperation() {
+        given(redisTemplate.delete("course:detail:1")).willThrow(new IllegalStateException("Redis unavailable"));
+        org.assertj.core.api.Assertions.assertThatCode(() -> courseDetailCache.evict(1L)).doesNotThrowAnyException();
+    }
 
     @Mock
     private StringRedisTemplate redisTemplate;
@@ -79,12 +92,14 @@ class CourseDetailCacheTests {
         courseDetailCache.put(1L, course);
 
         ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
         verify(valueOperations).set(
                 org.mockito.ArgumentMatchers.eq("course:detail:1"),
                 valueCaptor.capture(),
-                org.mockito.ArgumentMatchers.eq(CourseDetailCache.COURSE_TTL)
+                ttlCaptor.capture()
         );
         assertThat(valueCaptor.getValue()).contains("CS101", "Java程序设计");
+        assertThat(ttlCaptor.getValue()).isBetween(Duration.ofMinutes(24), Duration.ofMinutes(30));
     }
 
     @Test
@@ -92,11 +107,11 @@ class CourseDetailCacheTests {
         stubValueOperations();
         courseDetailCache.putNotFound(999999L);
 
+        ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
         verify(valueOperations).set(
-                "course:detail:999999",
-                CourseDetailCache.NULL_VALUE,
-                CourseDetailCache.NULL_TTL
-        );
+                org.mockito.ArgumentMatchers.eq("course:detail:999999"),
+                org.mockito.ArgumentMatchers.eq(CourseDetailCache.NULL_VALUE), ttlCaptor.capture());
+        assertThat(ttlCaptor.getValue()).isBetween(Duration.ofMinutes(4), Duration.ofMinutes(5));
     }
 
     @Test

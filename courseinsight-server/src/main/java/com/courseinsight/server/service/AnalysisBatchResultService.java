@@ -136,15 +136,15 @@ public class AnalysisBatchResultService {
                         row.getCommentId(),
                         safeForSpreadsheet(row.getContent()),
                         row.getRating(),
-                        row.getTaskStatus(),
+                        safeForSpreadsheet(row.getTaskStatus()),
                         row.getRetryCount(),
-                        row.getLanguage(),
-                        row.getSentiment(),
+                        safeForSpreadsheet(row.getLanguage()),
+                        safeForSpreadsheet(row.getSentiment()),
                         row.getConfidence(),
-                        row.getRiskLevel(),
-                        row.getKeywordsJson(),
-                        row.getTopicsJson(),
-                        row.getAdviceJson(),
+                        safeForSpreadsheet(row.getRiskLevel()),
+                        safeForSpreadsheet(row.getKeywordsJson()),
+                        safeForSpreadsheet(row.getTopicsJson()),
+                        safeForSpreadsheet(row.getAdviceJson()),
                         safeForSpreadsheet(row.getFailureReason()),
                         formatDateTime(row.getTaskCompletedAt())
                 );
@@ -163,9 +163,16 @@ public class AnalysisBatchResultService {
         if (value == null || value.isEmpty()) {
             return value;
         }
-        char first = value.charAt(0);
+        int index = 0;
+        while (index < value.length()
+                && (Character.isWhitespace(value.charAt(index))
+                    || Character.isSpaceChar(value.charAt(index)))) {
+            index++;
+        }
+        char first = index < value.length() ? value.charAt(index) : value.charAt(0);
         if (first == '=' || first == '+' || first == '-'
-                || first == '@' || first == '\t' || first == '\r') {
+                || first == '@' || value.charAt(0) == '\t'
+                || value.charAt(0) == '\r' || value.charAt(0) == '\n') {
             return "'" + value;
         }
         return value;

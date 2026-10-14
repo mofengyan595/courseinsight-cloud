@@ -144,10 +144,11 @@ ON DUPLICATE KEY UPDATE
 "@
 Invoke-MySql -Sql $insertSql
 
+$escapedDatasetPrefix = $DatasetPrefix.Replace('_', '!_')
 $idLines = Invoke-MySql -Tabular -Sql @"
 SELECT id
 FROM course
-WHERE code LIKE '$DatasetPrefix-%'
+WHERE code LIKE '$escapedDatasetPrefix-%' ESCAPE '!'
 ORDER BY code;
 "@
 $courseIds = @($idLines | ForEach-Object { [long]$_.Trim() })
