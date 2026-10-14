@@ -8,7 +8,7 @@ CourseInsight Cloud 是一个课程评价与教学分析系统。学生可以提
 
 - 课程管理：搜索、分页、创建和编辑课程。
 - 评价管理：提交评分与匿名评价，查看、删除自己的评价；教师按需查看单条评价的分析结果。
-- 批量分析：上传 CSV，查看逐条分析结果，下载结果 CSV；单次最多 200 条、文件不超过 2 MB。
+- 批量分析：上传 CSV，查看逐条分析结果，下载结果 CSV；单次最多 200 条、文件不超过 2 MB。上传时校验文件大小、行数、表头和 UTF-8 编码；导出时对可能被表格软件识别为公式的文本进行处理。
 - 任务管理：查看批次进度、成功与失败数量和失败原因，支持对符合条件的失败任务发起重试；刷新页面后也可以通过批次 URL 继续查看进度。
 - 数据看板：展示课程评价数、平均评分、情感分布、任务状态和风险统计。
 - 权限控制：学生、教师、管理员三种角色；教师的管理和分析权限限于本人创建的课程，学生不能读取完整 AI 分析结果。
@@ -65,9 +65,11 @@ MySQL 保存业务、任务和结果，Redis 保存缓存与可重建的派生�
 
 评价落库和消息发送分属数据库与消息系统，直接双写会留下“数据已提交，消息未发出”的窗口。提交评价或上传批次时，系统在一个 MySQL 事务中写入评价、分析任务和 Outbox 事件，再由定时发布器发送到 RocketMQ。
 
-发布器使用固定线程池和有界提交窗口，限制单个应用实例的并发发送数量。每次领取事件生成 `publish_token`，发送成功或失败的状态更新必须匹配该 token，防止超时恢复后旧发送结果覆盖新的发布尝试。
+Outbox 发布和任务租约恢复使用独立调度器，避免消息发送等待阻塞超时任务的恢复。发布器使用固定线程池和有界提交窗口，限制单个应用实例的并发发送数量。每次领取事件生成 `publish_token`，发送成功或失败的状态更新必须匹配该 token，防止超时恢复后旧发送结果覆盖新的发布尝试。
 
-这条链路采用 at-least-once（至少一次）语义：Broker 已接收消息但 `SENT` 未落库时，恢复后可能重发。消费者通过任务状态、事件代次和条件更新处理重复消息，不承诺 exactly-once。
+已发送成功的 Outbox 事件可按保留期限分批清理 `SENT` 记录。该功能默认关闭，不影响待发送或失败事件的重试。
+
+应用通过 Outbox 重试和消费端幂等处理重复投递，按 at-least-once（至少一次）模型设计：Broker 已接收消息但 `SENT` 未落库时，恢复后可能重发。消费者通过任务状态、事件代次和条件更新处理重复消息，不承诺 exactly-once。当前本地 RocketMQ 使用单节点异步刷盘，尚未保证 Broker 持久化故障下的消息不丢失。
 
 ### 异步任务状态与并发控制
 
@@ -79,9 +81,13 @@ MySQL 保存业务、任务和结果，Redis 保存缓存与可重建的派生�
 
 ### Redis 缓存
 
-课程详情和统计采用 Cache Aside：先读 Redis，未命中时查询 MySQL 并回填。课程详情 TTL 为 30 分钟，不存在的课程缓存 5 分钟；统计缓存 5 分钟。相关业务写入在事务提交后失效缓存，Redis 读写异常时仍使用数据库结果。
+课程详情和统计采用 Cache Aside：优先读取 Redis，未命中时查询 MySQL 并回填。课程详情最大 TTL 为 30 分钟，空值和统计缓存最大 TTL 为 5 分钟，并加入 80%–100% 的随机抖动，减少缓存集中失效。
 
-课程热度排行榜使用 ZSet，Lua 脚本完成数据写入后再设置就绪标记，避免读取半成品。缓存失效没有持久化重试，可能短暂返回旧值，需要后续失效或 TTL 到期收敛；缓存命中也仍会执行用户权限所需的数据库查询。
+针对热点课程详情同时未命中的情况，查询使用单实例锁槽和二次缓存检查，减少并发重复回源。相关业务写入在事务提交后失效缓存；详情回填与提交后的失效操作共用同一锁槽，减少旧数据重新写入缓存的情况。
+
+Redis 不可用时仍回退 MySQL。上述并发保护只作用于单实例，缓存删除失败以及跨实例回填仍可能造成短暂的数据不一致；缓存失效没有持久化重试，需要后续失效或 TTL 到期收敛。缓存命中也仍会执行用户权限所需的数据库查询。
+
+课程热度排行榜使用 ZSet，Lua 脚本完成数据写入后再设置就绪标记，避免读取半成品。
 
 ### Spring Security 与 JWT
 
@@ -199,6 +205,8 @@ Java 测试分为无外部服务的单元、MVC/安全与 HTTP/MQ 合约测试�
 
 macOS/Linux 可在 `courseinsight-server` 中分别使用 `bash ./mvnw test '-Dgroups=!integration'`、`bash ./mvnw test '-Dgroups=integration'` 和 `bash ./mvnw test`。测试不读取根目录 `.env`，不启动项目 Compose；默认测试中的 MQ/AI 使用 mock，真实异步链路由 Demo smoke 单独验证。
 
+2026 年 10 月 14 日完成的后端审计验证中，317 项 Java 测试全部通过，其中 MySQL、Redis 集成测试使用 Testcontainers。验证覆盖缓存并发、调度隔离、Outbox 清理与输入安全，详细记录见[后端工程审计报告](docs/backend-audit.md#验证记录)。
+
 前端在 `courseinsight-web` 中运行 `npm run lint`、`npm run typecheck`、`npm test` 和 `npm run build`；Playwright 覆盖真实 Demo 与异常交互，两类验证分别记录。AI 服务测试见[开发文档](docs/development.md#ai-服务测试)，浏览器测试前提及执行方式见[前端 README](courseinsight-web/README.md#测试与构建)。
 
 仓库保留了 k6 与指标采集报告，以下为历史本机实验中的代表性结果，均为每组 3 次：
@@ -213,7 +221,7 @@ macOS/Linux 可在 `courseinsight-server` 中分别使用 `bash ./mvnw test '-Dg
 - 缓存实验：100 RPS × 30 秒，相同 ID 顺序，miss/hit 交替。
 - Outbox 实验：每轮 1000 任务、100 ms AI Stub，消费者 8，发布批次 100、间隔 1000 ms；对比串行与并发 4。
 
-这些结果来自单台 Windows 主机，只适用于报告中的代码版本、负载与配置，不代表生产性能或真实 BERT/LLM 推理吞吐。应用默认发布并发仍为 2，缓存命中路径仍有用户状态查询。
+这些结果来自单台 Windows 主机，只适用于报告中的代码版本、负载与配置，不代表生产性能或真实 BERT/LLM 推理吞吐。本次后端审计未重新进行性能压测，上表不能解释为新缓存实现或调度隔离带来的性能提升。应用默认发布并发仍为 2，缓存命中路径仍有用户状态查询。
 
 测试环境、复现命令与原始结果见 [Cache A/B 报告](performance/results/2026-08-09-phase-3-http-cache-P3_HTTP.md)、[Outbox 并发报告](performance/results/2026-08-10-phase-7-outbox-publisher-P7_OUTBOX.md)及[性能实验入口](performance/README.md)。Demo 与浏览器历史验证见[验收记录](docs/teacher-comment-analysis.md#本次实际验证2026-10-11)。
 
@@ -234,6 +242,7 @@ courseinsight-cloud/
 
 - [本地开发与测试](docs/development.md)：环境配置、测试、服务启停、监控和排错。
 - [技术设计与可靠性边界](docs/development.md#技术设计与可靠性边界)：Outbox、执行租约、条件更新、缓存一致性及源码入口。
+- [后端工程审计](docs/backend-audit.md)：缓存并发、Outbox 调度、输入校验、安全边界及测试记录。
 - [学生反馈与教师分析](docs/teacher-comment-analysis.md)：接口、权限、按需查询和验证边界。
 - [前端说明](courseinsight-web/README.md)与[页面验收记录](docs/frontend-validation.md)：API 对接、异步交互、构建和截图。
 - [AI 服务说明](courseinsight-ai-service/README.md)：分析接口、降级与模型权重。

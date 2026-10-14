@@ -274,7 +274,7 @@ Demo smoke 验证真实 RocketMQ 与 AI Stub 路径，不验证真实模型质�
 | 测试 | `src/test/resources` | 不启动项目 Compose；集成测试按需启动 Testcontainers | HTTP/MQ 边界主要使用 mock |
 | 默认 | 环境变量 | 不自动启动 Compose | 依赖连接与认证配置由运行方提供 |
 
-MySQL 由 Flyway 执行仓库现有的 V1–V15 迁移。Demo 与 local 使用独立数据卷，但默认宿主机端口有重合，
+MySQL 由 Flyway 执行仓库现有的 V1–V16 迁移。Demo 与 local 使用独立数据卷，但默认宿主机端口有重合，
 切换前应停止对应环境；不要用删除数据卷解决端口冲突。
 
 | 组件 | 默认宿主机端口 | 就绪检查 |
