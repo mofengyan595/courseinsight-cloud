@@ -13,6 +13,7 @@ import com.courseinsight.server.mapper.AnalysisResultMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.mapper.CourseMapper;
+import com.courseinsight.server.mapper.AppUserMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({"rawtypes", "unchecked"})
 class CommentAnalysisServiceTests {
+    @Mock private AppUserMapper users;
     @Mock private CourseCommentMapper comments;
     @Mock private AnalysisTaskMapper tasks;
     @Mock private AnalysisResultMapper results;
@@ -44,7 +46,7 @@ class CommentAnalysisServiceTests {
     @BeforeEach
     void setUp() {
         service = new CommentAnalysisService(comments, tasks, results,
-                new CourseManagementAccessService(courses), json);
+                new CourseManagementAccessService(courses, users), json);
     }
 
     @Test

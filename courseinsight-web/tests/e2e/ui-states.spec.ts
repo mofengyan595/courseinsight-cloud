@@ -4,6 +4,12 @@ import type { Page } from '@playwright/test'
 // 仅测试环境注入契约响应，用于可重复触发异常；真实链路见 demo.spec.ts。
 const emptyPage = { page: 1, size: 10, total: 0, totalPages: 0, items: [] }
 async function signedIn(page: Page, role = 'TEACHER') {
+  await page.route('**/api/admin/users?**', (route) =>
+    route.fulfill({ json: { code: 0, data: emptyPage } }),
+  )
+  await page.route('**/api/analysis-batches?**', (route) =>
+    route.fulfill({ json: { code: 0, data: emptyPage } }),
+  )
   await page.addInitScript((role) => {
     sessionStorage.setItem(
       'courseinsight.session.v1',
@@ -86,10 +92,12 @@ test('课程空状态、网络失败和手动恢复', async ({ page }) => {
   await expect(page.getByRole('alert')).toContainText('无法连接服务')
   fail = false
   await page.getByRole('button', { name: '重新加载' }).click()
-  await expect(page.getByText('还没有课程，从创建第一门课程开始')).toBeVisible()
+  await expect(
+    page.getByText('暂无分配给你的课程，请联系教务管理员'),
+  ).toBeVisible()
 })
 test('文件错误、服务端 CSV 校验错误', async ({ page }) => {
-  await signedIn(page)
+  await signedIn(page, 'ADMIN')
   await page.route('**/api/courses?**', (route) =>
     route.fulfill({
       json: {
@@ -141,7 +149,29 @@ test('文件错误、服务端 CSV 校验错误', async ({ page }) => {
   )
 })
 test('PARTIAL_FAILED 终态、失败详情、重新入队后恢复轮询', async ({ page }) => {
-  await signedIn(page)
+  await signedIn(page, 'ADMIN')
+  await page.route('**/api/comments/1/analysis', (route) =>
+    route.fulfill({
+      json: {
+        code: 0,
+        data: {
+          comment: {
+            id: 1,
+            content: '测试失败评价',
+            rating: 2,
+            createdAt: '2026-10-11T10:00:00',
+          },
+          task: {
+            id: 1,
+            status: 'FAILED',
+            retryCount: 3,
+            failureReason: 'AI 服务暂不可用',
+          },
+          result: null,
+        },
+      },
+    }),
+  )
   let checks = 0
   let retried = false
   const progress = {
@@ -232,7 +262,9 @@ test('PARTIAL_FAILED 终态、失败详情、重新入队后恢复轮询', async
   await page.waitForTimeout(2300)
   expect(checks).toBe(atTerminal)
   await page.getByRole('button', { name: '详情', exact: true }).first().click()
-  await expect(page.getByText(/AI 服务暂不可用/)).toBeVisible()
+  await expect(
+    page.getByRole('dialog', { name: '评价分析' }).getByRole('alert'),
+  ).toContainText('AI 服务暂不可用')
   await page.keyboard.press('Escape')
   await page.getByRole('button', { name: '重试失败任务' }).click()
   await page.getByRole('button', { name: '重新入队', exact: true }).click()
@@ -308,7 +340,7 @@ test('空看板显示空状态，不生成虚构指标', async ({ page }) => {
 })
 
 test('已有课程简介为 null 时仍可编辑保存', async ({ page }) => {
-  await signedIn(page)
+  await signedIn(page, 'ADMIN')
   const current = {
     id: 1,
     code: 'NULL-DESC',

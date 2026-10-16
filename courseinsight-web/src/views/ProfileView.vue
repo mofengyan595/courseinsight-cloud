@@ -88,7 +88,12 @@ async function remove(id: number) {
       <el-table-column label="提交时间" width="180">
         <template #default="{ row }">{{ dateLabel(row.createdAt) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="85" fixed="right">
+      <el-table-column
+        v-if="auth.session?.role !== 'TEACHER'"
+        label="操作"
+        width="85"
+        fixed="right"
+      >
         <template #default="{ row }">
           <el-button
             link

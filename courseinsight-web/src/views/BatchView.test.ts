@@ -18,6 +18,14 @@ vi.mock('../api', () => ({
   retryBatch: vi.fn(),
   exportBatch: vi.fn(),
 }))
+vi.mock('../stores/auth', () => ({ useAuthStore: () => ({ canManage: true }) }))
+vi.mock('../components/CommentAnalysisDialog.vue', () => ({
+  default: {
+    props: ['commentId'],
+    setup: (props: { commentId: number }) => () =>
+      h('div', { class: 'test-dialog' }, `评价-${props.commentId}`),
+  },
+}))
 const messages = vi.hoisted(() => ({
   success: vi.fn(),
   confirm: vi.fn<() => Promise<void>>(),
@@ -129,13 +137,6 @@ const pagination: FunctionalComponent<{ currentPage: number }> = (
     },
     `第 ${props.currentPage} 页`,
   )
-const drawer: FunctionalComponent<{ modelValue: boolean }> = (
-  props,
-  { slots },
-) =>
-  props.modelValue
-    ? h('div', { class: 'test-drawer' }, slots.default?.())
-    : null
 const alert: FunctionalComponent<{ title: string }> = (props) =>
   h('div', props.title)
 pagination.props = ['currentPage']
@@ -172,7 +173,6 @@ async function mountBatch(id = 123) {
   app.component('ElAlert', alert)
   app.component('ElTable', table)
   app.component('ElPagination', pagination)
-  app.component('ElDrawer', drawer)
   app.directive('loading', () => {})
   app.mount(host)
   await settle()
@@ -241,7 +241,7 @@ describe('批次页路由复用隔离', () => {
     expect(api.batchProgress).toHaveBeenCalledTimes(2)
   })
 
-  it('切换立即清空旧进度、结果、抽屉和分页，取消旧轮询定时器', async () => {
+  it('切换立即清空旧进度、结果、弹窗和分页，取消旧轮询定时器', async () => {
     const pending = deferred<BatchProgress>()
     const pendingResults = deferred<PageResponse<BatchResult>>()
     const { router, view } = await mountBatch()
@@ -256,7 +256,7 @@ describe('批次页路由复用隔离', () => {
     )
     click('详情')
     await nextTick()
-    expect(host.querySelector('.test-drawer')?.textContent).toContain(
+    expect(host.querySelector('.test-dialog')?.textContent).toContain(
       '评价-123',
     )
     vi.mocked(api.batchProgress).mockImplementation(() => pending.promise)
@@ -266,7 +266,7 @@ describe('批次页路由复用隔离', () => {
     expect(view.value).toBe(instance)
     expect(host.textContent).not.toContain('batch-123.csv')
     expect(host.textContent).not.toContain('评价-123')
-    expect(host.querySelector('.test-drawer')).toBeNull()
+    expect(host.querySelector('.test-dialog')).toBeNull()
     expect(api.batchResults).toHaveBeenLastCalledWith(
       '456',
       { page: 1, size: 10 },

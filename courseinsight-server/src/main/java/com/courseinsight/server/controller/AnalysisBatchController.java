@@ -8,6 +8,8 @@ import com.courseinsight.server.dto.AnalysisBatchProgressResponse;
 import com.courseinsight.server.dto.AnalysisBatchResultItemResponse;
 import com.courseinsight.server.dto.AnalysisBatchResultPageQuery;
 import com.courseinsight.server.dto.AnalysisBatchRetryResponse;
+import com.courseinsight.server.dto.AnalysisBatchPageQuery;
+import com.courseinsight.server.dto.AnalysisBatchSummaryResponse;
 import com.courseinsight.server.security.CurrentUser;
 import com.courseinsight.server.service.AnalysisBatchRecoveryService;
 import com.courseinsight.server.service.AnalysisBatchResultService;
@@ -65,6 +67,14 @@ public class AnalysisBatchController {
                 currentUser.role(),
                 file
         ));
+    }
+
+    @GetMapping("/analysis-batches")
+    public ApiResponse<PageResponse<AnalysisBatchSummaryResponse>> getBatches(
+            Authentication authentication,
+            @Valid @ModelAttribute AnalysisBatchPageQuery query) {
+        CurrentUser currentUser = CurrentUser.from(authentication);
+        return ApiResponse.success(batchService.page(query, currentUser.id(), currentUser.role()));
     }
 
     @GetMapping("/analysis-batches/{batchId}")

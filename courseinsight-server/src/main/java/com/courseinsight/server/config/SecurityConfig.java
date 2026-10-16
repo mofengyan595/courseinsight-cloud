@@ -73,9 +73,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/health", "/api/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/courses")
-                        .hasAnyRole("TEACHER", "ADMIN")
+                        .hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/courses/**")
-                        .hasAnyRole("TEACHER", "ADMIN")
+                        .hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/courses/*/comments")
+                        .hasAnyRole("STUDENT", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/comments/*")
+                        .hasAnyRole("STUDENT", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/course-rankings/**")
+                        .hasAnyRole("STUDENT", "ADMIN")
                         .requestMatchers(
                                 HttpMethod.GET,
                                 "/api/comments/*/analysis",
@@ -87,9 +93,10 @@ public class SecurityConfig {
                                 "/api/analysis-tasks/*/enqueue",
                                 "/api/courses/*/analysis-batches",
                                 "/api/analysis-batches/*/retry-failed"
-                        ).hasAnyRole("TEACHER", "ADMIN")
+                        ).hasRole("ADMIN")
                         .requestMatchers(
                                 HttpMethod.GET,
+                                "/api/analysis-batches",
                                 "/api/analysis-batches/*",
                                 "/api/analysis-batches/*/results",
                                 "/api/analysis-batches/*/export"

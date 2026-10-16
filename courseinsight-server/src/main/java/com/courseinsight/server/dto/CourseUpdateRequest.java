@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 
 public record CourseUpdateRequest(
         @NotBlank(message = "课程代码不能为空")
@@ -25,6 +26,10 @@ public record CourseUpdateRequest(
         @NotNull(message = "课程状态不能为空")
         @Min(value = 0, message = "课程状态只能是0或1")
         @Max(value = 1, message = "课程状态只能是0或1")
-        Integer status
+        Integer status,
+        @Positive(message = "教师账号 ID 必须是正整数") Long teacherUserId
 ) {
+    public CourseUpdateRequest(String code, String name, String teacherName, String description, Integer status) {
+        this(code, name, teacherName, description, status, null);
+    }
 }

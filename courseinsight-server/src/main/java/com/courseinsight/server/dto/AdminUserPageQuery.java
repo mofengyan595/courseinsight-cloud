@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 
 import java.util.Locale;
 
@@ -26,8 +27,12 @@ public record AdminUserPageQuery(
 
         @Min(value = 0, message = "用户状态只能是0或1")
         @Max(value = 1, message = "用户状态只能是0或1")
-        Integer status
+        Integer status,
+        @Positive(message = "用户 ID 必须是正整数") Long userId
 ) {
+    public AdminUserPageQuery(Integer page, Integer size, String keyword, String role, Integer status) {
+        this(page, size, keyword, role, status, null);
+    }
 
     public AdminUserPageQuery {
         page = page == null ? 1 : page;

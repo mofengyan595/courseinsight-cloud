@@ -99,7 +99,7 @@ class CourseDetailConcurrencyTests {
         try {
             Future<?> reader = threads.submit(() -> service.getById(1L));
             assertThat(oldRead.await(5, TimeUnit.SECONDS)).isTrue();
-            Future<?> writer = threads.submit(() -> service.update(11L, UserRole.TEACHER, 1L,
+            Future<?> writer = threads.submit(() -> service.update(11L, UserRole.ADMIN, 1L,
                     new CourseUpdateRequest("CS101", "after", "teacher", null, 1)));
             assertThat(updated.await(5, TimeUnit.SECONDS)).isTrue();
             release.countDown();

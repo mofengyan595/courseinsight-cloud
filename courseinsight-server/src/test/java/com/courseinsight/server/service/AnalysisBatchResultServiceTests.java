@@ -111,7 +111,7 @@ class AnalysisBatchResultServiceTests {
             assertThat(item.taskId()).isEqualTo(60L);
             assertThat(item.topics().get(0).asText()).isEqualTo("examples");
         });
-        verify(accessService).assertCanManage(14L, 11L, UserRole.TEACHER);
+        verify(accessService).assertCanAnalyze(14L, 11L, UserRole.TEACHER);
     }
 
     @Test
@@ -139,7 +139,7 @@ class AnalysisBatchResultServiceTests {
         );
 
         assertThat(filename).isEqualTo("analysis-batch-batch-30.csv");
-        verify(accessService).assertCanManage(14L, 11L, UserRole.TEACHER);
+        verify(accessService).assertCanAnalyze(14L, 11L, UserRole.TEACHER);
     }
 
     @Test

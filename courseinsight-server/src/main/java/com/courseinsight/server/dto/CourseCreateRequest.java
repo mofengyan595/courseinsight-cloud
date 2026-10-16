@@ -2,6 +2,7 @@ package com.courseinsight.server.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Positive;
 
 public record CourseCreateRequest(
         @NotBlank(message = "课程代码不能为空")
@@ -17,6 +18,10 @@ public record CourseCreateRequest(
         String teacherName,
 
         @Size(max = 500, message = "课程简介不能超过500个字符")
-        String description
+        String description,
+        @Positive(message = "教师账号 ID 必须是正整数") Long teacherUserId
 ) {
+    public CourseCreateRequest(String code, String name, String teacherName, String description) {
+        this(code, name, teacherName, description, null);
+    }
 }

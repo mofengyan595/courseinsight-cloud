@@ -30,7 +30,7 @@ public class CourseAnalyticsService {
             Long courseId,
             Long currentUserId,
             UserRole currentRole) {
-        managementAccessService.assertCanManage(
+        managementAccessService.assertCanAnalyze(
                 courseId,
                 currentUserId,
                 currentRole

@@ -72,7 +72,7 @@ public class AnalysisBatchResultService {
             UserRole currentRole,
             AnalysisBatchResultPageQuery query) {
         AnalysisBatch batch = requireBatch(batchId);
-        accessService.assertCanManage(
+        accessService.assertCanAnalyze(
                 batch.getCourseId(),
                 currentUserId,
                 currentRole
@@ -102,7 +102,7 @@ public class AnalysisBatchResultService {
             Long currentUserId,
             UserRole currentRole) {
         AnalysisBatch batch = requireBatch(batchId);
-        accessService.assertCanManage(
+        accessService.assertCanAnalyze(
                 batch.getCourseId(),
                 currentUserId,
                 currentRole

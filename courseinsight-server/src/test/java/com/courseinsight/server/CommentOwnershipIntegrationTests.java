@@ -2,13 +2,16 @@ package com.courseinsight.server;
 
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentPageQuery;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.DuplicateCommentException;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.service.CommentService;
 import com.courseinsight.server.testsupport.MySqlIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -25,6 +28,32 @@ class CommentOwnershipIntegrationTests {
     private JdbcTemplate jdbcTemplate;
 
     @Test
+    @Transactional
+    void shouldLetAdminSoftDeleteStudentAndImportedCommentsAndKeepTaskHistory() {
+        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        Long ownerId = insertUser("owner_" + suffix);
+        Long adminId = insertUser("admin_" + suffix);
+        jdbcTemplate.update("UPDATE app_user SET role = 'ADMIN' WHERE id = ?", adminId);
+        Long courseId = insertCourse("ADM" + suffix);
+        Long commentId = commentService.create(courseId, ownerId, UserRole.STUDENT, new CommentCreateRequest("待删除评价", 3));
+
+        assertThatThrownBy(() -> commentService.delete(commentId, adminId, UserRole.TEACHER))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        commentService.delete(commentId, adminId, UserRole.ADMIN);
+        assertThat(commentStatus(commentId)).isZero();
+        assertThat(taskCount(commentId)).isEqualTo(1);
+        assertThat(commentService.page(courseId, new CommentPageQuery(1, 10)).total()).isZero();
+        assertThatThrownBy(() -> commentService.delete(commentId, adminId, UserRole.ADMIN))
+                .isInstanceOf(ResourceNotFoundException.class);
+
+        Long importedId = commentService.create(courseId, ownerId, UserRole.STUDENT, new CommentCreateRequest("导入评价", 4));
+        jdbcTemplate.update("UPDATE course_comment SET user_id = NULL WHERE id = ?", importedId);
+        commentService.delete(importedId, adminId, UserRole.ADMIN);
+        assertThat(commentStatus(importedId)).isZero();
+        assertThat(taskCount(importedId)).isEqualTo(1);
+    }
+
+    @Test
     void shouldKeepDeletedHistoryAndAllowASeparateReplacementComment() {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         Long ownerId = insertUser("owner_" + suffix);
@@ -32,13 +61,13 @@ class CommentOwnershipIntegrationTests {
         Long courseId = insertCourse("DEL" + suffix);
         Long commentId = commentService.create(
                 courseId,
-                ownerId,
+                ownerId, UserRole.STUDENT,
                 new CommentCreateRequest("第一次评价", 5)
         );
         Long replacementCommentId = null;
 
         try {
-            assertThatThrownBy(() -> commentService.delete(commentId, otherUserId))
+            assertThatThrownBy(() -> commentService.delete(commentId, otherUserId, UserRole.STUDENT))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("评价不存在");
             assertThat(commentStatus(commentId)).isEqualTo(1);
@@ -47,7 +76,7 @@ class CommentOwnershipIntegrationTests {
                     new CommentPageQuery(1, 10)
             ).total()).isEqualTo(1);
 
-            commentService.delete(commentId, ownerId);
+            commentService.delete(commentId, ownerId, UserRole.STUDENT);
 
             assertThat(commentStatus(commentId)).isZero();
             assertThat(commentService.page(
@@ -58,13 +87,13 @@ class CommentOwnershipIntegrationTests {
                     ownerId,
                     new CommentPageQuery(1, 10)
             ).total()).isZero();
-            assertThatThrownBy(() -> commentService.delete(commentId, ownerId))
+            assertThatThrownBy(() -> commentService.delete(commentId, ownerId, UserRole.STUDENT))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessage("评价不存在");
 
             Long newCommentId = commentService.create(
                     courseId,
-                    ownerId,
+                    ownerId, UserRole.STUDENT,
                     new CommentCreateRequest("删除后重新评价", 4)
             );
             replacementCommentId = newCommentId;
@@ -91,7 +120,7 @@ class CommentOwnershipIntegrationTests {
 
             assertThatThrownBy(() -> commentService.create(
                     courseId,
-                    ownerId,
+                    ownerId, UserRole.STUDENT,
                     new CommentCreateRequest("活动评价不能重复", 3)
             ))
                     .isInstanceOf(DuplicateCommentException.class)

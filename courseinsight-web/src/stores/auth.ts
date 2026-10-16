@@ -6,9 +6,10 @@ import type { LoginRequest } from '../types/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const session = ref(readSession())
-  const canManage = computed(
+  const canAnalyze = computed(
     () => session.value?.role === 'TEACHER' || session.value?.role === 'ADMIN',
   )
+  const canManage = computed(() => session.value?.role === 'ADMIN')
   async function signIn(data: LoginRequest) {
     session.value = saveSession(await api.login(data))
   }
@@ -19,5 +20,5 @@ export const useAuthStore = defineStore('auth', () => {
   function sync() {
     session.value = readSession()
   }
-  return { session, canManage, signIn, signOut, sync }
+  return { session, canAnalyze, canManage, signIn, signOut, sync }
 })

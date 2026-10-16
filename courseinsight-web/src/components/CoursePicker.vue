@@ -62,7 +62,7 @@ function find() {
         />
       </el-select>
       <p v-if="!data.items.length" class="muted">
-        没有符合条件的课程，请调整搜索或先创建课程。
+        没有符合条件的课程，请调整搜索或联系教务管理员。
       </p>
       <PaginationBar
         v-if="data.totalPages > 1"
@@ -71,6 +71,6 @@ function find() {
         :total="data.total"
       />
     </template>
-    <p class="field-hint">教师可管理自己创建的课程，管理员可管理所有课程。</p>
+    <p class="field-hint">教师只读查看本人课程的评价分析，教务管理员负责课程与批量导入。</p>
   </div>
 </template>

@@ -6,9 +6,14 @@ import { UploadFilled, ArrowRight } from '@element-plus/icons-vue'
 import * as api from '../api'
 import { csvError } from '../utils/file'
 import { useAction } from '../composables/useAction'
+import { useResource } from '../composables/useResource'
+import { dateLabel } from '../utils/format'
 import CoursePicker from '../components/CoursePicker.vue'
 import PageHeading from '../components/PageHeading.vue'
 import ErrorNotice from '../components/ErrorNotice.vue'
+import PaginationBar from '../components/PaginationBar.vue'
+import { useAuthStore } from '../stores/auth'
+const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
 const initial = Number(route.query.courseId)
@@ -19,6 +24,11 @@ const file = ref<File>()
 const batchId = ref('')
 const dragging = ref(false)
 const { busy, error, run } = useAction()
+const historyPage = ref(1)
+const history = useResource(
+  (signal) => api.batches({ page: historyPage.value, size: 10 }, signal),
+  [historyPage],
+)
 function select(value?: File) {
   error.value = csvError(value)
   file.value = error.value ? undefined : value
@@ -48,9 +58,13 @@ function restore() {
 <template>
   <PageHeading
     title="批量分析"
-    description="上传课程评价 CSV，异步分析情感、课程维度与教学建议。"
+    :description="
+      auth.canManage
+        ? '上传课程评价 CSV，异步分析情感、课程维度与教学建议。'
+        : '查看已有任务的处理进度与评价分析结果。'
+    "
   />
-  <div class="workflow-steps">
+  <div v-if="auth.canManage" class="workflow-steps">
     <div class="current">
       <b>01</b>
       <span>上传评价</span>
@@ -66,7 +80,7 @@ function restore() {
       <span>查看分析结果</span>
     </div>
   </div>
-  <div class="upload-layout">
+  <div v-if="auth.canManage" class="upload-layout">
     <section class="section-card">
       <h2>创建分析任务</h2>
       <p class="muted">选择目标课程，提交一份符合格式的 CSV 文件。</p>
@@ -140,7 +154,7 @@ content,rating
       <div class="guide-divider"></div>
       <h3>恢复已有任务</h3>
       <p class="field-hint">
-        输入批次 ID，或直接打开保存的任务链接。服务端暂未提供批次列表。
+        可从下方历史任务直接返回，也可输入批次 ID 或打开保存的任务链接。
       </p>
       <form @submit.prevent="restore">
         <el-input
@@ -158,4 +172,64 @@ content,rating
       </form>
     </aside>
   </div>
+  <section class="section-card batch-history" aria-label="历史分析任务">
+    <div class="section-toolbar">
+      <div>
+        <h2>历史分析任务</h2>
+        <p class="muted">
+          已上传的任务会保留，离开页面后可从这里继续查看，无需重新上传 CSV。
+        </p>
+      </div>
+      <el-button :loading="history.loading.value" @click="history.reload">
+        刷新任务
+      </el-button>
+    </div>
+    <ErrorNotice :message="history.error.value" @retry="history.reload" />
+    <el-table
+      v-loading="history.loading.value"
+      :data="history.data.value?.items || []"
+      :empty-text="
+        auth.canManage
+          ? '暂无历史任务，上传 CSV 后会显示在这里'
+          : '本人课程暂无批量分析任务'
+      "
+      stripe
+    >
+      <el-table-column prop="batchId" label="批次 ID" width="95" />
+      <el-table-column
+        prop="originalFilename"
+        label="文件"
+        min-width="200"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="courseName"
+        label="课程"
+        min-width="180"
+        show-overflow-tooltip
+      />
+      <el-table-column prop="totalCount" label="评价数" width="85" />
+      <el-table-column label="创建时间" width="180">
+        <template #default="{ row }">{{ dateLabel(row.createdAt) }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="110" fixed="right">
+        <template #default="{ row }">
+          <RouterLink :to="`/analysis/${row.batchId}`">
+            <el-button link type="primary">查看任务</el-button>
+          </RouterLink>
+        </template>
+      </el-table-column>
+    </el-table>
+    <PaginationBar
+      v-if="history.data.value"
+      v-model:page="historyPage"
+      :size="10"
+      :total="history.data.value.total"
+    />
+  </section>
 </template>
+<style scoped>
+.batch-history {
+  margin-top: 24px;
+}
+</style>

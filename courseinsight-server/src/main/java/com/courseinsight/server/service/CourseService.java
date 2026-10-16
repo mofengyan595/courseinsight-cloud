@@ -14,6 +14,7 @@ import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.CourseMapper;
+import com.courseinsight.server.security.WriteAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -47,12 +48,14 @@ public class CourseService {
     }
 
     @Transactional
-    public Long create(Long currentUserId, CourseCreateRequest request) {
+    public Long create(Long currentUserId, UserRole currentRole, CourseCreateRequest request) {
+        WriteAccessPolicy.requireAdmin(currentRole);
         Course course = new Course();
         course.setCode(request.code());
         course.setName(request.name());
         course.setTeacherName(request.teacherName());
-        course.setOwnerUserId(currentUserId);
+        course.setOwnerUserId(request.teacherUserId() == null ? currentUserId
+                : managementAccessService.requireTeacherUserId(request.teacherUserId()));
         course.setDescription(request.description());
         course.setStatus(1);
 
@@ -67,6 +70,7 @@ public class CourseService {
             UserRole currentRole,
             Long id,
             CourseUpdateRequest request) {
+        WriteAccessPolicy.requireAdmin(currentRole);
         managementAccessService.requireManageableCourse(
                 id,
                 currentUserId,
@@ -80,6 +84,9 @@ public class CourseService {
         course.setTeacherName(request.teacherName());
         course.setDescription(request.description());
         course.setStatus(request.status());
+        if (request.teacherUserId() != null) {
+            course.setOwnerUserId(managementAccessService.requireTeacherUserId(request.teacherUserId()));
+        }
         if (courseMapper.updateById(course) != 1) {
             throw new ResourceNotFoundException("课程不存在");
         }
@@ -87,6 +94,20 @@ public class CourseService {
         evictCacheAfterCommit(id);
         popularityRankingCache.evictAfterCommit();
         return id;
+    }
+
+    public CourseDetailResponse getForUser(Long id, Long currentUserId, UserRole currentRole) {
+        if (currentRole == UserRole.TEACHER) {
+            managementAccessService.assertCanAnalyze(id, currentUserId, currentRole);
+        }
+        CourseDetailResponse response = getById(id);
+        // 兼容升级前缓存中尚无归属字段的课程详情。
+        if (currentRole == UserRole.ADMIN && response.ownerUserId() == null) {
+            Course current = courseMapper.selectById(id);
+            if (current == null) throw new ResourceNotFoundException("课程不存在");
+            return CourseDetailResponse.from(current);
+        }
+        return response;
     }
 
     public CourseDetailResponse getById(Long id) {
@@ -122,7 +143,15 @@ public class CourseService {
 
     @Transactional(readOnly = true)
     public PageResponse<CourseDetailResponse> page(CoursePageQuery query) {
+        return pageForUser(query, null, UserRole.ADMIN);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<CourseDetailResponse> pageForUser(CoursePageQuery query, Long currentUserId, UserRole currentRole) {
         LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
+        if (currentRole == UserRole.TEACHER) {
+            wrapper.eq(Course::getOwnerUserId, currentUserId);
+        }
 
         if (query.keyword() != null) {
             wrapper.and(condition -> condition

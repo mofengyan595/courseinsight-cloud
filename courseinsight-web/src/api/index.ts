@@ -5,6 +5,7 @@ import type {
   BatchProgress,
   BatchResult,
   BatchRetry,
+  BatchSummary,
   Comment,
   CommentCreate,
   CommentAnalysis,
@@ -15,6 +16,7 @@ import type {
   LoginResponse,
   PageQuery,
   PageResponse,
+  UserSummary,
 } from '../types/api'
 
 export const login = (data: LoginRequest) =>
@@ -27,6 +29,15 @@ export const course = (id: string | number, signal?: AbortSignal) =>
   request<Course>({ url: `/courses/${id}`, signal })
 export const createCourse = (data: CourseCreate) =>
   request<number>({ method: 'POST', url: '/courses', data })
+export const teachers = (
+  params: PageQuery & { keyword?: string; userId?: number },
+  signal?: AbortSignal,
+) =>
+  request<PageResponse<UserSummary>>({
+    url: '/admin/users',
+    params: { ...params, role: 'TEACHER', status: 1 },
+    signal,
+  })
 export const updateCourse = (id: number, data: CourseUpdate) =>
   request<number>({ method: 'PUT', url: `/courses/${id}`, data })
 export const comments = (id: string, params: PageQuery, signal?: AbortSignal) =>
@@ -55,6 +66,12 @@ export const uploadBatch = (id: number, file: File) => {
 }
 export const batchProgress = (id: string, signal?: AbortSignal) =>
   request<BatchProgress>({ url: `/analysis-batches/${id}`, signal })
+export const batches = (params: PageQuery, signal?: AbortSignal) =>
+  request<PageResponse<BatchSummary>>({
+    url: '/analysis-batches',
+    params,
+    signal,
+  })
 export const batchResults = (
   id: string,
   params: PageQuery,

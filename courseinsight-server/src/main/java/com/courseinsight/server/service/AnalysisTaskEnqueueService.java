@@ -13,6 +13,7 @@ import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
+import com.courseinsight.server.security.WriteAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +44,7 @@ public class AnalysisTaskEnqueueService {
             Long taskId,
             Long currentUserId,
             UserRole currentRole) {
+        WriteAccessPolicy.requireAdmin(currentRole);
         rateLimiter.check(RateLimitPolicy.MANUAL_ANALYSIS, currentUserId);
         AnalysisTask task = analysisTaskMapper.selectById(taskId);
         if (task == null) {

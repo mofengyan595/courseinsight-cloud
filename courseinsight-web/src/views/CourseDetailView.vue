@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance } from 'element-plus'
 import * as api from '../api'
 import { useResource } from '../composables/useResource'
@@ -12,7 +12,7 @@ import CourseForm from '../components/CourseForm.vue'
 import PageHeading from '../components/PageHeading.vue'
 import ErrorNotice from '../components/ErrorNotice.vue'
 import PaginationBar from '../components/PaginationBar.vue'
-import CommentAnalysisDrawer from '../components/CommentAnalysisDrawer.vue'
+import CommentAnalysisDialog from '../components/CommentAnalysisDialog.vue'
 const id = String(useRoute().params.id)
 const auth = useAuthStore()
 const open = ref(false)
@@ -24,6 +24,30 @@ const list = useResource(
   [page],
 )
 const { busy, error, run } = useAction()
+const deletion = useAction()
+async function removeComment(commentId: number) {
+  if (auth.session?.role !== 'ADMIN') return
+  try {
+    await ElMessageBox.confirm(
+      '删除后该评价将不再作为有效评价展示，且不能从网页恢复。确定删除？',
+      '删除课程评价',
+      {
+        type: 'warning',
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        modalClass: 'workspace-modal',
+      },
+    )
+  } catch {
+    return
+  }
+  await deletion.run(async () => {
+    await api.deleteComment(commentId)
+    ElMessage.success('评价已删除')
+    if (list.data.value?.items.length === 1 && page.value > 1) page.value--
+    else await list.reload()
+  })
+}
 const formRef = ref<FormInstance>()
 const form = reactive({ content: '', rating: 0 })
 async function submit() {
@@ -71,8 +95,11 @@ async function submit() {
       <p class="field-hint">
         创建于 {{ dateLabel(details.data.value.createdAt) }}
       </p>
-      <div v-if="auth.canManage" class="inline-actions">
-        <RouterLink :to="{ path: '/analysis', query: { courseId: id } }">
+      <div v-if="auth.canAnalyze" class="inline-actions">
+        <RouterLink
+          v-if="auth.canManage"
+          :to="{ path: '/analysis', query: { courseId: id } }"
+        >
           <el-button type="primary" plain>批量分析评价</el-button>
         </RouterLink>
         <RouterLink :to="{ path: '/analytics', query: { courseId: id } }">
@@ -80,7 +107,7 @@ async function submit() {
         </RouterLink>
       </div>
     </section>
-    <section class="section-card">
+    <section v-if="auth.session?.role !== 'TEACHER'" class="section-card">
       <h2>提交课程评价</h2>
       <p class="muted">
         评价匿名展示。每个账号对同一课程仅可提交一条有效评价，可在个人信息中管理。
@@ -145,6 +172,7 @@ async function submit() {
         <el-button @click="list.reload">刷新评价</el-button>
       </div>
       <ErrorNotice :message="list.error.value" @retry="list.reload" />
+      <ErrorNotice :message="deletion.error.value" />
       <el-skeleton v-if="list.loading.value" :rows="4" animated />
       <template v-else-if="list.data.value">
         <el-empty
@@ -163,12 +191,21 @@ async function submit() {
           </div>
           <p class="preserve-text">{{ item.content }}</p>
           <el-button
-            v-if="auth.canManage"
+            v-if="auth.canAnalyze"
             link
             type="primary"
             @click="selectedCommentId = item.id"
           >
             查看分析
+          </el-button>
+          <el-button
+            v-if="auth.session?.role === 'ADMIN'"
+            link
+            type="danger"
+            :disabled="deletion.busy.value"
+            @click="removeComment(item.id)"
+          >
+            删除评价
           </el-button>
         </article>
         <PaginationBar
@@ -179,13 +216,14 @@ async function submit() {
       </template>
     </section>
     <CourseForm
+      v-if="auth.canManage"
       v-model="open"
       :course="details.data.value"
       @saved="details.reload"
     />
   </template>
-  <CommentAnalysisDrawer
-    v-if="auth.canManage && selectedCommentId !== undefined"
+  <CommentAnalysisDialog
+    v-if="auth.canAnalyze && selectedCommentId !== undefined"
     :comment-id="selectedCommentId"
     @close="selectedCommentId = undefined"
   />

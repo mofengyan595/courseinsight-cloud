@@ -53,7 +53,7 @@ public class CommentAnalysisService {
         if (comment == null || !Objects.equals(comment.getStatus(), 1)) {
             throw new ResourceNotFoundException("课程评价不存在或已删除");
         }
-        accessService.assertCanManage(comment.getCourseId(), userId, role);
+        accessService.assertCanAnalyze(comment.getCourseId(), userId, role);
 
         AnalysisTask task = taskMapper.selectOne(new LambdaQueryWrapper<AnalysisTask>()
                 .eq(AnalysisTask::getCommentId, commentId)

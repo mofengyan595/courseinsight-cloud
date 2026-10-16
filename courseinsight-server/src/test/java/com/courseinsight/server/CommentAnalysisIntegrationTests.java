@@ -37,7 +37,7 @@ class CommentAnalysisIntegrationTests {
         jdbc.update("INSERT INTO course (code,name,teacher_name,owner_user_id,status) VALUES (?, '分析课程', '教师', 201, 1)", code);
         Long courseId = jdbc.queryForObject("SELECT id FROM course WHERE code=?", Long.class, code);
         try {
-            Long commentId = comments.create(courseId, 101L, new CommentCreateRequest("课程讲解清晰", 5));
+            Long commentId = comments.create(courseId, 101L, UserRole.STUDENT, new CommentCreateRequest("课程讲解清晰", 5));
             Long taskId = jdbc.queryForObject("SELECT id FROM analysis_task WHERE comment_id=?", Long.class, commentId);
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM analysis_outbox_event WHERE task_id=? AND status='PENDING'", Integer.class, taskId)).isEqualTo(1);
             assertThat(analysis.getByCommentId(commentId, 201L, UserRole.TEACHER).task().status()).isEqualTo("WAITING");
@@ -65,7 +65,7 @@ class CommentAnalysisIntegrationTests {
             assertThat(analysis.getByCommentId(commentId, 999L, UserRole.ADMIN).result().id()).isEqualTo(teacher.result().id());
             assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM analysis_result WHERE comment_id=?", Integer.class, commentId)).isEqualTo(1);
 
-            comments.delete(commentId, 101L);
+            comments.delete(commentId, 101L, UserRole.STUDENT);
             assertThatThrownBy(() -> analysis.getByCommentId(commentId, 999L, UserRole.ADMIN))
                     .isInstanceOf(ResourceNotFoundException.class);
         } finally {

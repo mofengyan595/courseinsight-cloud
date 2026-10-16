@@ -51,7 +51,7 @@ function find() {
   <section class="section-card">
     <div class="section-toolbar">
       <h2>
-        全部课程
+        {{ auth.session?.role === 'TEACHER' ? '我的课程' : '全部课程' }}
         <span v-if="data" class="count-badge">{{ data.total }}</span>
       </h2>
       <form class="search-row" @submit.prevent="find">
@@ -72,7 +72,11 @@ function find() {
       <el-empty
         v-if="!data.items.length"
         :description="
-          search ? '没有找到相关课程' : '还没有课程，从创建第一门课程开始'
+          search
+            ? '没有找到相关课程'
+            : auth.session?.role === 'TEACHER'
+              ? '暂无分配给你的课程，请联系教务管理员'
+              : '还没有课程，从创建第一门课程开始'
         "
       />
       <div v-else class="course-grid">
@@ -106,5 +110,9 @@ function find() {
       <PaginationBar v-model:page="page" :size="9" :total="data.total" />
     </template>
   </section>
-  <CourseForm v-model="open" @saved="router.push(`/courses/${$event}`)" />
+  <CourseForm
+    v-if="auth.canManage"
+    v-model="open"
+    @saved="router.push(`/courses/${$event}`)"
+  />
 </template>

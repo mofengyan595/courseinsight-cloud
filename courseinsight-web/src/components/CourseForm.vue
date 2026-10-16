@@ -6,6 +6,7 @@ import * as api from '../api'
 import type { Course } from '../types/api'
 import { useAction } from '../composables/useAction'
 import ErrorNotice from './ErrorNotice.vue'
+import TeacherPicker from './TeacherPicker.vue'
 const props = defineProps<{ course?: Course }>()
 const open = defineModel<boolean>({ required: true })
 const emit = defineEmits<{ saved: [id: number] }>()
@@ -16,6 +17,7 @@ const form = reactive({
   teacherName: '',
   description: '',
   status: 1,
+  teacherUserId: undefined as number | undefined,
 })
 const { busy, error, run } = useAction()
 watch(open, (value) => {
@@ -31,6 +33,7 @@ watch(open, (value) => {
       },
     )
     form.description = props.course?.description ?? ''
+    form.teacherUserId = props.course?.ownerUserId ?? undefined
     error.value = ''
     formRef.value?.clearValidate()
   }
@@ -84,6 +87,7 @@ async function save() {
       name: form.name.trim(),
       teacherName: form.teacherName.trim(),
       description: form.description.trim(),
+      teacherUserId: form.teacherUserId,
     }
     const id = props.course
       ? await api.updateCourse(props.course.id, {
@@ -102,6 +106,8 @@ async function save() {
     v-model="open"
     :title="course ? '编辑课程' : '创建课程'"
     width="540px"
+    align-center
+    modal-class="workspace-modal"
     :close-on-click-modal="!busy"
     :show-close="!busy"
     :close-on-press-escape="!busy"
@@ -122,6 +128,17 @@ async function save() {
       </el-form-item>
       <el-form-item label="教师姓名" prop="teacherName">
         <el-input v-model="form.teacherName" maxlength="50" />
+      </el-form-item>
+      <el-form-item label="授课教师账号">
+        <TeacherPicker
+          v-if="open"
+          v-model="form.teacherUserId"
+          :clearable="!course"
+          @selected="form.teacherName = $event"
+        />
+        <p class="field-hint">
+          指定后，该教师可查看本课程的评价与分析。新建时可暂不指定。
+        </p>
       </el-form-item>
       <el-form-item label="课程简介" prop="description">
         <el-input

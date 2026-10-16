@@ -18,6 +18,7 @@ import com.courseinsight.server.mapper.CourseCommentMapper;
 import com.courseinsight.server.metrics.CourseInsightMetrics;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
+import com.courseinsight.server.security.WriteAccessPolicy;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
@@ -74,6 +75,7 @@ public class AnalysisExecutionService {
             Long taskId,
             Long currentUserId,
             UserRole currentRole) {
+        WriteAccessPolicy.requireAdmin(currentRole);
         rateLimiter.check(RateLimitPolicy.MANUAL_ANALYSIS, currentUserId);
         AnalysisTask task = requireTask(taskId);
         managementAccessService.assertCanManage(

@@ -108,10 +108,14 @@ function close() {
 onScopeDispose(poller.stop)
 </script>
 <template>
-  <el-drawer
+  <el-dialog
     :model-value="true"
     title="评价分析"
-    size="min(720px, 100%)"
+    width="760px"
+    align-center
+    modal-class="workspace-modal"
+    class="analysis-dialog"
+    :close-on-click-modal="false"
     @close="close"
   >
     <div class="analysis-report">
@@ -311,6 +315,8 @@ onScopeDispose(poller.stop)
         >
           <summary>分析与运行信息</summary>
           <dl class="result-details">
+            <dt>任务 ID</dt>
+            <dd>{{ data.task.id }}</dd>
             <dt>任务状态 / 重试次数</dt>
             <dd>{{ taskLabel }} / {{ data.task.retryCount }} 次</dd>
             <dt>任务开始 / 完成时间</dt>
@@ -321,6 +327,10 @@ onScopeDispose(poller.stop)
             <template v-if="data.task.failureReason">
               <dt>最近失败信息</dt>
               <dd>{{ data.task.failureReason }}</dd>
+            </template>
+            <template v-if="data.task.deadLetteredAt">
+              <dt>死信时间</dt>
+              <dd>{{ dateLabel(data.task.deadLetteredAt) }}</dd>
             </template>
             <template v-if="result">
               <dt>分析来源</dt>
@@ -363,13 +373,18 @@ onScopeDispose(poller.stop)
       </template>
     </div>
     <template #footer>
+      <el-button @click="close">关闭</el-button>
       <el-button :loading="loading" @click="refresh">刷新分析</el-button>
     </template>
-  </el-drawer>
+  </el-dialog>
 </template>
 <style scoped>
 .analysis-report {
   color: #30334a;
+  max-height: 68vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 8px;
 }
 .analysis-report h3 {
   margin: 0;

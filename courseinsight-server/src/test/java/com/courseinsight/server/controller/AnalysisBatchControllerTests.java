@@ -6,6 +6,8 @@ import com.courseinsight.server.dto.AnalysisBatchProgressResponse;
 import com.courseinsight.server.dto.AnalysisBatchResultItemResponse;
 import com.courseinsight.server.dto.AnalysisBatchResultPageQuery;
 import com.courseinsight.server.dto.AnalysisBatchRetryResponse;
+import com.courseinsight.server.dto.AnalysisBatchPageQuery;
+import com.courseinsight.server.dto.AnalysisBatchSummaryResponse;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.InvalidCsvFileException;
@@ -65,12 +67,38 @@ class AnalysisBatchControllerTests {
     private AnalysisBatchRecoveryService recoveryService;
 
     @Test
+    void shouldReturnHistoryWithDefaultPagination() throws Exception {
+        given(batchService.page(new AnalysisBatchPageQuery(1, 10), 11L, UserRole.ADMIN))
+                .willReturn(new PageResponse<>(1, 10, 1, 1, List.of(
+                        new AnalysisBatchSummaryResponse(30L, "batch-30", 14L,
+                                "测试课程", "comments.csv", 2,
+                                LocalDateTime.of(2026, 10, 16, 10, 0)))));
+
+        mockMvc.perform(get("/api/analysis-batches").principal(adminAuthentication()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].batchId").value(30))
+                .andExpect(jsonPath("$.data.items[0].courseName").value("测试课程"));
+    }
+
+    @Test
+    void shouldRejectInvalidHistoryPagination() throws Exception {
+        for (String[] params : List.of(new String[]{"0", "10"},
+                new String[]{"1", "101"}, new String[]{"1", "0"})) {
+            mockMvc.perform(get("/api/analysis-batches")
+                            .param("page", params[0]).param("size", params[1])
+                            .principal(adminAuthentication()))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void shouldCreateAnalysisBatchFromCsv() throws Exception {
         MockMultipartFile file = csvFile();
         given(batchService.upload(
                 eq(14L),
                 eq(11L),
-                eq(UserRole.TEACHER),
+                eq(UserRole.ADMIN),
                 any()
         )).willReturn(new AnalysisBatchCreateResponse(
                 30L,
@@ -81,7 +109,7 @@ class AnalysisBatchControllerTests {
 
         mockMvc.perform(multipart("/api/courses/{courseId}/analysis-batches", 14L)
                         .file(file)
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.batchId").value(30))
@@ -94,7 +122,7 @@ class AnalysisBatchControllerTests {
         given(batchService.upload(
                 eq(14L),
                 eq(11L),
-                eq(UserRole.TEACHER),
+                eq(UserRole.ADMIN),
                 any()
         )).willThrow(new InvalidCsvFileException(
                 "CSV 表头必须包含 content 和 rating"
@@ -102,7 +130,7 @@ class AnalysisBatchControllerTests {
 
         mockMvc.perform(multipart("/api/courses/{courseId}/analysis-batches", 14L)
                         .file(csvFile())
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value(400))
                 .andExpect(jsonPath("$.message")
@@ -111,11 +139,11 @@ class AnalysisBatchControllerTests {
 
     @Test
     void shouldReturnAnalysisBatchProgress() throws Exception {
-        given(batchService.getProgress(30L, 11L, UserRole.TEACHER))
+        given(batchService.getProgress(30L, 11L, UserRole.ADMIN))
                 .willReturn(progressResponse());
 
         mockMvc.perform(get("/api/analysis-batches/{batchId}", 30L)
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.status").value("PROCESSING"))
@@ -130,7 +158,7 @@ class AnalysisBatchControllerTests {
         given(resultService.page(
                 eq(30L),
                 eq(11L),
-                eq(UserRole.TEACHER),
+                eq(UserRole.ADMIN),
                 any(AnalysisBatchResultPageQuery.class)
         )).willReturn(new PageResponse<>(
                 1,
@@ -143,7 +171,7 @@ class AnalysisBatchControllerTests {
         mockMvc.perform(get("/api/analysis-batches/{batchId}/results", 30L)
                         .param("page", "1")
                         .param("size", "20")
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(1))
                 .andExpect(jsonPath("$.data.items[0].taskId").value(60))
@@ -155,7 +183,7 @@ class AnalysisBatchControllerTests {
     void shouldRejectInvalidResultPageSize() throws Exception {
         mockMvc.perform(get("/api/analysis-batches/{batchId}/results", 30L)
                         .param("size", "101")
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -164,7 +192,7 @@ class AnalysisBatchControllerTests {
         given(resultService.authorizeCsvExport(
                 30L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         )).willReturn("analysis-batch-batch-30.csv");
         doAnswer(invocation -> {
             OutputStream outputStream = invocation.getArgument(1);
@@ -175,7 +203,7 @@ class AnalysisBatchControllerTests {
 
         MvcResult result = mockMvc.perform(
                         get("/api/analysis-batches/{batchId}/export", 30L)
-                                .principal(teacherAuthentication()))
+                                .principal(adminAuthentication()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/csv"))
                 .andExpect(header().string(
@@ -197,7 +225,7 @@ class AnalysisBatchControllerTests {
         given(recoveryService.retryDeadLettered(
                 30L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         )).willReturn(new AnalysisBatchRetryResponse(
                 30L,
                 2,
@@ -205,7 +233,7 @@ class AnalysisBatchControllerTests {
         ));
 
         mockMvc.perform(post("/api/analysis-batches/{batchId}/retry-failed", 30L)
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.batchId").value(30))
@@ -222,11 +250,11 @@ class AnalysisBatchControllerTests {
         );
     }
 
-    private Authentication teacherAuthentication() {
+    private Authentication adminAuthentication() {
         return UsernamePasswordAuthenticationToken.authenticated(
                 "11",
                 "N/A",
-                List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
         );
     }
 

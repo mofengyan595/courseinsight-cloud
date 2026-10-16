@@ -22,7 +22,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -58,7 +57,7 @@ class AnalysisTaskEnqueueServiceTests {
         AnalysisTaskEnqueueResponse response = enqueueService.enqueue(
                 6L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         );
 
         ArgumentCaptor<AnalysisOutboxEvent> eventCaptor =
@@ -73,7 +72,7 @@ class AnalysisTaskEnqueueServiceTests {
         verify(managementAccessService).assertCanManage(
                 14L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         );
         verify(rateLimiter).check(RateLimitPolicy.MANUAL_ANALYSIS, 11L);
     }
@@ -83,7 +82,7 @@ class AnalysisTaskEnqueueServiceTests {
         given(analysisTaskMapper.selectById(6L)).willReturn(createTask("SUCCESS"));
 
         assertThatThrownBy(() -> enqueueService.enqueue(
-                6L, 11L, UserRole.TEACHER
+                6L, 11L, UserRole.ADMIN
         )).isInstanceOf(AnalysisTaskConflictException.class);
 
         verifyNoInteractions(outboxEventMapper);
@@ -94,24 +93,17 @@ class AnalysisTaskEnqueueServiceTests {
         given(analysisTaskMapper.selectById(999L)).willReturn(null);
 
         assertThatThrownBy(() -> enqueueService.enqueue(
-                999L, 11L, UserRole.TEACHER
+                999L, 11L, UserRole.ADMIN
         )).isInstanceOf(ResourceNotFoundException.class);
 
         verifyNoInteractions(outboxEventMapper);
     }
 
     @Test
-    void shouldRejectTaskFromAnotherTeachersCourse() {
-        given(analysisTaskMapper.selectById(6L)).willReturn(createTask("WAITING"));
-        willThrow(new CourseAccessDeniedException("denied"))
-                .given(managementAccessService)
-                .assertCanManage(14L, 12L, UserRole.TEACHER);
-
-        assertThatThrownBy(() -> enqueueService.enqueue(
-                6L, 12L, UserRole.TEACHER
-        )).isInstanceOf(CourseAccessDeniedException.class);
-
-        verifyNoInteractions(outboxEventMapper);
+    void shouldRejectTeacherBeforeQueryingOrEnqueueing() {
+        assertThatThrownBy(() -> enqueueService.enqueue(6L, 12L, UserRole.TEACHER))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        verifyNoInteractions(analysisTaskMapper, outboxEventMapper, managementAccessService, rateLimiter);
     }
 
     @Test
@@ -121,7 +113,7 @@ class AnalysisTaskEnqueueServiceTests {
         given(analysisTaskMapper.selectById(6L)).willReturn(task);
 
         assertThatThrownBy(() -> enqueueService.enqueue(
-                6L, 11L, UserRole.TEACHER
+                6L, 11L, UserRole.ADMIN
         )).isInstanceOf(AnalysisTaskConflictException.class);
 
         verifyNoInteractions(outboxEventMapper);

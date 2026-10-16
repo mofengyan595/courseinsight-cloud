@@ -1,5 +1,6 @@
 package com.courseinsight.server;
 
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
@@ -55,7 +56,7 @@ class CommentAnalysisTransactionTests {
 
             assertThatThrownBy(() -> commentService.create(
                     courseId,
-                    700001L,
+                    700001L, UserRole.STUDENT,
                     new CommentCreateRequest("事务回滚测试", 5)
             )).isInstanceOf(DataIntegrityViolationException.class);
 

@@ -5,6 +5,8 @@ import com.courseinsight.server.dto.AnalysisBatchCreateResponse;
 import com.courseinsight.server.dto.AnalysisBatchCsvData;
 import com.courseinsight.server.dto.AnalysisBatchProgressAggregate;
 import com.courseinsight.server.dto.AnalysisBatchProgressResponse;
+import com.courseinsight.server.dto.AnalysisBatchPageQuery;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.entity.AnalysisBatch;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.RateLimitExceededException;
@@ -55,6 +57,21 @@ class AnalysisBatchServiceTests {
     private AnalysisBatchService batchService;
 
     @Test
+    void shouldDenyTeacherUploadBeforeParsingOrWriting() {
+        assertThatThrownBy(() -> batchService.upload(14L, 11L, UserRole.TEACHER, csvFile()))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        verifyNoInteractions(rateLimiter, accessService, csvParser, creationService, batchMapper);
+    }
+
+    @Test
+    void shouldDenyStudentHistoryBeforeQueryingDatabase() {
+        assertThatThrownBy(() -> batchService.page(
+                new AnalysisBatchPageQuery(null, null), 11L, UserRole.STUDENT))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        verifyNoInteractions(batchMapper);
+    }
+
+    @Test
     void shouldValidateAndCreateUploadedBatch() {
         MockMultipartFile file = csvFile();
         AnalysisBatchCsvData csvData = new AnalysisBatchCsvData(
@@ -74,13 +91,13 @@ class AnalysisBatchServiceTests {
         AnalysisBatchCreateResponse response = batchService.upload(
                 14L,
                 11L,
-                UserRole.TEACHER,
+                UserRole.ADMIN,
                 file
         );
 
         assertThat(response).isEqualTo(created);
         verify(rateLimiter).check(RateLimitPolicy.BATCH_ANALYSIS_UPLOAD, 11L);
-        verify(accessService).assertCanManage(14L, 11L, UserRole.TEACHER);
+        verify(accessService).assertCanManage(14L, 11L, UserRole.ADMIN);
     }
 
     @Test
@@ -93,7 +110,7 @@ class AnalysisBatchServiceTests {
         assertThatThrownBy(() -> batchService.upload(
                 14L,
                 11L,
-                UserRole.TEACHER,
+                UserRole.ADMIN,
                 file
         )).isInstanceOf(RateLimitExceededException.class);
 
@@ -117,7 +134,7 @@ class AnalysisBatchServiceTests {
         assertThat(response.batchId()).isEqualTo(30L);
         assertThat(response.status()).isEqualTo("PROCESSING");
         assertThat(response.waitingCount()).isEqualTo(2);
-        verify(accessService).assertCanManage(14L, 11L, UserRole.TEACHER);
+        verify(accessService).assertCanAnalyze(14L, 11L, UserRole.TEACHER);
     }
 
     @Test

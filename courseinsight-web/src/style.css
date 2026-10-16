@@ -773,6 +773,13 @@ nav a.router-link-exact-active {
   max-width: calc(100vw - 28px);
   border-radius: 13px;
 }
+.workspace-modal .el-overlay-dialog,
+.workspace-modal .el-overlay-message-box {
+  left: 242px;
+}
+.workspace-modal .el-dialog {
+  max-width: calc(100% - 28px);
+}
 .el-table th.el-table__cell {
   background: #f8f7fc;
   color: #868196;
@@ -794,6 +801,10 @@ nav a.router-link-exact-active {
   }
 }
 @media (max-width: 1200px) {
+  .workspace-modal .el-overlay-dialog,
+  .workspace-modal .el-overlay-message-box {
+    left: 214px;
+  }
   .sidebar {
     width: 214px;
     padding-inline: 14px;
@@ -829,6 +840,10 @@ nav a.router-link-exact-active {
   }
 }
 @media (max-width: 850px) {
+  .workspace-modal .el-overlay-dialog,
+  .workspace-modal .el-overlay-message-box {
+    left: 0;
+  }
   .sidebar {
     transform: translateX(-100%);
     transition: transform 0.15s;

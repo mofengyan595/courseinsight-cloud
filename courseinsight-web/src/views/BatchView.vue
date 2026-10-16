@@ -19,8 +19,11 @@ import {
 import PageHeading from '../components/PageHeading.vue'
 import ErrorNotice from '../components/ErrorNotice.vue'
 import PaginationBar from '../components/PaginationBar.vue'
+import CommentAnalysisDialog from '../components/CommentAnalysisDialog.vue'
+import { useAuthStore } from '../stores/auth'
 
 const route = useRoute()
+const auth = useAuthStore()
 const batchId = computed(() => String(route.params.batchId))
 const progress = ref<BatchProgress>()
 const progressError = ref('')
@@ -38,8 +41,7 @@ const results = useResource(
   [batchId, page, resultsVersion],
 )
 const { busy, error, run } = useAction()
-const selected = ref<BatchResult>()
-const showDetails = ref(false)
+const selectedCommentId = ref<number>()
 const finished = computed(
   () => progress.value && isTerminal(progress.value.status),
 )
@@ -113,8 +115,7 @@ watch(
     paused.value = false
     checking.value = true
     page.value = 1
-    selected.value = undefined
-    showDetails.value = false
+    selectedCommentId.value = undefined
     // 离开详情路由时，参数可能先清空，再卸载组件。
     if (!/^\d+$/.test(batchId.value)) return
     poller.start()
@@ -163,8 +164,7 @@ async function retry() {
   })
 }
 function details(item: BatchResult) {
-  selected.value = item
-  showDetails.value = true
+  selectedCommentId.value = item.commentId
 }
 function download() {
   const id = batchId.value
@@ -175,9 +175,9 @@ function download() {
 <template>
   <PageHeading
     title="分析任务详情"
-    :description="`批次 #${batchId} · 任务链接可保存，刷新后会自动恢复查询。`"
+    :description="`批次 #${batchId} · 退出后可从批量分析页的历史任务返回，刷新后自动恢复查询。`"
   >
-    <RouterLink to="/analysis"><el-button>新建分析</el-button></RouterLink>
+    <RouterLink to="/analysis"><el-button>返回批量分析</el-button></RouterLink>
     <el-button :icon="Refresh" :loading="checking" @click="refresh">
       刷新状态
     </el-button>
@@ -281,7 +281,7 @@ function download() {
           }}
         </span>
         <el-button
-          v-if="retryAvailable"
+          v-if="auth.canManage && retryAvailable"
           type="warning"
           plain
           :loading="busy"
@@ -392,73 +392,9 @@ function download() {
       />
     </section>
   </template>
-  <el-drawer v-model="showDetails" title="分析详情" size="min(600px, 100%)">
-    <template v-if="selected">
-      <dl class="result-details">
-        <dt>原始评价</dt>
-        <dd>{{ selected.content }}</dd>
-        <dt>评分 / 任务状态</dt>
-        <dd>{{ selected.rating }} / {{ statusLabel(selected.taskStatus) }}</dd>
-        <dt>情感 / 置信度 / 风险</dt>
-        <dd>
-          {{ sentimentLabel(selected.sentiment) }} /
-          {{
-            selected.confidence == null
-              ? '—'
-              : `${(selected.confidence * 100).toFixed(1)}%`
-          }}
-          / {{ riskLabel(selected.riskLevel) }}
-        </dd>
-        <dt>课程维度</dt>
-        <dd>{{ jsonLabel(selected.topics) }}</dd>
-        <dt>原文证据</dt>
-        <dd>{{ jsonLabel(selected.topicEvidence) }}</dd>
-        <dt>关键词</dt>
-        <dd>{{ jsonLabel(selected.keywords) }}</dd>
-        <dt>教学建议</dt>
-        <dd>{{ jsonLabel(selected.advice) }}</dd>
-        <dt>来源信息</dt>
-        <dd>
-          语言：{{ selected.language || '—' }}
-          <br />
-          情感来源：{{ selected.sentimentSource || '—' }}
-          <br />
-          运行设备：{{ selected.sentimentDevice || '—' }}
-          <br />
-          建议来源：{{ selected.adviceSource || '—' }}
-        </dd>
-        <dt>长文本处理</dt>
-        <dd>
-          {{
-            selected.longTextHandled === null
-              ? '—'
-              : selected.longTextHandled
-                ? '已处理'
-                : '未触发'
-          }}
-          /
-          {{
-            selected.longTextTruncated === null
-              ? '—'
-              : selected.longTextTruncated
-                ? '已截断'
-                : '未截断'
-          }}
-        </dd>
-        <dt>重试与失败</dt>
-        <dd>
-          重试 {{ selected.retryCount }} 次
-          <br />
-          {{ selected.failureReason || '暂无失败原因' }}
-          <br />
-          死信时间：{{ dateLabel(selected.deadLetteredAt) }}
-        </dd>
-        <dt>结果 ID / 任务完成时间</dt>
-        <dd>
-          {{ selected.resultId || '—' }} /
-          {{ dateLabel(selected.taskCompletedAt) }}
-        </dd>
-      </dl>
-    </template>
-  </el-drawer>
+  <CommentAnalysisDialog
+    v-if="selectedCommentId !== undefined"
+    :comment-id="selectedCommentId"
+    @close="selectedCommentId = undefined"
+  />
 </template>

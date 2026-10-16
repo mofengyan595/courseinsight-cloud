@@ -49,7 +49,7 @@ function logout() {
           课程列表
         </RouterLink>
         <RouterLink
-          v-if="auth.canManage"
+          v-if="auth.canAnalyze"
           to="/analysis"
           :class="{
             active:
@@ -60,7 +60,7 @@ function logout() {
           <el-icon><Upload /></el-icon>
           批量分析
         </RouterLink>
-        <RouterLink v-if="auth.canManage" to="/analytics">
+        <RouterLink v-if="auth.canAnalyze" to="/analytics">
           <el-icon><DataAnalysis /></el-icon>
           数据看板
         </RouterLink>

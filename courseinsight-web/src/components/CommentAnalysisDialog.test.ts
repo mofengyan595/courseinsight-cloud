@@ -4,7 +4,7 @@ import type { App, FunctionalComponent } from 'vue'
 import { ApiError } from '../api/http'
 import * as api from '../api'
 import type { CommentAnalysis, AnalysisTaskStatus } from '../types/api'
-import CommentAnalysisDrawer from './CommentAnalysisDrawer.vue'
+import CommentAnalysisDialog from './CommentAnalysisDialog.vue'
 
 vi.mock('../api', () => ({ commentAnalysis: vi.fn() }))
 
@@ -69,7 +69,7 @@ const container: FunctionalComponent = (_, { slots }) =>
   h('div', slots.default?.())
 const button: FunctionalComponent = (_, { slots }) =>
   h('button', slots.default?.())
-const drawer: FunctionalComponent = (_, { slots, emit }) =>
+const dialog: FunctionalComponent = (_, { slots, emit }) =>
   h('div', [
     h('button', { onClick: () => emit('close') }, '关闭分析'),
     slots.default?.(),
@@ -90,7 +90,7 @@ async function mount() {
   app = createApp({
     render: () =>
       shown.value
-        ? h(CommentAnalysisDrawer, {
+        ? h(CommentAnalysisDialog, {
             commentId: commentId.value,
             onClose: () => {
               shown.value = false
@@ -98,7 +98,7 @@ async function mount() {
           })
         : null,
   })
-  app.component('ElDrawer', drawer)
+  app.component('ElDialog', dialog)
   app.component('ElButton', button)
   app.component('ElTag', container)
   app.component('ElSkeleton', container)
@@ -128,7 +128,7 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('按需评价分析抽屉', () => {
+describe('按需评价分析弹窗', () => {
   it('将建议和证据显示为中文卡片，兼容 camelCase 与 snake_case 行动类型', async () => {
     const value = response(1, 'SUCCESS')
     value.result!.adviceSource = 'llm_api'

@@ -11,6 +11,7 @@ import com.courseinsight.server.mapper.AnalysisBatchMapper;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
+import com.courseinsight.server.security.WriteAccessPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +43,7 @@ public class AnalysisBatchRecoveryService {
             Long batchId,
             Long currentUserId,
             UserRole currentRole) {
+        WriteAccessPolicy.requireAdmin(currentRole);
         AnalysisBatch batch = requireBatch(batchId);
         accessService.assertCanManage(
                 batch.getCourseId(),

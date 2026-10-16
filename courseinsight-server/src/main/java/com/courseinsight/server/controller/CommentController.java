@@ -7,6 +7,8 @@ import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
 import com.courseinsight.server.dto.CommentPageQuery;
 import com.courseinsight.server.service.CommentService;
+import com.courseinsight.server.security.CurrentUser;
+import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,11 +37,13 @@ public class CommentController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<Long> create(
             @PathVariable @Positive(message = "ID 必须是正整数") Long courseId,
-            Principal principal,
+            Authentication authentication,
             @Valid @RequestBody CommentCreateRequest request) {
+        CurrentUser currentUser = CurrentUser.from(authentication);
         return ApiResponse.success(commentService.create(
                 courseId,
-                currentUserId(principal),
+                currentUser.id(),
+                currentUser.role(),
                 request
         ));
     }
@@ -47,8 +51,10 @@ public class CommentController {
     @GetMapping("/courses/{courseId}/comments")
     public ApiResponse<PageResponse<CommentDetailResponse>> page(
             @PathVariable @Positive(message = "ID 必须是正整数") Long courseId,
+            Authentication authentication,
             @Valid @ModelAttribute CommentPageQuery query) {
-        return ApiResponse.success(commentService.page(courseId, query));
+        CurrentUser currentUser = CurrentUser.from(authentication);
+        return ApiResponse.success(commentService.pageForUser(courseId, query, currentUser.id(), currentUser.role()));
     }
 
     @GetMapping("/comments/me")
@@ -64,8 +70,9 @@ public class CommentController {
     @DeleteMapping("/comments/{commentId}")
     public ApiResponse<Void> delete(
             @PathVariable @Positive(message = "ID 必须是正整数") Long commentId,
-            Principal principal) {
-        commentService.delete(commentId, currentUserId(principal));
+            Authentication authentication) {
+        CurrentUser currentUser = CurrentUser.from(authentication);
+        commentService.delete(commentId, currentUser.id(), currentUser.role());
         return ApiResponse.success(null);
     }
 

@@ -64,7 +64,7 @@ public class AnalysisTaskService {
             }
             return;
         }
-        managementAccessService.assertCanManage(
+        managementAccessService.assertCanAnalyze(
                 task.getCourseId(),
                 currentUserId,
                 currentRole

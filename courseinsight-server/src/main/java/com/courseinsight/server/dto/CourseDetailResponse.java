@@ -12,8 +12,13 @@ public record CourseDetailResponse(
         String description,
         Integer status,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Long ownerUserId
 ) {
+    public CourseDetailResponse(Long id, String code, String name, String teacherName,
+            String description, Integer status, LocalDateTime createdAt, LocalDateTime updatedAt) {
+        this(id, code, name, teacherName, description, status, createdAt, updatedAt, null);
+    }
 
     public static CourseDetailResponse from(Course course) {
         return new CourseDetailResponse(
@@ -24,7 +29,8 @@ public record CourseDetailResponse(
                 course.getDescription(),
                 course.getStatus(),
                 course.getCreatedAt(),
-                course.getUpdatedAt()
+                course.getUpdatedAt(),
+                course.getOwnerUserId()
         );
     }
 }

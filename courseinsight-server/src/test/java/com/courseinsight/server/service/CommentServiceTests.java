@@ -8,6 +8,7 @@ import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.dto.CommentDetailResponse;
 import com.courseinsight.server.dto.CommentPageQuery;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.entity.AnalysisOutboxStatus;
 import com.courseinsight.server.entity.AnalysisTask;
@@ -15,6 +16,7 @@ import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.CourseComment;
 import com.courseinsight.server.exception.DuplicateCommentException;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.exception.RateLimitExceededException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
@@ -90,7 +92,7 @@ class CommentServiceTests {
 
         Long commentId = commentService.create(
                 1L,
-                7L,
+                7L, UserRole.STUDENT,
                 new CommentCreateRequest("课程讲解清晰", 5)
         );
 
@@ -138,7 +140,7 @@ class CommentServiceTests {
 
         assertThatThrownBy(() -> commentService.create(
                 1L,
-                7L,
+                7L, UserRole.STUDENT,
                 new CommentCreateRequest("课程评价", 4)
         )).isInstanceOf(RateLimitExceededException.class);
 
@@ -156,7 +158,7 @@ class CommentServiceTests {
 
         assertThatThrownBy(() -> commentService.create(
                 999999L,
-                7L,
+                7L, UserRole.STUDENT,
                 new CommentCreateRequest("课程评价", 4)
         ))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -175,7 +177,7 @@ class CommentServiceTests {
 
         assertThatThrownBy(() -> commentService.create(
                 1L,
-                7L,
+                7L, UserRole.STUDENT,
                 new CommentCreateRequest("重复评价", 4)
         ))
                 .isInstanceOf(DuplicateCommentException.class)
@@ -239,7 +241,7 @@ class CommentServiceTests {
                 any(Wrapper.class)
         )).willReturn(1);
 
-        commentService.delete(10L, 7L);
+        commentService.delete(10L, 7L, UserRole.STUDENT);
 
         ArgumentCaptor<CourseComment> updateCaptor =
                 ArgumentCaptor.forClass(CourseComment.class);
@@ -262,9 +264,42 @@ class CommentServiceTests {
                 any(Wrapper.class)
         )).willReturn(0);
 
-        assertThatThrownBy(() -> commentService.delete(10L, 7L))
+        assertThatThrownBy(() -> commentService.delete(10L, 7L, UserRole.STUDENT))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("评价不存在");
+    }
+
+    @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void shouldAllowAdminToDeleteImportedCommentWithoutOwner() {
+        CourseComment comment = createComment();
+        comment.setUserId(null);
+        given(courseCommentMapper.selectById(10L)).willReturn(comment);
+        given(courseCommentMapper.update(any(CourseComment.class), any(Wrapper.class))).willReturn(1);
+
+        commentService.delete(10L, 99L, UserRole.ADMIN);
+
+        verify(courseAnalyticsCache).evictAfterCommit(1L);
+        verify(popularityRankingCache).evictAfterCommit();
+        verifyNoInteractions(analysisTaskMapper, outboxEventMapper);
+    }
+
+    @Test
+    void shouldNotGiveTeacherOrStudentAdminDeletionRights() {
+        given(courseCommentMapper.selectById(10L)).willReturn(createComment());
+        assertThatThrownBy(() -> commentService.delete(10L, 99L, UserRole.STUDENT))
+                .isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> commentService.delete(10L, 7L, UserRole.TEACHER))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        verifyNoInteractions(courseAnalyticsCache, popularityRankingCache);
+    }
+
+    @Test
+    void shouldRejectTeacherSubmissionBeforeAnyWrites() {
+        assertThatThrownBy(() -> commentService.create(1L, 7L, UserRole.TEACHER,
+                new CommentCreateRequest("教师评价", 5)))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        verifyNoInteractions(courseMapper, courseCommentMapper, analysisTaskMapper, outboxEventMapper, rateLimiter);
     }
 
     @Test

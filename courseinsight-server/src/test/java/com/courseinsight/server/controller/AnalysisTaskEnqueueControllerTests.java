@@ -41,10 +41,10 @@ class AnalysisTaskEnqueueControllerTests {
     void shouldAcceptTaskForAsyncAnalysis() throws Exception {
         AnalysisTaskEnqueueResponse response =
                 new AnalysisTaskEnqueueResponse("event-1", 6L, 13L, "message-1");
-        given(enqueueService.enqueue(6L, 11L, UserRole.TEACHER)).willReturn(response);
+        given(enqueueService.enqueue(6L, 11L, UserRole.ADMIN)).willReturn(response);
 
         mockMvc.perform(post("/api/analysis-tasks/{taskId}/enqueue", 6L)
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.eventId").value("event-1"))
@@ -54,21 +54,21 @@ class AnalysisTaskEnqueueControllerTests {
 
     @Test
     void shouldReturnServiceUnavailableWhenMessageCannotBeSent() throws Exception {
-        given(enqueueService.enqueue(6L, 11L, UserRole.TEACHER))
+        given(enqueueService.enqueue(6L, 11L, UserRole.ADMIN))
                 .willThrow(new MessageQueueException("RocketMQ 暂时不可用，分析任务未入队"));
 
         mockMvc.perform(post("/api/analysis-tasks/{taskId}/enqueue", 6L)
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value(503))
                 .andExpect(jsonPath("$.message").value("RocketMQ 暂时不可用，分析任务未入队"));
     }
 
-    private Authentication teacherAuthentication() {
+    private Authentication adminAuthentication() {
         return UsernamePasswordAuthenticationToken.authenticated(
                 "11",
                 "N/A",
-                List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
         );
     }
 }

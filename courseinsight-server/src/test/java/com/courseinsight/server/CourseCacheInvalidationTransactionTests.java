@@ -47,7 +47,7 @@ class CourseCacheInvalidationTransactionTests {
         Long id = jdbc.queryForObject("SELECT id FROM course WHERE code = ?", Long.class, code);
         try {
             new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                service.update(11L, UserRole.TEACHER, id,
+                service.update(11L, UserRole.ADMIN, id,
                         new CourseUpdateRequest(code, "after", "teacher", null, 1));
                 verify(cache, never()).evict(id);
                 if (rollback) {

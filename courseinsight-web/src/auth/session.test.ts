@@ -43,10 +43,14 @@ describe('登录状态', () => {
     expect(sessionStorage.length).toBe(0)
     clearSession()
   })
-  it.each(['TEACHER', 'ADMIN'] as const)('%s 可见管理入口', async (role) => {
-    vi.mocked(api.login).mockResolvedValue({ ...identity, role })
-    const auth = useAuthStore()
-    await auth.signIn({ username: 'test', password: 'test' })
-    expect(auth.canManage).toBe(true)
-  })
+  it.each(['STUDENT', 'TEACHER', 'ADMIN'] as const)(
+    '%s 按角色区分分析与管理入口',
+    async (role) => {
+      vi.mocked(api.login).mockResolvedValue({ ...identity, role })
+      const auth = useAuthStore()
+      await auth.signIn({ username: 'test', password: 'test' })
+      expect(auth.canAnalyze).toBe(role !== 'STUDENT')
+      expect(auth.canManage).toBe(role === 'ADMIN')
+    },
+  )
 })

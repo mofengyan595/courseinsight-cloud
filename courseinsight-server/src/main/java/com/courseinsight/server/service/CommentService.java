@@ -14,6 +14,7 @@ import com.courseinsight.server.entity.AnalysisOutboxStatus;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.AnalysisTaskStatus;
 import com.courseinsight.server.entity.CourseComment;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.DuplicateCommentException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
@@ -23,6 +24,7 @@ import com.courseinsight.server.mapper.CourseMapper;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
 import com.courseinsight.server.ratelimit.RateLimitPolicy;
 import com.courseinsight.server.ratelimit.RedisRateLimiter;
+import com.courseinsight.server.security.WriteAccessPolicy;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,7 @@ public class CommentService {
     private final CourseAnalyticsCache courseAnalyticsCache;
     private final CoursePopularityRankingCache popularityRankingCache;
     private final RedisRateLimiter rateLimiter;
+    private final CourseManagementAccessService accessService;
 
     public CommentService(
             CourseMapper courseMapper,
@@ -50,7 +53,8 @@ public class CommentService {
             AnalysisOutboxEventMapper outboxEventMapper,
             CourseAnalyticsCache courseAnalyticsCache,
             CoursePopularityRankingCache popularityRankingCache,
-            RedisRateLimiter rateLimiter) {
+            RedisRateLimiter rateLimiter,
+            CourseManagementAccessService accessService) {
         this.courseMapper = courseMapper;
         this.courseCommentMapper = courseCommentMapper;
         this.analysisTaskMapper = analysisTaskMapper;
@@ -58,10 +62,12 @@ public class CommentService {
         this.courseAnalyticsCache = courseAnalyticsCache;
         this.popularityRankingCache = popularityRankingCache;
         this.rateLimiter = rateLimiter;
+        this.accessService = accessService;
     }
 
     @Transactional
-    public Long create(Long courseId, Long userId, CommentCreateRequest request) {
+    public Long create(Long courseId, Long userId, UserRole currentRole, CommentCreateRequest request) {
+        WriteAccessPolicy.requireCommentWrite(currentRole);
         rateLimiter.check(RateLimitPolicy.COMMENT_SUBMISSION, userId);
         requireCourse(courseId);
 
@@ -105,6 +111,15 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
+    public PageResponse<CommentDetailResponse> pageForUser(Long courseId, CommentPageQuery query,
+            Long currentUserId, UserRole currentRole) {
+        if (currentRole == UserRole.TEACHER) {
+            accessService.assertCanAnalyze(courseId, currentUserId, currentRole);
+        }
+        return page(courseId, query);
+    }
+
+    @Transactional(readOnly = true)
     public PageResponse<CommentDetailResponse> page(Long courseId, CommentPageQuery query) {
         requireCourse(courseId);
 
@@ -141,10 +156,11 @@ public class CommentService {
     }
 
     @Transactional
-    public void delete(Long commentId, Long userId) {
+    public void delete(Long commentId, Long userId, UserRole currentRole) {
+        WriteAccessPolicy.requireCommentWrite(currentRole);
         CourseComment existing = courseCommentMapper.selectById(commentId);
         if (existing == null
-                || !Objects.equals(existing.getUserId(), userId)
+                || (currentRole != UserRole.ADMIN && !Objects.equals(existing.getUserId(), userId))
                 || !Objects.equals(existing.getStatus(), 1)) {
             throw new ResourceNotFoundException("评价不存在");
         }
@@ -154,7 +170,7 @@ public class CommentService {
 
         LambdaUpdateWrapper<CourseComment> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(CourseComment::getId, commentId)
-                .eq(CourseComment::getUserId, userId)
+                .eq(currentRole != UserRole.ADMIN, CourseComment::getUserId, userId)
                 .eq(CourseComment::getStatus, 1);
 
         if (courseCommentMapper.update(update, wrapper) != 1) {

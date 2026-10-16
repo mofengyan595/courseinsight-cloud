@@ -237,7 +237,7 @@ token 保护的是数据库中的发布状态，不能撤销已经发出的消�
 
 事务后失效仍是尽力执行，没有持久化失效记录或可靠重试。失效失败或并发回填可能使缓存暂时保留旧值，
 需要后续失效、重新填充或 TTL 收敛，并不提供强一致性。Redis 故障时回源也会增加 MySQL 压力。
-JWT 请求仍查询当前用户状态，统计接口仍校验课程归属，因此缓存命中不等于零数据库查询。
+JWT 请求仍查询当前用户状态，统计接口仍校验分析权限和课程归属，因此缓存命中不等于零数据库查询。
 本地互斥不提供多实例全局一致性；当前未引入 Caffeine 或用户权限 Redis 缓存。
 
 完整审查、修改依据和验证范围见[后端工程审计](backend-audit.md)。
@@ -250,13 +250,13 @@ JWT 请求仍查询当前用户状态，统计接口仍校验课程归属，因�
 ### 认证与对象权限
 
 JWT 使用 HS256，校验签名、有效期和 issuer 后，认证转换器读取 `app_user` 的当前角色与启用状态。
-接口规则限制角色，业务服务校验对象归属；管理员可以跨课程管理，教师只能管理本人创建的课程。
+接口规则和业务服务共同校验权限：学生提交与管理本人评价，教师只读查看本人课程的评价、分析和看板，管理员维护课程、指定授课教师、导入 CSV 和管理任务，并保留创建/删除评价的测试能力。课程列表和直接读取均按实际归属校验；管理员创建或编辑时可通过 `teacherUserId` 指定启用的教师账号，保存到 `owner_user_id`。
 评价在响应中匿名展示，但数据库仍保留用户关联，用于个人评价管理与所有权校验。
 
 源码入口：[JWT 配置](../courseinsight-server/src/main/java/com/courseinsight/server/config/JwtConfig.java)、
 [接口授权](../courseinsight-server/src/main/java/com/courseinsight/server/config/SecurityConfig.java)、
 [当前用户校验](../courseinsight-server/src/main/java/com/courseinsight/server/security/CurrentUserJwtAuthenticationConverter.java)、
-[课程归属](../courseinsight-server/src/main/java/com/courseinsight/server/service/CourseManagementAccessService.java)。
+[课程权限](../courseinsight-server/src/main/java/com/courseinsight/server/service/CourseManagementAccessService.java)。
 完整分析的匿名字段与前端会话边界见[教师分析说明](teacher-comment-analysis.md)和[前端 README](../courseinsight-web/README.md#权限与会话边界)。
 
 这些机制分别由事务、并发领取、旧执行写入、租约恢复和缓存集成测试覆盖。

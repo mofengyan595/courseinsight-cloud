@@ -33,6 +33,7 @@ export interface CourseCreate {
   name: string
   teacherName: string
   description: string
+  teacherUserId?: number
 }
 export interface CourseUpdate extends CourseCreate {
   status: number
@@ -42,6 +43,14 @@ export interface Course extends Omit<CourseUpdate, 'description'> {
   id: number
   createdAt: string
   updatedAt: string
+  ownerUserId?: number | null
+}
+export interface UserSummary {
+  id: number
+  username: string
+  displayName: string
+  role: Role
+  status: number
 }
 export interface CommentCreate {
   content: string
@@ -102,6 +111,11 @@ export interface BatchCreated {
   batchNo: string
   courseId: number
   totalCount: number
+}
+export interface BatchSummary extends BatchCreated {
+  courseName: string
+  originalFilename: string
+  createdAt: string
 }
 export interface BatchProgress extends BatchCreated {
   originalFilename: string

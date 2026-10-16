@@ -3,6 +3,7 @@ package com.courseinsight.server.controller;
 import com.courseinsight.server.common.PageResponse;
 import com.courseinsight.server.dto.CommentDetailResponse;
 import com.courseinsight.server.dto.CommentPageQuery;
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.RateLimitExceededException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
@@ -12,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -44,10 +48,10 @@ class CommentControllerTests {
 
     @Test
     void shouldCreateComment() throws Exception {
-        given(commentService.create(eq(1L), eq(7L), any())).willReturn(10L);
+        given(commentService.create(eq(1L), eq(7L), eq(UserRole.STUDENT), any())).willReturn(10L);
 
         mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
-                        .principal(() -> "7")
+                        .principal(userAuthentication(UserRole.STUDENT))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -64,7 +68,7 @@ class CommentControllerTests {
     @Test
     void shouldRejectInvalidComment() throws Exception {
         mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
-                        .principal(() -> "7")
+                        .principal(userAuthentication(UserRole.STUDENT))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -80,11 +84,11 @@ class CommentControllerTests {
 
     @Test
     void shouldReturnNotFoundWhenCourseDoesNotExist() throws Exception {
-        given(commentService.create(eq(999999L), eq(7L), any()))
+        given(commentService.create(eq(999999L), eq(7L), eq(UserRole.STUDENT), any()))
                 .willThrow(new ResourceNotFoundException("课程不存在"));
 
         mockMvc.perform(post("/api/courses/{courseId}/comments", 999999L)
-                        .principal(() -> "7")
+                        .principal(userAuthentication(UserRole.STUDENT))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -99,13 +103,13 @@ class CommentControllerTests {
 
     @Test
     void shouldReturnTooManyRequestsWhenCommentRateLimitIsExceeded() throws Exception {
-        given(commentService.create(eq(1L), eq(7L), any()))
+        given(commentService.create(eq(1L), eq(7L), eq(UserRole.STUDENT), any()))
                 .willThrow(new RateLimitExceededException(
                         "提交评价过于频繁，请稍后再试"
                 ));
 
         mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
-                        .principal(() -> "7")
+                        .principal(userAuthentication(UserRole.STUDENT))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -131,10 +135,11 @@ class CommentControllerTests {
                 LocalDateTime.of(2026, 8, 1, 10, 0),
                 LocalDateTime.of(2026, 8, 1, 10, 0)
         );
-        given(commentService.page(eq(1L), any(CommentPageQuery.class)))
+        given(commentService.pageForUser(eq(1L), any(CommentPageQuery.class), eq(7L), eq(UserRole.STUDENT)))
                 .willReturn(new PageResponse<>(1, 10, 1, 1, List.of(comment)));
 
         mockMvc.perform(get("/api/courses/{courseId}/comments", 1L)
+                        .principal(userAuthentication(UserRole.STUDENT))
                         .param("page", "1")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -167,7 +172,7 @@ class CommentControllerTests {
                 .willReturn(new PageResponse<>(1, 10, 1, 1, List.of(comment)));
 
         mockMvc.perform(get("/api/comments/me")
-                        .principal(() -> "7")
+                        .principal(userAuthentication(UserRole.STUDENT))
                         .param("page", "1")
                         .param("size", "10"))
                 .andExpect(status().isOk())
@@ -179,26 +184,39 @@ class CommentControllerTests {
     @Test
     void shouldDeleteCurrentUsersComment() throws Exception {
         mockMvc.perform(delete("/api/comments/{commentId}", 10L)
-                        .principal(() -> "7"))
+                        .principal(userAuthentication(UserRole.STUDENT)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.message").value("success"))
                 .andExpect(jsonPath("$.data").doesNotExist());
 
-        verify(commentService).delete(10L, 7L);
+        verify(commentService).delete(10L, 7L, UserRole.STUDENT);
     }
 
     @Test
     void shouldHideWhetherCommentBelongsToAnotherUser() throws Exception {
         willThrow(new ResourceNotFoundException("评价不存在"))
                 .given(commentService)
-                .delete(10L, 7L);
+                .delete(10L, 7L, UserRole.STUDENT);
 
         mockMvc.perform(delete("/api/comments/{commentId}", 10L)
-                        .principal(() -> "7"))
+                        .principal(userAuthentication(UserRole.STUDENT)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("评价不存在"));
+    }
+
+    @Test
+    void shouldPassAuthenticatedAdminRoleToDeletionService() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}", 10L)
+                        .principal(userAuthentication(UserRole.ADMIN)))
+                .andExpect(status().isOk());
+        verify(commentService).delete(10L, 7L, UserRole.ADMIN);
+    }
+
+    private Authentication userAuthentication(UserRole role) {
+        return UsernamePasswordAuthenticationToken.authenticated("7", "N/A",
+                List.of(new SimpleGrantedAuthority("ROLE_" + role.name())));
     }
 
     @Test

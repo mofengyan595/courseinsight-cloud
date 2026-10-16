@@ -13,6 +13,7 @@ import com.courseinsight.server.dto.CourseUpdateRequest;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.mapper.CourseMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,6 +51,17 @@ class CourseServiceTests {
     private CourseService courseService;
 
     @Test
+    void shouldDenyTeacherCourseCreationAndEditingBeforeWrites() {
+        assertThatThrownBy(() -> courseService.create(11L, UserRole.TEACHER,
+                new CourseCreateRequest("TEST", "课程", "教师", null)))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        assertThatThrownBy(() -> courseService.update(11L, UserRole.TEACHER, 1L,
+                new CourseUpdateRequest("TEST", "课程", "教师", null, 1)))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        verifyNoInteractions(courseMapper, courseDetailCache, popularityRankingCache, managementAccessService);
+    }
+
+    @Test
     void shouldBindCreatedCourseToCurrentUser() {
         given(courseMapper.insert(any(Course.class))).willAnswer(invocation -> {
             Course course = invocation.getArgument(0);
@@ -58,7 +70,7 @@ class CourseServiceTests {
         });
 
         Long courseId = courseService.create(
-                11L,
+                11L, UserRole.ADMIN,
                 new CourseCreateRequest(
                         "CS103",
                         "Java程序设计",
@@ -78,13 +90,13 @@ class CourseServiceTests {
         given(managementAccessService.requireManageableCourse(
                 1L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         )).willReturn(createCourse());
         given(courseMapper.updateById(any(Course.class))).willReturn(1);
 
         Long courseId = courseService.update(
                 11L,
-                UserRole.TEACHER,
+                UserRole.ADMIN,
                 1L,
                 new CourseUpdateRequest(
                         "CS101",
@@ -105,12 +117,12 @@ class CourseServiceTests {
         given(managementAccessService.requireManageableCourse(
                 999999L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         )).willThrow(new ResourceNotFoundException("课程不存在"));
 
         assertThatThrownBy(() -> courseService.update(
                 11L,
-                UserRole.TEACHER,
+                UserRole.ADMIN,
                 999999L,
                 new CourseUpdateRequest("CS999", "不存在", "测试教师", null, 1)
         )).isInstanceOf(ResourceNotFoundException.class)

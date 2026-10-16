@@ -53,11 +53,12 @@ BERT 权重放置路径见 [AI 服务说明](../courseinsight-ai-service/README.
 | --- | --- | --- |
 | 登录 `/login` | `POST /api/auth/login` | 读取 accessToken、tokenType、expiresIn、userId、username、displayName、role |
 | 课程列表 `/courses` | `GET /api/courses`、`POST /api/courses` | 关键词、分页、创建；创建响应 data 为课程 ID |
-| 课程详情 `/courses/:id` | `GET /api/courses/{id}`、`PUT /api/courses/{id}` | code/name/teacherName/description，编辑额外提交 status |
-| 课程评价 | `GET/POST /api/courses/{id}/comments` | 匿名评价列表、评分和评价提交 |
-| 单条评价分析 | `GET /api/comments/{commentId}/analysis` | 教师/管理员点击后查询；抽屉显示任务状态和完整分析 |
+| 课程详情 `/courses/:id` | `GET /api/courses/{id}`、`PUT /api/courses/{id}` | 管理员可编辑并通过 teacherUserId 指定教师账号；不传该字段时保留原归属 |
+| 课程评价 | `GET/POST /api/courses/{id}/comments`、`DELETE /api/comments/{id}` | 匿名评价列表、评分和提交；管理员可确认删除任意有效评价 |
+| 单条评价分析 | `GET /api/comments/{commentId}/analysis` | 教师/管理员点击后查询；与批量逐条详情共用居中弹窗 |
 | 个人信息 `/profile` | `GET /api/comments/me`、`DELETE /api/comments/{id}` | 登录身份信息、个人评价、确认删除 |
-| 上传 `/analysis` | `POST /api/courses/{id}/analysis-batches` | FormData 的 file 字段；读取 batchId 后跳转 |
+| 上传 `/analysis` | `POST /api/courses/{id}/analysis-batches` | 仅管理员可上传；FormData 的 file 字段，读取 batchId 后跳转 |
+| 历史分析任务 `/analysis` | `GET /api/analysis-batches` | 教师仅见本人课程，管理员可见全部；按创建时间倒序分页，点击返回原批次，无需再次上传 |
 | 批次 `/analysis/:batchId` | `GET /api/analysis-batches/{id}` | 状态、waiting/processing/retrying/success/failed 与完成百分比 |
 | 结果 | `GET /api/analysis-batches/{id}/results` | 分页评价、情感、置信度、关键词、维度、证据、建议、风险和来源 |
 | 导出 / 重试 | `GET /api/analysis-batches/{id}/export`、`POST /api/analysis-batches/{id}/retry-failed` | Blob CSV 下载；符合后端条件的死信任务重新入队 |
@@ -65,15 +66,16 @@ BERT 权重放置路径见 [AI 服务说明](../courseinsight-ai-service/README.
 
 JSON 响应为 `{ code, message, data }`，成功码 0；分页为 `{ page, size, total, totalPages, items }`，页码从 1 开始。分析动态字段在后端是 JsonNode，使用递归 JSON 类型展示数组、对象和 null，不假定是固定字符串数组。
 
-当前后端没有批次列表、资料更新、评价编辑接口，前端不提供虚构操作。通过保存的 URL 或上传页输入 batchId 恢复任务。AdminUserController 用户管理属于可选第二阶段，当前 MVP 不包含。
+当前后端没有资料更新、评价编辑接口，前端不提供虚构操作。已上传的任务保存在服务端，可从历史分析任务、保存的 URL 或输入 batchId 恢复查询。AdminUserController 用户管理属于可选第二阶段，当前 MVP 不包含。
 
 ## 权限与会话边界
 
 - STUDENT：课程浏览、评价提交、个人评价管理。
-- TEACHER：额外创建/编辑课程、单条评价分析、批量分析、看板；服务端限制为自己创建的课程。
-- ADMIN：可管理所有课程。
+- TEACHER：仅可只读查看归属本人的课程、评价、单条分析、已有批次和看板；不能创建/编辑课程、提交/删除评价、上传 CSV 或重试任务。服务端同时过滤列表和校验直接访问。
+- ADMIN：负责课程维护、指定授课教师、批量导入及任务重试；保留创建/删除评价的测试能力。课程列表中的删除沿用软删除，保留分析任务记录；学生仅可删除本人评价。
 - 学生提交后提示“评价提交成功，感谢你的反馈。”，不展示分析入口或结果。完整分析接口明确拒绝学生，包括自己的评价；原有仅查询任务状态的 `/analysis-task` 权限保持兼容。返回评论不包含学生身份。
-- 课程 DTO 未暴露 ownerUserId，前端仅根据登录角色显示入口，不推测教师归属；对象权限由服务端独立校验，403 明确提示并保留登录状态。
+- 前端按登录角色显示读写入口；服务端独立校验实际角色和评价所有权，403 明确提示并保留登录状态。
+- 教师账号选择复用 `GET /api/admin/users`，只列出启用的 TEACHER，可搜索和分页。课程 `ownerUserId` 表示实际归属，`teacherName` 是展示姓名；未指定教师的新课程暂归管理员，编辑后可分配。改派后旧教师立即失去读取权限，权限检查先于详情和统计缓存。
 - 入口角色来自登录快照，后端每次校验数据库当前角色/状态；权限调整后可重新登录更新入口。前端守卫不能作为安全边界。
 - Token 只放在当前标签页 sessionStorage，不写入 URL、日志、源码或 localStorage。关闭标签页通常清除状态，但同源 JavaScript 仍可读取，无法防御 XSS，复制标签页也可能复制初始会话。本方案用于演示；生产需要 HTTPS、CSP、依赖审计与符合自身威胁模型的会话方案。
 - 根据 expiresIn 记录过期时间；401 清理并跳转登录，403、429、网络和业务错误显示明确提示。后端没有刷新 Token 接口，不虚构刷新流程。
@@ -87,7 +89,7 @@ JSON 响应为 `{ code, message, data }`，成功码 0；分页为 `{ page, size
 
 retry-failed 当前只恢复死信任务；requeuedCount=0 表示没有符合条件的任务，不代表分析成功。部分失败有独立提示和失败详情，不覆盖已有成功结果。
 
-单条评价分析按点击加载，列表不会逐条请求。WAITING/PROCESSING 显示“分析中”，按同样的间隔与退避规则轮询；SUCCESS/FAILED 停止。关闭抽屉、切换评论或离开课程页会取消请求并丢弃迟到响应。完整结果只在 SUCCESS 返回，其余状态 result 为 null；单条查询不提供虚构的完成百分比或重试接口。抽屉先展示原文、分析摘要、情感与关键词，再展示建议卡片和维度证据；模型来源、时间、重试与原始返回数据收在“分析与运行信息”中，默认折叠。
+单条和批量逐条详情按点击加载同一个评价分析弹窗，列表不会逐条请求。WAITING/PROCESSING 显示“分析中”，按同样的间隔与退避规则轮询；SUCCESS/FAILED 停止。关闭弹窗、切换评论或离开页面会取消请求并丢弃迟到响应。完整结果只在 SUCCESS 返回，其余状态 result 为 null；单条查询不提供虚构的完成百分比或重试接口。弹窗先展示原文、分析摘要、情感与关键词，再展示建议卡片和维度证据；模型来源、时间、重试与原始返回数据收在“分析与运行信息”中，默认折叠。弹窗在右侧内容区居中，手机端在屏幕内居中；正文独立滚动，可用关闭按钮或 Escape 退出。
 
 ## 目录
 

@@ -57,7 +57,7 @@ class CourseAnalyticsServiceTests {
                 UserRole.TEACHER
         );
 
-        verify(managementAccessService).assertCanManage(
+        verify(managementAccessService).assertCanAnalyze(
                 14L,
                 11L,
                 UserRole.TEACHER
@@ -99,7 +99,7 @@ class CourseAnalyticsServiceTests {
     void shouldStopBeforeQueryWhenCourseAccessIsDenied() {
         willThrow(new CourseAccessDeniedException("无权管理其他教师的课程"))
                 .given(managementAccessService)
-                .assertCanManage(14L, 12L, UserRole.TEACHER);
+                .assertCanAnalyze(14L, 12L, UserRole.TEACHER);
 
         assertThatThrownBy(() -> courseAnalyticsService.getSummary(
                 14L,

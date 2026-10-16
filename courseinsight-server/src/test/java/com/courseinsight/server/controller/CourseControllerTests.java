@@ -65,10 +65,10 @@ class CourseControllerTests {
 
     @Test
     void shouldCreateCourse() throws Exception {
-        given(courseService.create(eq(11L), any())).willReturn(3L);
+        given(courseService.create(eq(11L), eq(UserRole.ADMIN), any())).willReturn(3L);
 
         mockMvc.perform(post("/api/courses")
-                        .principal(authentication(11L, UserRole.TEACHER))
+                        .principal(authentication(11L, UserRole.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -88,13 +88,13 @@ class CourseControllerTests {
     void shouldUpdateCourse() throws Exception {
         given(courseService.update(
                 eq(11L),
-                eq(UserRole.TEACHER),
+                eq(UserRole.ADMIN),
                 eq(1L),
                 any()
         )).willReturn(1L);
 
         mockMvc.perform(put("/api/courses/{id}", 1L)
-                        .principal(authentication(11L, UserRole.TEACHER))
+                        .principal(authentication(11L, UserRole.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -113,7 +113,7 @@ class CourseControllerTests {
     @Test
     void shouldRejectInvalidCourseStatusOnUpdate() throws Exception {
         mockMvc.perform(put("/api/courses/{id}", 1L)
-                        .principal(authentication(11L, UserRole.TEACHER))
+                        .principal(authentication(11L, UserRole.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -133,7 +133,7 @@ class CourseControllerTests {
     @Test
     void shouldRejectBlankCourseName() throws Exception {
         mockMvc.perform(post("/api/courses")
-                        .principal(authentication(11L, UserRole.TEACHER))
+                        .principal(authentication(11L, UserRole.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -153,11 +153,11 @@ class CourseControllerTests {
 
     @Test
     void shouldReturnConflictForDuplicateCourseCode() throws Exception {
-        given(courseService.create(eq(11L), any()))
+        given(courseService.create(eq(11L), eq(UserRole.ADMIN), any()))
                 .willThrow(new DuplicateKeyException("duplicate course code"));
 
         mockMvc.perform(post("/api/courses")
-                        .principal(authentication(11L, UserRole.TEACHER))
+                        .principal(authentication(11L, UserRole.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -177,13 +177,13 @@ class CourseControllerTests {
     void shouldReturnForbiddenWhenTeacherUpdatesAnotherCourse() throws Exception {
         given(courseService.update(
                 eq(12L),
-                eq(UserRole.TEACHER),
+                eq(UserRole.ADMIN),
                 eq(1L),
                 any()
         )).willThrow(new CourseAccessDeniedException("无权管理其他教师的课程"));
 
         mockMvc.perform(put("/api/courses/{id}", 1L)
-                        .principal(authentication(12L, UserRole.TEACHER))
+                        .principal(authentication(12L, UserRole.ADMIN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -211,9 +211,9 @@ class CourseControllerTests {
                 LocalDateTime.of(2026, 7, 31, 10, 0),
                 LocalDateTime.of(2026, 7, 31, 10, 0)
         );
-        given(courseService.getById(1L)).willReturn(response);
+        given(courseService.getForUser(1L, 11L, UserRole.STUDENT)).willReturn(response);
 
-        mockMvc.perform(get("/api/courses/{id}", 1L))
+        mockMvc.perform(get("/api/courses/{id}", 1L).principal(authentication(11L, UserRole.STUDENT)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.message").value("success"))
@@ -226,10 +226,10 @@ class CourseControllerTests {
 
     @Test
     void shouldReturnNotFoundForMissingCourse() throws Exception {
-        given(courseService.getById(999999L))
+        given(courseService.getForUser(999999L, 11L, UserRole.STUDENT))
                 .willThrow(new ResourceNotFoundException("课程不存在"));
 
-        mockMvc.perform(get("/api/courses/{id}", 999999L))
+        mockMvc.perform(get("/api/courses/{id}", 999999L).principal(authentication(11L, UserRole.STUDENT)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value(404))
                 .andExpect(jsonPath("$.message").value("课程不存在"))
@@ -248,10 +248,10 @@ class CourseControllerTests {
                 LocalDateTime.of(2026, 7, 31, 10, 0),
                 LocalDateTime.of(2026, 7, 31, 10, 0)
         );
-        given(courseService.page(any(CoursePageQuery.class)))
+        given(courseService.pageForUser(any(CoursePageQuery.class), eq(11L), eq(UserRole.STUDENT)))
                 .willReturn(new PageResponse<>(1, 10, 1, 1, List.of(course)));
 
-        mockMvc.perform(get("/api/courses")
+        mockMvc.perform(get("/api/courses").principal(authentication(11L, UserRole.STUDENT))
                         .param("page", "1")
                         .param("size", "10")
                         .param("keyword", "Java"))

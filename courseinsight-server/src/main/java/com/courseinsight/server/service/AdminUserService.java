@@ -35,6 +35,7 @@ public class AdminUserService {
                     .like(AppUser::getDisplayName, query.keyword()));
         }
         wrapper.eq(query.role() != null, AppUser::getRole, query.role())
+                .eq(query.userId() != null, AppUser::getId, query.userId())
                 .eq(query.status() != null, AppUser::getStatus, query.status())
                 .orderByDesc(AppUser::getCreatedAt)
                 .orderByDesc(AppUser::getId);

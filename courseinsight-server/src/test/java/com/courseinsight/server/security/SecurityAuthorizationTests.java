@@ -50,6 +50,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -148,7 +149,7 @@ class SecurityAuthorizationTests {
     void shouldAllowStudentToListCourses() throws Exception {
         given(jwtDecoder.decode("student-token"))
                 .willReturn(jwt("student-token", "STUDENT"));
-        given(courseService.page(any(CoursePageQuery.class)))
+        given(courseService.pageForUser(any(CoursePageQuery.class), eq(1L), eq(UserRole.STUDENT)))
                 .willReturn(new PageResponse<>(1, 10, 0, 0, List.of()));
 
         mockMvc.perform(get("/api/courses")
@@ -156,7 +157,7 @@ class SecurityAuthorizationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
-        verify(courseService).page(any(CoursePageQuery.class));
+        verify(courseService).pageForUser(any(CoursePageQuery.class), eq(1L), eq(UserRole.STUDENT));
     }
 
     @Test
@@ -232,20 +233,56 @@ class SecurityAuthorizationTests {
     }
 
     @Test
-    void shouldAllowTeacherToCreateCourse() throws Exception {
-        given(jwtDecoder.decode("teacher-token"))
-                .willReturn(jwt("teacher-token", "TEACHER"));
-        given(courseService.create(eq(1L), any())).willReturn(99L);
+    void shouldAllowAdminToCreateCourse() throws Exception {
+        given(jwtDecoder.decode("admin-token"))
+                .willReturn(jwt("admin-token", "ADMIN"));
+        given(courseService.create(eq(1L), eq(UserRole.ADMIN), any())).willReturn(99L);
 
         mockMvc.perform(post("/api/courses")
-                        .header("Authorization", "Bearer teacher-token")
+                        .header("Authorization", "Bearer admin-token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validCourseRequest()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").value(99));
 
-        verify(courseService).create(eq(1L), any());
+        verify(courseService).create(eq(1L), eq(UserRole.ADMIN), any());
+    }
+
+    @Test
+    void shouldRejectAllTeacherBusinessWrites() throws Exception {
+        given(jwtDecoder.decode("teacher-token")).willReturn(jwt("teacher-token", "TEACHER"));
+        mockMvc.perform(get("/api/course-rankings/popular")
+                        .header("Authorization", "Bearer teacher-token"))
+                .andExpect(status().isForbidden());
+        var writes = List.of(
+                post("/api/courses").contentType(MediaType.APPLICATION_JSON).content(validCourseRequest()),
+                put("/api/courses/1").contentType(MediaType.APPLICATION_JSON).content(validCourseRequest()),
+                post("/api/courses/1/comments").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"教师不能提交评价\",\"rating\":5}"),
+                delete("/api/comments/10"),
+                multipart("/api/courses/1/analysis-batches").file(csvFile()),
+                post("/api/analysis-tasks/1/execute"),
+                post("/api/analysis-tasks/1/enqueue"),
+                post("/api/analysis-batches/1/retry-failed")
+        );
+        for (var write : writes) {
+            mockMvc.perform(write.header("Authorization", "Bearer teacher-token"))
+                    .andExpect(status().isForbidden());
+        }
+        verifyNoInteractions(courseService, commentService, analysisBatchService, analysisBatchRecoveryService);
+    }
+
+    @Test
+    void shouldRequireManagerRoleForBatchHistory() throws Exception {
+        mockMvc.perform(get("/api/analysis-batches"))
+                .andExpect(status().isUnauthorized());
+        given(jwtDecoder.decode("student-token"))
+                .willReturn(jwt("student-token", "STUDENT"));
+        mockMvc.perform(get("/api/analysis-batches")
+                        .header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(analysisBatchService);
     }
 
     @Test
@@ -263,10 +300,10 @@ class SecurityAuthorizationTests {
     }
 
     @Test
-    void shouldAllowTeacherToUploadAnalysisBatch() throws Exception {
-        given(jwtDecoder.decode("teacher-token"))
-                .willReturn(jwt("teacher-token", "TEACHER"));
-        given(analysisBatchService.upload(eq(14L), eq(1L), eq(UserRole.TEACHER), any()))
+    void shouldAllowAdminToUploadAnalysisBatch() throws Exception {
+        given(jwtDecoder.decode("admin-token"))
+                .willReturn(jwt("admin-token", "ADMIN"));
+        given(analysisBatchService.upload(eq(14L), eq(1L), eq(UserRole.ADMIN), any()))
                 .willReturn(new AnalysisBatchCreateResponse(
                         30L,
                         "batch-30",
@@ -276,7 +313,7 @@ class SecurityAuthorizationTests {
 
         mockMvc.perform(multipart("/api/courses/{courseId}/analysis-batches", 14L)
                         .file(csvFile())
-                        .header("Authorization", "Bearer teacher-token"))
+                        .header("Authorization", "Bearer admin-token"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.batchId").value(30));
     }
@@ -321,13 +358,13 @@ class SecurityAuthorizationTests {
     }
 
     @Test
-    void shouldAllowTeacherToRetryAnalysisBatch() throws Exception {
-        given(jwtDecoder.decode("teacher-token"))
-                .willReturn(jwt("teacher-token", "TEACHER"));
+    void shouldAllowAdminToRetryAnalysisBatch() throws Exception {
+        given(jwtDecoder.decode("admin-token"))
+                .willReturn(jwt("admin-token", "ADMIN"));
         given(analysisBatchRecoveryService.retryDeadLettered(
                 30L,
                 1L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         )).willReturn(new AnalysisBatchRetryResponse(
                 30L,
                 2,
@@ -335,7 +372,7 @@ class SecurityAuthorizationTests {
         ));
 
         mockMvc.perform(post("/api/analysis-batches/{batchId}/retry-failed", 30L)
-                        .header("Authorization", "Bearer teacher-token"))
+                        .header("Authorization", "Bearer admin-token"))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.data.requeuedCount").value(2));
     }
@@ -344,7 +381,7 @@ class SecurityAuthorizationTests {
     void shouldBindStudentCommentToJwtSubject() throws Exception {
         given(jwtDecoder.decode("student-token"))
                 .willReturn(jwt("student-token", "STUDENT"));
-        given(commentService.create(eq(1L), eq(1L), any())).willReturn(10L);
+        given(commentService.create(eq(1L), eq(1L), eq(UserRole.STUDENT), any())).willReturn(10L);
 
         mockMvc.perform(post("/api/courses/{courseId}/comments", 1L)
                         .header("Authorization", "Bearer student-token")
@@ -358,7 +395,7 @@ class SecurityAuthorizationTests {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data").value(10));
 
-        verify(commentService).create(eq(1L), eq(1L), any());
+        verify(commentService).create(eq(1L), eq(1L), eq(UserRole.STUDENT), any());
     }
 
     @Test
@@ -371,6 +408,15 @@ class SecurityAuthorizationTests {
     }
 
     @Test
+    void shouldPassAuthoritativeAdminRoleForCommentDeletion() throws Exception {
+        given(jwtDecoder.decode("admin-token")).willReturn(jwt("admin-token", "ADMIN"));
+        mockMvc.perform(delete("/api/comments/{commentId}", 10L)
+                        .header("Authorization", "Bearer admin-token"))
+                .andExpect(status().isOk());
+        verify(commentService).delete(10L, 1L, UserRole.ADMIN);
+    }
+
+    @Test
     void shouldBindCommentDeletionToJwtSubject() throws Exception {
         given(jwtDecoder.decode("student-token"))
                 .willReturn(jwt("student-token", "STUDENT"));
@@ -380,7 +426,7 @@ class SecurityAuthorizationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0));
 
-        verify(commentService).delete(10L, 1L);
+        verify(commentService).delete(10L, 1L, UserRole.STUDENT);
     }
 
     private Jwt jwt(String tokenValue, String role) {

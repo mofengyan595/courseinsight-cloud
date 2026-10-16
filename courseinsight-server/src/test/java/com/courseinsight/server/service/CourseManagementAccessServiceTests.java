@@ -5,6 +5,7 @@ import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.CourseMapper;
+import com.courseinsight.server.mapper.AppUserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,6 +18,7 @@ import static org.mockito.BDDMockito.given;
 
 @ExtendWith(MockitoExtension.class)
 class CourseManagementAccessServiceTests {
+    @Mock private AppUserMapper users;
 
     @Mock
     private CourseMapper courseMapper;
@@ -25,38 +27,30 @@ class CourseManagementAccessServiceTests {
 
     @BeforeEach
     void setUp() {
-        accessService = new CourseManagementAccessService(courseMapper);
+        accessService = new CourseManagementAccessService(courseMapper, users);
     }
 
     @Test
-    void shouldAllowOwningTeacher() {
+    void shouldAllowTeacherToReadOwnCourseAnalysis() {
         Course course = course(11L);
         given(courseMapper.selectById(1L)).willReturn(course);
 
-        Course result = accessService.requireManageableCourse(
-                1L,
-                11L,
-                UserRole.TEACHER
-        );
-
-        assertThat(result).isSameAs(course);
+        accessService.assertCanAnalyze(1L, 11L, UserRole.TEACHER);
     }
 
     @Test
     void shouldRejectAnotherTeacher() {
-        given(courseMapper.selectById(1L)).willReturn(course(11L));
 
         assertThatThrownBy(() -> accessService.requireManageableCourse(
                 1L,
                 12L,
                 UserRole.TEACHER
         )).isInstanceOf(CourseAccessDeniedException.class)
-                .hasMessage("无权管理其他教师的课程");
+                .hasMessage("仅管理员可修改课程或分析任务");
     }
 
     @Test
     void shouldRejectStudentEvenWhenIdsMatch() {
-        given(courseMapper.selectById(1L)).willReturn(course(11L));
 
         assertThatThrownBy(() -> accessService.requireManageableCourse(
                 1L,

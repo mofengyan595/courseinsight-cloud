@@ -48,12 +48,14 @@ test('真实 Stub：学生评价 → RocketMQ → 教师逐条分析，含跨课
     teacher: `t_${suffix}`,
     outsider: `o_${suffix}`,
   }
+  let teacherUserId: number | undefined
   for (const [role, username] of Object.entries(accounts)) {
     const registered = await request.post('/api/auth/register', {
       data: { username, password, displayName: '隔离 Demo 测试账号' },
     })
     expect(registered.status()).toBe(201)
     const user = (await registered.json()).data
+    if (role === 'teacher') teacherUserId = user.id
     expect(user.role).toBe('STUDENT')
     if (role !== 'student') {
       const promoted = await request.patch(`/api/admin/users/${user.id}/role`, {
@@ -63,14 +65,14 @@ test('真实 Stub：学生评价 → RocketMQ → 教师逐条分析，含跨课
       expect(promoted.status()).toBe(200)
     }
   }
-  const teacherToken = await loginApi(request, accounts.teacher, password)
   const created = await request.post('/api/courses', {
-    headers: { Authorization: `Bearer ${teacherToken}` },
+    headers: adminHeaders,
     data: {
       code: `CA-${suffix}`,
       name: '学生反馈与教师分析',
       teacherName: 'Demo 教师',
       description: '真实 MQ 与 AI Stub 联调',
+      teacherUserId,
     },
   })
   expect(created.status()).toBe(201)
@@ -139,7 +141,15 @@ test('真实 Stub：学生评价 → RocketMQ → 教师逐条分析，含跨课
   ).toBeVisible()
   expect(analysisQueries).toBe(0)
   await expect(page.getByRole('button', { name: '查看数据看板' })).toBeVisible()
-  await expect(page.getByRole('button', { name: '批量分析评价' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '批量分析评价' })).toHaveCount(
+    0,
+  )
+  await expect(
+    page.getByRole('button', { name: '提交评价', exact: true }),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('button', { name: '删除评价', exact: true }),
+  ).toHaveCount(0)
   await page.getByRole('button', { name: '查看分析', exact: true }).click()
   const drawer = page.getByRole('dialog', { name: '评价分析' })
   await expect(

@@ -80,8 +80,8 @@ class AnalysisTaskServiceTests {
         analysisTaskService.getByCommentId(10L, 30L, UserRole.TEACHER);
         analysisTaskService.getByCommentId(10L, 40L, UserRole.ADMIN);
 
-        verify(managementAccessService).assertCanManage(1L, 30L, UserRole.TEACHER);
-        verify(managementAccessService).assertCanManage(1L, 40L, UserRole.ADMIN);
+        verify(managementAccessService).assertCanAnalyze(1L, 30L, UserRole.TEACHER);
+        verify(managementAccessService).assertCanAnalyze(1L, 40L, UserRole.ADMIN);
     }
 
     @Test
@@ -89,7 +89,7 @@ class AnalysisTaskServiceTests {
         prepareTaskAndComment(20L);
         willThrow(new CourseAccessDeniedException("denied"))
                 .given(managementAccessService)
-                .assertCanManage(1L, 31L, UserRole.TEACHER);
+                .assertCanAnalyze(1L, 31L, UserRole.TEACHER);
 
         assertThatThrownBy(() -> analysisTaskService.getByCommentId(
                 10L,

@@ -1,5 +1,6 @@
 package com.courseinsight.server;
 
+import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.dto.CommentCreateRequest;
 import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
@@ -55,7 +56,7 @@ class CommentOutboxTransactionTests {
 
             assertThatThrownBy(() -> commentService.create(
                     courseId,
-                    700002L,
+                    700002L, UserRole.STUDENT,
                     new CommentCreateRequest("Outbox 事务回滚测试", 4)
             )).isInstanceOf(DataIntegrityViolationException.class);
 

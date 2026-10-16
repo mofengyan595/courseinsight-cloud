@@ -54,11 +54,11 @@ class AnalysisExecutionControllerTests {
         given(analysisExecutionService.executeForUser(
                 3L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         )).willReturn(response);
 
         mockMvc.perform(post("/api/analysis-tasks/{taskId}/execute", 3L)
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.taskId").value(3))
@@ -72,22 +72,22 @@ class AnalysisExecutionControllerTests {
         given(analysisExecutionService.executeForUser(
                 3L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         ))
                 .willThrow(new AiServiceException("AI 服务调用失败"));
 
         mockMvc.perform(post("/api/analysis-tasks/{taskId}/execute", 3L)
-                        .principal(teacherAuthentication()))
+                        .principal(adminAuthentication()))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value(502))
                 .andExpect(jsonPath("$.message").value("AI 服务调用失败"));
     }
 
-    private Authentication teacherAuthentication() {
+    private Authentication adminAuthentication() {
         return UsernamePasswordAuthenticationToken.authenticated(
                 "11",
                 "N/A",
-                List.of(new SimpleGrantedAuthority("ROLE_TEACHER"))
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))
         );
     }
 }

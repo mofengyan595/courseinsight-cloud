@@ -30,7 +30,7 @@ public class CourseController {
             Authentication authentication,
             @Valid @RequestBody CourseCreateRequest request) {
         CurrentUser currentUser = CurrentUser.from(authentication);
-        Long courseId = courseService.create(currentUser.id(), request);
+        Long courseId = courseService.create(currentUser.id(), currentUser.role(), request);
         return ApiResponse.success(courseId);
     }
 
@@ -49,13 +49,17 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<CourseDetailResponse> getById(@PathVariable @Positive(message = "ID 必须是正整数") Long id) {
-        return ApiResponse.success(courseService.getById(id));
+    public ApiResponse<CourseDetailResponse> getById(@PathVariable @Positive(message = "ID 必须是正整数") Long id,
+            Authentication authentication) {
+        CurrentUser currentUser = CurrentUser.from(authentication);
+        return ApiResponse.success(courseService.getForUser(id, currentUser.id(), currentUser.role()));
     }
 
     @GetMapping
     public ApiResponse<PageResponse<CourseDetailResponse>> page(
+            Authentication authentication,
             @Valid @ModelAttribute CoursePageQuery query) {
-        return ApiResponse.success(courseService.page(query));
+        CurrentUser currentUser = CurrentUser.from(authentication);
+        return ApiResponse.success(courseService.pageForUser(query, currentUser.id(), currentUser.role()));
     }
 }

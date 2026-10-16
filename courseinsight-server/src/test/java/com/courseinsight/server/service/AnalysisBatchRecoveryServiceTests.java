@@ -7,6 +7,7 @@ import com.courseinsight.server.entity.AnalysisBatch;
 import com.courseinsight.server.entity.AnalysisOutboxEvent;
 import com.courseinsight.server.entity.AnalysisTask;
 import com.courseinsight.server.entity.UserRole;
+import com.courseinsight.server.exception.CourseAccessDeniedException;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.mapper.AnalysisBatchMapper;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
@@ -57,6 +58,13 @@ class AnalysisBatchRecoveryServiceTests {
     private AnalysisBatchRecoveryService recoveryService;
 
     @Test
+    void shouldDenyTeacherRetryBeforeTouchingTasks() {
+        assertThatThrownBy(() -> recoveryService.retryDeadLettered(30L, 11L, UserRole.TEACHER))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        org.mockito.Mockito.verifyNoInteractions(batchMapper, taskMapper, outboxEventMapper, accessService);
+    }
+
+    @Test
     void shouldRequeueDeadLetteredTasksWithNewOutboxEvents() {
         given(batchMapper.selectById(30L)).willReturn(batch());
         given(taskMapper.selectDeadLetteredByBatchIdForUpdate(30L))
@@ -72,7 +80,7 @@ class AnalysisBatchRecoveryServiceTests {
         AnalysisBatchRetryResponse response = recoveryService.retryDeadLettered(
                 30L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         );
 
         assertThat(response.batchId()).isEqualTo(30L);
@@ -89,7 +97,7 @@ class AnalysisBatchRecoveryServiceTests {
         assertThat(eventCaptor.getAllValues())
                 .extracting(AnalysisOutboxEvent::getEventId)
                 .doesNotHaveDuplicates();
-        verify(accessService).assertCanManage(14L, 11L, UserRole.TEACHER);
+        verify(accessService).assertCanManage(14L, 11L, UserRole.ADMIN);
     }
 
     @Test
@@ -101,7 +109,7 @@ class AnalysisBatchRecoveryServiceTests {
         AnalysisBatchRetryResponse response = recoveryService.retryDeadLettered(
                 30L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         );
 
         assertThat(response.requeuedCount()).isZero();
@@ -115,7 +123,7 @@ class AnalysisBatchRecoveryServiceTests {
         assertThatThrownBy(() -> recoveryService.retryDeadLettered(
                 999L,
                 11L,
-                UserRole.TEACHER
+                UserRole.ADMIN
         )).isInstanceOf(ResourceNotFoundException.class);
 
         verifyNoInteractions(accessService, taskMapper, outboxEventMapper);

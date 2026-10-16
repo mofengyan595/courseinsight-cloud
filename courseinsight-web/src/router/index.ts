@@ -65,7 +65,7 @@ router.beforeEach((to) => {
   auth.sync()
   if (!to.meta.public && !auth.session)
     return { name: 'login', query: { redirect: to.fullPath } }
-  if (to.meta.manager && !auth.canManage) return '/forbidden'
+  if (to.meta.manager && !auth.canAnalyze) return '/forbidden'
   if (to.name === 'login' && auth.session) return '/courses'
 })
 router.afterEach((to) => {
