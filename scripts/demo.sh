@@ -2,18 +2,24 @@
 set -Eeuo pipefail
 
 ACTION="${1:-start}"
-REAL_AI=false
+REAL_AI=true
+EXPLICIT_REAL_AI=false
+USE_STUB=false
 REBUILD=false
 CONFIRM_DELETE_DATA=false
 for option in "${@:2}"; do
   case "${option}" in
-    --real-ai) REAL_AI=true ;;
-    --enable-llm) REAL_AI=true ;;
+    --real-ai|--enable-llm) EXPLICIT_REAL_AI=true ;;
+    --stub) USE_STUB=true ;;
     --rebuild) REBUILD=true ;;
     --confirm-delete-data) CONFIRM_DELETE_DATA=true ;;
     *) printf '[FAIL] Unknown option: %s\n' "${option}" >&2; exit 1 ;;
   esac
 done
+if [[ "${USE_STUB}" == true ]]; then
+  [[ "${EXPLICIT_REAL_AI}" != true ]] || { printf '[FAIL] --stub cannot be combined with --real-ai or --enable-llm.\n' >&2; exit 1; }
+  REAL_AI=false
+fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DEMO_ENV="${REPOSITORY_ROOT}/demo.env"
@@ -23,6 +29,10 @@ DEMO_AI_IMAGE="courseinsight-demo-ai-service:latest"
 AI_DESCRIPTION="deterministic AI Stub"
 AI_CONTAINER="courseinsight-demo-ai-stub"
 COMPOSE=(docker compose --env-file "${DEMO_ENV}" -f "${DEMO_COMPOSE}")
+SMOKE_OPTIONS=()
+if [[ "${USE_STUB}" == true ]]; then
+  SMOKE_OPTIONS+=(--stub)
+fi
 if [[ "${REAL_AI}" == true && -f "${REPOSITORY_ROOT}/.env" ]]; then
   COMPOSE=(docker compose --env-file "${REPOSITORY_ROOT}/.env" --env-file "${DEMO_ENV}" -f "${DEMO_COMPOSE}")
 fi
@@ -97,7 +107,7 @@ case "${ACTION}" in
     require_docker
     require_java
     if [[ -z "$("${COMPOSE[@]}" ps -q 2>/dev/null)" ]]; then
-      java "${SMOKE_SOURCE}" --check-demo-ports
+      java "${SMOKE_SOURCE}" --check-demo-ports "${SMOKE_OPTIONS[@]}"
     fi
     start_demo_dependencies
     assert_dependencies_healthy
@@ -110,13 +120,13 @@ case "${ACTION}" in
     require_docker
     require_java
     assert_dependencies_healthy
-    java "${SMOKE_SOURCE}" --health-only
+    java "${SMOKE_SOURCE}" --health-only "${SMOKE_OPTIONS[@]}"
     ;;
   smoke)
     require_docker
     require_java
     assert_dependencies_healthy
-    java "${SMOKE_SOURCE}"
+    java "${SMOKE_SOURCE}" "${SMOKE_OPTIONS[@]}"
     ;;
   stop)
     require_docker
@@ -131,6 +141,6 @@ case "${ACTION}" in
     printf '[PASS] Demo containers and demo-only data volumes removed\n'
     ;;
   *)
-    fail "Usage: scripts/demo.sh {start|ready|smoke|stop|clean} [--real-ai] [--enable-llm] [--rebuild] [--confirm-delete-data]"
+    fail "Usage: scripts/demo.sh {start|ready|smoke|stop|clean} [--stub] [--rebuild] [--confirm-delete-data]"
     ;;
 esac

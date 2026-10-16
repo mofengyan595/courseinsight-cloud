@@ -3,6 +3,7 @@ param(
     [string]$Action = "start",
     [switch]$ConfirmDeleteData,
     [switch]$Rebuild,
+    [switch]$Stub,
     [switch]$RealAi,
     [switch]$EnableLlm
 )
@@ -18,10 +19,10 @@ $DemoAiImage = "courseinsight-demo-ai-service:latest"
 $AiDescription = "deterministic AI Stub"
 $AiContainer = "courseinsight-demo-ai-stub"
 $ComposePrefix = @("compose", "--env-file", $DemoEnv, "-f", $DemoCompose)
-if ($EnableLlm) {
-    $RealAi = $true
+if ($Stub -and ($RealAi -or $EnableLlm)) {
+    throw "-Stub cannot be combined with -RealAi or -EnableLlm."
 }
-if ($RealAi) {
+if (-not $Stub) {
     $LlmEnv = Join-Path $RepositoryRoot ".env"
     if (Test-Path -LiteralPath $LlmEnv) {
         # Compose loads secrets directly; demo.env keeps the isolated database settings.
@@ -74,6 +75,9 @@ function Invoke-Compose([string[]]$Arguments) {
 }
 
 function Invoke-DemoJava([string[]]$Arguments) {
+    if ($Stub) {
+        $Arguments += "--stub"
+    }
     & java $SmokeSource @Arguments
     if ($LASTEXITCODE -ne 0) {
         throw "Demo verification failed."

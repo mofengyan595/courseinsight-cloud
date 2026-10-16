@@ -99,18 +99,16 @@ API 使用无状态 JWT 认证，校验签名、有效期和 issuer 后，再读
 
 ## 快速启动（Quick Start）
 
-Demo 在宿主机运行 Java 和前端，在 Docker 中运行 MySQL、Redis、RocketMQ 和固定延迟 100 ms 的 AI Stub。它使用独立的 Compose 项目、数据库和数据卷，无需模型权重、LLM 密钥或付费 API，也无需创建 `.env`。
-
-下文先以无需模型配置的 Stub 模式启动。使用本地模型时，将启动命令换成 `start -RealAi`，Java 仍使用 `demo` profile，已有 Demo 数据保留。
+默认在宿主机运行 Java 和前端，在 Docker 中运行 MySQL、Redis、RocketMQ 和真实 Python AI 服务，使用隔离的 Demo 数据库和数据卷。启动、检查和停止均不需要额外的 AI 开关。
 
 ### 环境要求
 
 - JDK 17，确保 `java` 可用；Maven 由仓库中的 Wrapper 提供。
 - 已启动的 Docker Desktop / Docker Engine，包含 Docker Compose v2。
 - Git；启动前端另需 Node.js 22.12+ 和 npm。
-- 默认端口：后端 `8080`、前端 `5173`、MySQL `3307`、Redis `6380`、NameServer `9876`、Broker `10911 / 10909`、MQ 指标 `5557`、AI Stub `8002`。Demo 与完整本地环境共用部分宿主机端口，不能按默认配置同时启动。
+- 默认端口：后端 `8080`、前端 `5173`、MySQL `3307`、Redis `6380`、NameServer `9876`、Broker `10911 / 10909`、MQ 指标 `5557`、AI 服务 `8002`。Demo 与完整本地环境共用部分宿主机端口，不能按默认配置同时启动。
 
-首次运行需要下载 Docker 镜像和 Maven/npm 依赖，耗时取决于网络。
+首次运行需要下载 Docker 镜像、PyTorch 和 Maven/npm 依赖。BERT 权重放置方式见 [AI 服务说明](courseinsight-ai-service/README.md#bert-权重)，未准备权重时使用 TF-IDF / 规则降级。
 
 ### Windows PowerShell
 
@@ -177,25 +175,15 @@ npm run dev
 
 ### 本地模型与大模型建议
 
-先按 [AI 服务说明](courseinsight-ai-service/README.md#bert-权重)放置 BERT 权重，再从仓库根目录启动：
-
-```powershell
-.\scripts\demo.ps1 start -RealAi
-```
-
-```bash
-bash scripts/demo.sh start --real-ai
-```
-
-该模式将 8002 的 Stub 换成 Python 服务，前端和 Java 的启动方式不变。真实 AI 模式会自动加载根 `.env`（若存在），再用 `demo.env` 覆盖数据库等演示配置。单条评价和 CSV 分析默认生成教学建议；需要大模型时，在未提交的 `.env` 中配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`。
+`start` 默认启动真实 AI 服务，并自动加载根 `.env`（若存在），再用 `demo.env` 覆盖数据库等演示配置。单条评价和 CSV 分析默认生成教学建议；需要大模型时，在未提交的 `.env` 中配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`，启动命令不变。
 
 大模型会接收评价文本、关键词与维度证据，可能消耗 API 额度。未配置或调用失败时返回本地建议；实际来源可在前端分析详情中查看。历史结果不会自动重算，密钥不得放入前端或提交到仓库。
 
 ### 验证运行结果与停止服务
 
-`ready` 检查依赖容器和 Java 健康状态。Stub 模式的 `smoke` 验证登录、课程创建、3 行 CSV 上传和成功结果，失败时返回非零退出码；每次运行都会创建课程与批次并保留记录。
+`ready` 检查依赖容器、Java 和真实 AI 服务。`smoke` 验证登录、课程创建、3 行 CSV 上传、成功计数和实际分析来源，并分别报告大模型建议与本地建议数量；失败时返回非零退出码，每次运行都会创建课程与批次并保留记录。
 
-真实 AI 模式使用 `ready -RealAi`（Bash：`ready --real-ai`），模型与建议来源通过[前端联调测试](courseinsight-web/README.md#测试与构建)检查。`/api/health` 仅检查存活；Actuator health 包含 MySQL、Redis，不包含 MQ/AI。
+仅需固定结果测试时显式使用 `start -Stub`、`ready -Stub`、`smoke -Stub`（Bash：`--stub`）；该模式不加载根 `.env`。`/api/health` 仅检查存活，完整检查使用 `ready`。浏览器联调命令见[前端说明](courseinsight-web/README.md#测试与构建)。
 
 结束时在前端和 Java 终端按 `Ctrl+C`，再从仓库根目录停止依赖，保留数据卷：
 

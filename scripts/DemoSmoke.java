@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 public class DemoSmoke {
 
     private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(30);
-    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(90);
+    private static final Duration POLL_TIMEOUT = Duration.ofMinutes(5);
 
     private final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
@@ -29,29 +29,35 @@ public class DemoSmoke {
     private final Path repositoryRoot;
     private final Map<String, String> demoSettings;
     private final String baseUrl;
+    private final boolean stub;
 
-    private DemoSmoke(Path repositoryRoot) throws IOException {
+    private DemoSmoke(Path repositoryRoot, boolean stub) throws IOException {
         this.repositoryRoot = repositoryRoot;
         this.demoSettings = loadDemoSettings(repositoryRoot.resolve("demo.env"));
         this.baseUrl = setting("DEMO_BASE_URL", "http://127.0.0.1:8080")
                 .replaceAll("/+$", "");
+        this.stub = stub;
     }
 
     public static void main(String[] args) {
         try {
-            DemoSmoke demo = new DemoSmoke(findRepositoryRoot());
-            if (args.length == 1 && "--check-demo-ports".equals(args[0])) {
+            List<String> arguments = List.of(args);
+            for (String argument : arguments) {
+                if (!List.of("--check-demo-ports", "--health-only", "--stub").contains(argument)) {
+                    throw new IllegalArgumentException(
+                            "Usage: java scripts/DemoSmoke.java [--check-demo-ports|--health-only] [--stub]"
+                    );
+                }
+            }
+            DemoSmoke demo = new DemoSmoke(findRepositoryRoot(), arguments.contains("--stub"));
+            if (arguments.contains("--check-demo-ports")) {
                 demo.checkDemoPorts();
                 return;
             }
-            if (args.length == 1 && "--health-only".equals(args[0])) {
+            if (arguments.contains("--health-only")) {
                 demo.checkApplicationHealth();
+                demo.checkAiHealth();
                 return;
-            }
-            if (args.length != 0) {
-                throw new IllegalArgumentException(
-                        "Usage: java scripts/DemoSmoke.java [--check-demo-ports|--health-only]"
-                );
             }
             demo.runSmokeFlow();
         } catch (Exception exception) {
@@ -115,6 +121,7 @@ public class DemoSmoke {
     private void runSmokeFlow() throws Exception {
         long startedAt = System.nanoTime();
         checkApplicationHealth();
+        checkAiHealth();
 
         String username = requiredSetting("BOOTSTRAP_ADMIN_USERNAME");
         String password = requiredSetting("BOOTSTRAP_ADMIN_PASSWORD");
@@ -173,25 +180,61 @@ public class DemoSmoke {
         requireStatus(results, 200, "batch results");
         long resultTotal = requiredLong(results.body(), "total");
         int successful = countFieldValue(results.body(), "taskStatus", "SUCCESS");
-        int deterministic = countFieldValue(
-                results.body(),
-                "sentimentSource",
-                "performance_stub"
-        );
+        List<String> expectedSources = stub
+                ? List.of("performance_stub")
+                : List.of("bert", "bert+rule", "tfidf", "tfidf+rule", "rule");
+        int recognized = expectedSources.stream()
+                .mapToInt(source -> countFieldValue(results.body(), "sentimentSource", source))
+                .sum();
+        int llmAdvice = countFieldValue(results.body(), "adviceSource", "llm_api");
+        int localAdvice = countFieldValue(results.body(), "adviceSource", "local_fallback");
+        int validAdvice = stub
+                ? countFieldValue(results.body(), "adviceSource", "performance_stub")
+                : llmAdvice + localAdvice;
         if (resultTotal != expectedRows
                 || successful != expectedRows
-                || deterministic != expectedRows) {
+                || recognized != expectedRows
+                || validAdvice != expectedRows) {
             throw new IllegalStateException(
                     "Unexpected results: total=" + resultTotal
                             + ", successful=" + successful
-                            + ", deterministic=" + deterministic
+                            + ", recognizedSources=" + recognized
+                            + ", validAdvice=" + validAdvice
             );
         }
         System.out.println("[PASS] Retrieved " + resultTotal
-                + " deterministic analysis results");
+                + (stub ? " deterministic Stub results" : " real AI analysis results"));
+        if (!stub) {
+            System.out.println("[INFO] Advice sources: llm_api=" + llmAdvice
+                    + ", local_fallback=" + localAdvice);
+        }
 
         double elapsedSeconds = (System.nanoTime() - startedAt) / 1_000_000_000.0;
         System.out.printf("[PASS] Recruiting demo smoke flow completed in %.2f s%n", elapsedSeconds);
+    }
+
+    private void checkAiHealth() throws IOException, InterruptedException {
+        String aiBaseUrl = setting("AI_SERVICE_BASE_URL", "http://127.0.0.1:8002")
+                .replaceAll("/+$", "");
+        HttpResponse<String> response = send(HttpRequest.newBuilder()
+                .uri(URI.create(aiBaseUrl + "/health"))
+                .timeout(REQUEST_TIMEOUT)
+                .GET()
+                .build());
+        requireStatus(response, 200, "AI health");
+        requireFieldValue(response.body(), "status", "UP", "AI health");
+        requireFieldValue(response.body(), "service", stub
+                ? "courseinsight-performance-ai-stub"
+                : "courseinsight-ai-service", "AI service mode");
+        if (!stub) {
+            String backend = requiredString(response.body(), "activeBackend");
+            if (!List.of("bert", "tfidf", "rule").contains(backend)) {
+                throw new IllegalStateException("Unexpected AI backend: " + backend);
+            }
+            System.out.println("[PASS] Real AI service is UP (backend=" + backend + ")");
+        } else {
+            System.out.println("[PASS] Deterministic AI Stub is UP");
+        }
     }
 
     private void waitForCompletion(long batchId, String token, int expectedRows)

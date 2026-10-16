@@ -31,13 +31,13 @@ result 字段：id、language、sentiment、confidence、sentimentSource、senti
 
 ## 本地运行与验证
 
-依赖、Java demo profile、Vue 启动方式见 [前端 README](../courseinsight-web/README.md)。不需要真实 BERT 或外部收费服务。
+依赖、Java demo profile、Vue 启动方式见 [前端 README](../courseinsight-web/README.md)。以下固定结果验证使用 `start -Stub` 启动依赖，不需要 BERT 或外部收费服务；普通 `start` 默认使用真实 AI。
 
 ```powershell
 # 仓库根目录，Docker Engine 已就绪
 .\scripts\test.ps1 -Suite fast
 .\scripts\test.ps1 -Suite integration
-.\scripts\demo.ps1 smoke
+.\scripts\demo.ps1 smoke -Stub
 
 Set-Location courseinsight-web
 npm run lint

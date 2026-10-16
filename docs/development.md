@@ -261,7 +261,7 @@ JWT 使用 HS256，校验签名、有效期和 issuer 后，认证转换器读�
 
 这些机制分别由事务、并发领取、旧执行写入、租约恢复和缓存集成测试覆盖。
 默认 Java 测试使用真实 MySQL/Redis Testcontainers，但 MQ/AI 主要使用 mock；
-Demo smoke 验证真实 RocketMQ 与 AI Stub 路径，不验证真实模型质量、所有故障窗口或多实例容量。
+Demo smoke 默认验证真实 RocketMQ 与 AI 服务路径；`-Stub` 模式验证固定结果。两者都不评价模型质量、所有故障窗口或多实例容量。
 
 ## 运行配置与排错
 
@@ -269,12 +269,12 @@ Demo smoke 验证真实 RocketMQ 与 AI Stub 路径，不验证真实模型质�
 
 | Profile | 配置来源 | 依赖生命周期 | AI 与账号 |
 | --- | --- | --- | --- |
-| `demo` | 仓库中的 `demo.env` | 脚本管理 `compose.demo.yaml`，Boot 不自动启停容器 | 8002 Stub，初始化公开演示管理员 |
+| `demo` | `demo.env`；AI 可加载根 `.env` | 脚本管理 Compose，Boot 不自动启停容器 | 8002 真实 AI，初始化公开演示管理员；`-Stub` 可显式切换 |
 | `local` | 未提交的 `.env` | Boot Compose `start-only`，Java 退出后依赖保留 | 8001 完整 AI 服务，管理员初始化默认关闭 |
 | 测试 | `src/test/resources` | 不启动项目 Compose；集成测试按需启动 Testcontainers | HTTP/MQ 边界主要使用 mock |
 | 默认 | 环境变量 | 不自动启动 Compose | 依赖连接与认证配置由运行方提供 |
 
-前端真实 AI 联调可继续使用 `demo` profile：运行 `.\scripts\demo.ps1 start -RealAi`（Bash：`bash scripts/demo.sh start --real-ai`），叠加 `compose.demo-ai.yaml`，仅将 AI 替换为完整 Python 服务并保持 8002 端口，复用 Demo 数据卷。检查、停止时携带相同选项；去掉选项重新 `start` 可恢复 Stub。真实 AI 模式自动加载根 `.env`（若存在），再由 `demo.env` 覆盖演示配置；教学建议默认开启，未配置密钥或调用失败时使用本地模板。配置大模型后，评价及分析证据会发送到该服务，实际调用成功应检查结果 `adviceSource=llm_api`。详见[前端说明](../courseinsight-web/README.md#安装与运行)。
+运行 `.\scripts\demo.ps1 start`（Bash：`bash scripts/demo.sh start`）默认使用 `compose.demo.yaml` 和 `compose.demo-ai.yaml` 启动真实 AI，Java 使用 `demo` profile。`ready` / `smoke` / `stop` 均不需要额外选项。启动时自动加载根 `.env`（若存在），再由 `demo.env` 覆盖演示配置；教学建议默认开启，未配置密钥或调用失败时使用本地模板。配置大模型后，评价及分析证据会发送到该服务，实际成功应检查结果 `adviceSource=llm_api`。仅需固定结果时，启动、检查与 smoke 显式增加 `-Stub`（Bash：`--stub`）。详见[前端说明](../courseinsight-web/README.md#安装与运行)。
 
 MySQL 由 Flyway 执行仓库现有的 V1–V16 迁移。Demo 与 local 使用独立数据卷，但默认宿主机端口有重合，
 切换前应停止对应环境；不要用删除数据卷解决端口冲突。
@@ -286,7 +286,7 @@ MySQL 由 Flyway 执行仓库现有的 V1–V16 迁移。Demo 与 local 使用�
 | MySQL / Redis | 3307 / 6380 | Compose healthcheck |
 | RocketMQ NameServer | 9876 | Compose TCP healthcheck |
 | RocketMQ Broker | 10911、10909；指标 5557 | Broker TCP healthcheck；指标不能代替业务验证 |
-| AI Stub / 完整 AI | 8002 / 8001 | `/health`；Stub 返回 `deterministic: true` |
+| Demo AI / local AI | 8002 / 8001 | `/health` 返回实际后端；显式 Stub 模式返回 `deterministic: true` |
 | Prometheus / Grafana | 9090 / 3000 | 可选 `observability` profile |
 
 `/api/health` 仅用于存活检查。`scripts/demo.* ready` 同时检查五个依赖容器与 Java Actuator，
@@ -308,9 +308,9 @@ docker compose --env-file demo.env -f compose.yaml --profile observability stop 
 监控地址和指标含义见[本地监控](#本地监控)。前端静态构建与同源代理示例见[前端部署说明](../courseinsight-web/README.md#部署)，
 仓库没有验证生产服务器部署或多实例集群运行。
 
-### Stub 构建与 Docker 网络
+### 镜像构建与 Docker 网络
 
-Demo 的 `start` 优先复用本地 Stub 镜像。Stub 源码变化后，可从仓库根目录强制重建：
+`start` 优先复用本地 AI 镜像。源码变化后，可从仓库根目录强制重建：
 
 ```powershell
 .\scripts\demo.ps1 start -Rebuild
@@ -323,6 +323,8 @@ bash scripts/demo.sh start --rebuild
 首次构建的 `failed to fetch oauth token` 表示 Docker 访问 `auth.docker.io` / `registry-1.docker.io` 失败，
 应检查 Docker 的网络、代理与 DNS；该错误不来自 Java 或项目登录凭据。
 Docker Engine 未启动时应先启动引擎；端口冲突时应先识别并停止冲突服务，再重试。
+
+smoke 校验脚本的离线回归可用 `python -m unittest discover -s scripts/tests -p test_demo_smoke.py -v` 运行，需要 Python 和 JDK 17。测试使用临时本地 HTTP 服务，不需要 Docker，也不调用外部模型。
 
 ### 清理 Demo 数据
 

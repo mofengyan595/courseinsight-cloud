@@ -9,7 +9,7 @@
 需要 Node.js 22.12+（本次使用 22.17.1）、JDK 17、Docker Engine 和 Compose v2。在仓库根目录启动隔离 Demo 依赖和真实 AI 服务：
 
 ```powershell
-.\scripts\demo.ps1 start -RealAi
+.\scripts\demo.ps1 start
 ```
 
 第二个终端启动后端并保持运行：
@@ -29,15 +29,15 @@ npm run dev
 
 打开 <http://127.0.0.1:5173>，使用根 README 中的公开、本地 Demo 账号登录。
 
-`-RealAi` 使用 `compose.demo-ai.yaml` 将 Demo 的 Stub 替换为 Python AI 服务，仍监听 8002；Java 继续使用 `demo` profile，已有 Demo 数据卷保留。Linux/macOS 使用 `bash scripts/demo.sh start --real-ai`。首次构建需要下载 Python/PyTorch 依赖；代码更新后加 `-Rebuild`（Bash 为 `--rebuild`）。
+`start` 默认启动真实 Python AI 服务，监听 8002；Java 使用 `demo` profile，已有 Demo 数据卷保留。Linux/macOS 使用 `bash scripts/demo.sh start`。首次构建需要下载 Python/PyTorch 依赖；代码更新后加 `-Rebuild`（Bash 为 `--rebuild`）。
 
 BERT 权重放置路径见 [AI 服务说明](../courseinsight-ai-service/README.md)。权重或运行依赖不可用时按原有策略降级到 TF-IDF / 规则，实际来源可在单条和批次分析详情查看。
 
-教学建议默认开启。真实 AI 模式会自动加载根 `.env`（若存在），再用 `demo.env` 覆盖数据库等演示配置。在根 `.env` 配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL` 后，仍使用 `start -RealAi`（Bash：`start --real-ai`），无需额外开关。也可从启动终端提供 LLM 环境变量；密钥只传给 AI 容器，前端不接触密钥。旧的 `-EnableLlm` / `--enable-llm` 参数保留兼容。
+教学建议默认开启。启动时自动加载根 `.env`（若存在），再用 `demo.env` 覆盖数据库等演示配置。在根 `.env` 配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL` 后，仍使用 `start`，无需额外开关。也可从启动终端提供 LLM 环境变量；密钥只传给 AI 容器，前端不接触密钥。
 
 启用后会将新评价文本、关键词和维度证据发送到配置的模型服务，可能消耗 API 额度。未配置或调用失败时保留本地兜底。查看 `llmConfigured=true` 只能证明已配置；应以新分析结果的 `adviceSource=llm_api` 确认实际调用成功。历史结果不会随配置变化自动重算。若只需要本地建议，清除根 `.env` 和启动终端中的 `LLM_API_KEY` 后重新启动真实 AI 服务。
 
-仅需固定结果的离线流程演示时，去掉 `-RealAi` 即可恢复 Stub。切换只影响后续任务，已成功保存的历史分析不会自动重新计算。检查或停止真实 AI Demo 时使用 `.\scripts\demo.ps1 ready -RealAi` / `.\scripts\demo.ps1 stop -RealAi`。
+检查或停止服务直接使用 `.\scripts\demo.ps1 ready` / `.\scripts\demo.ps1 stop`。仅需固定结果测试时运行 `.\scripts\demo.ps1 start -Stub`（Bash：`bash scripts/demo.sh start --stub`），对应的 `ready` / `smoke` 也加 `-Stub`。切换只影响后续任务，历史分析不会自动重新计算。
 
 演示路径：登录 → 创建课程 → 课程详情 → 批量分析评价 → 上传 CSV → 等待任务终态 → 展开结果或查看详情 → 下载 CSV → 数据看板。
 
@@ -123,7 +123,7 @@ Vitest 覆盖登录成功/失败、会话过期、角色、业务错误、401/40
 # 不依赖后端的异常交互契约测试，响应仅在测试中注入
 npm run test:e2e -- tests/e2e/ui-states.spec.ts
 
-# 后端 demo 已启动时，由终端变量提供隔离演示账号
+# 先在仓库根目录以 start -Stub 启动依赖，再启动 Java demo
 $env:E2E_USERNAME = '<本地演示用户名>'
 $env:E2E_PASSWORD = '<本地演示密码>'
 npm run test:e2e -- tests/e2e/demo.spec.ts

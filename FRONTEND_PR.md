@@ -19,7 +19,7 @@
 
 ## 启动与部署
 
-仓库根目录 `scripts/demo.ps1 start` → `courseinsight-server` 中以 demo profile 启动 Java → `courseinsight-web` 中 `npm ci`、`npm run dev` → 打开 http://127.0.0.1:5173。
+复现本记录的固定结果流程：仓库根目录 `scripts/demo.ps1 start -Stub` → `courseinsight-server` 中以 demo profile 启动 Java → `courseinsight-web` 中 `npm ci`、`npm run dev` → 打开 http://127.0.0.1:5173。普通 `start` 当前默认使用真实 AI 服务。
 
 Vite 将 `/api` 代理到 localhost:8080，无后端 CORS 改动。生产构建输出 dist，提供 Nginx 同源 `/api` 代理和 history fallback 示例。会话安全边界、技术结构和完整命令见 [前端 README](courseinsight-web/README.md)。
 
