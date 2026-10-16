@@ -6,10 +6,10 @@
 
 ## 安装与运行
 
-需要 Node.js 22.12+（本次使用 22.17.1）、JDK 17、Docker Engine 和 Compose v2。在仓库根目录启动隔离 Demo 依赖：
+需要 Node.js 22.12+（本次使用 22.17.1）、JDK 17、Docker Engine 和 Compose v2。在仓库根目录启动隔离 Demo 依赖和真实 AI 服务：
 
 ```powershell
-.\scripts\demo.ps1 start
+.\scripts\demo.ps1 start -RealAi
 ```
 
 第二个终端启动后端并保持运行：
@@ -29,11 +29,21 @@ npm run dev
 
 打开 <http://127.0.0.1:5173>，使用根 README 中的公开、本地 Demo 账号登录。
 
+`-RealAi` 使用 `compose.demo-ai.yaml` 将 Demo 的 Stub 替换为 Python AI 服务，仍监听 8002；Java 继续使用 `demo` profile，已有 Demo 数据卷保留。Linux/macOS 使用 `bash scripts/demo.sh start --real-ai`。首次构建需要下载 Python/PyTorch 依赖；代码更新后加 `-Rebuild`（Bash 为 `--rebuild`）。
+
+BERT 权重放置路径见 [AI 服务说明](../courseinsight-ai-service/README.md)。权重或运行依赖不可用时按原有策略降级到 TF-IDF / 规则，实际来源可在单条和批次分析详情查看。
+
+教学建议默认开启。真实 AI 模式会自动加载根 `.env`（若存在），再用 `demo.env` 覆盖数据库等演示配置。在根 `.env` 配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL` 后，仍使用 `start -RealAi`（Bash：`start --real-ai`），无需额外开关。也可从启动终端提供 LLM 环境变量；密钥只传给 AI 容器，前端不接触密钥。旧的 `-EnableLlm` / `--enable-llm` 参数保留兼容。
+
+启用后会将新评价文本、关键词和维度证据发送到配置的模型服务，可能消耗 API 额度。未配置或调用失败时保留本地兜底。查看 `llmConfigured=true` 只能证明已配置；应以新分析结果的 `adviceSource=llm_api` 确认实际调用成功。历史结果不会随配置变化自动重算。若只需要本地建议，清除根 `.env` 和启动终端中的 `LLM_API_KEY` 后重新启动真实 AI 服务。
+
+仅需固定结果的离线流程演示时，去掉 `-RealAi` 即可恢复 Stub。切换只影响后续任务，已成功保存的历史分析不会自动重新计算。检查或停止真实 AI Demo 时使用 `.\scripts\demo.ps1 ready -RealAi` / `.\scripts\demo.ps1 stop -RealAi`。
+
 演示路径：登录 → 创建课程 → 课程详情 → 批量分析评价 → 上传 CSV → 等待任务终态 → 展开结果或查看详情 → 下载 CSV → 数据看板。
 
 样例：[`public/analysis-batch-sample.csv`](public/analysis-batch-sample.csv)。使用 UTF-8，表头 `content,rating`，最多 2MB、200 条评价；content 非空且不超过 2000 字符，rating 为 1–5 整数。含逗号或换行的内容用双引号包围。完整内容和行级错误由后端校验。
 
-普通本地开发可改用现有 `local` profile，配置和账号准备见 [`../docs/development.md`](../docs/development.md)。前端固定请求同源 `/api`，Vite 开发代理目标为 `http://localhost:8080`，无需修改后端 CORS。前端不读取根目录 `.env`，不需要真实模型、API Key 或付费服务。
+普通本地开发也可使用现有 `local` profile，配置和账号准备见 [`../docs/development.md`](../docs/development.md)。前端固定请求同源 `/api`，Vite 开发代理目标为 `http://localhost:8080`，无需修改后端 CORS。前端不读取根目录 `.env`，模型与 LLM 配置仅属于服务端。
 
 结束时在前端、Java 终端按 Ctrl+C；仓库根目录 `scripts/demo.ps1 stop` 停止依赖并保留数据卷。
 
@@ -77,7 +87,7 @@ JSON 响应为 `{ code, message, data }`，成功码 0；分页为 `{ page, size
 
 retry-failed 当前只恢复死信任务；requeuedCount=0 表示没有符合条件的任务，不代表分析成功。部分失败有独立提示和失败详情，不覆盖已有成功结果。
 
-单条评价分析按点击加载，列表不会逐条请求。WAITING/PROCESSING 显示“分析中”，按同样的间隔与退避规则轮询；SUCCESS/FAILED 停止。关闭抽屉、切换评论或离开课程页会取消请求并丢弃迟到响应。完整结果只在 SUCCESS 返回，其余状态 result 为 null；单条查询不提供虚构的完成百分比或重试接口。
+单条评价分析按点击加载，列表不会逐条请求。WAITING/PROCESSING 显示“分析中”，按同样的间隔与退避规则轮询；SUCCESS/FAILED 停止。关闭抽屉、切换评论或离开课程页会取消请求并丢弃迟到响应。完整结果只在 SUCCESS 返回，其余状态 result 为 null；单条查询不提供虚构的完成百分比或重试接口。抽屉先展示原文、分析摘要、情感与关键词，再展示建议卡片和维度证据；模型来源、时间、重试与原始返回数据收在“分析与运行信息”中，默认折叠。
 
 ## 目录
 
@@ -123,6 +133,18 @@ Remove-Item Env:E2E_USERNAME, Env:E2E_PASSWORD
 ```
 
 没有账号时真实 Demo 测试明确 skip，不算端到端通过。没有 Chrome 时可在 playwright.config.ts 更换已安装的浏览器 channel。测试不提交缓存、登录状态、下载临时文件或 trace。
+
+真实 AI 已启动时，单独运行模型联调测试（会在隔离 Demo 中创建一门课程、单条评价和两行 CSV 批次，保留记录便于查看）：
+
+```powershell
+$env:E2E_USERNAME = '<本地演示用户名>'
+$env:E2E_PASSWORD = '<本地演示密码>'
+$env:E2E_REAL_AI = '1'
+npm run test:e2e -- tests/e2e/real-ai.spec.ts
+Remove-Item Env:E2E_USERNAME, Env:E2E_PASSWORD, Env:E2E_REAL_AI
+```
+
+测试默认要求实际后端为 BERT，同时检查网页结果、任务成功计数、持久化模型来源、CSV 下载与刷新恢复，不使用固定情感或置信度。启用外部建议后设置 `E2E_ADVICE_SOURCE=llm_api`，严格要求三条测试评价均获得大模型建议；本地验证设置为 `local_fallback` 时也要求外部 LLM 未配置。若有意验证降级后端，设置 `E2E_AI_BACKEND=tfidf` 或 `rule`；自定义 AI 端口时设置 `E2E_AI_URL`。原 `demo.spec.ts`、`comment-analysis-demo.spec.ts` 保留 Stub 固定结果断言，应在 Stub 模式运行。
 
 本次实际结果、截图和验证边界见 [`../docs/frontend-validation.md`](../docs/frontend-validation.md)。AI Stub 验证完整 HTTP/异步链路，不代表真实 BERT 推理验证。
 

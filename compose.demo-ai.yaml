@@ -1,0 +1,24 @@
+# Use with compose.demo.yaml: keep the isolated demo database and the Java AI URL.
+# Only the AI service is replaced; model weights stay on the host.
+services:
+  ai-service:
+    image: courseinsight-demo-real-ai-service:latest
+    build:
+      context: ./courseinsight-ai-service
+    container_name: courseinsight-demo-ai-service
+    environment:
+      SENTIMENT_BACKEND: ${SENTIMENT_BACKEND:-AUTO}
+      BERT_MODEL_PATH: models/bert_model_final
+      BERT_DEVICE: cpu
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://chat.ecnu.edu.cn/open/api/v1}
+      LLM_MODEL: ${LLM_MODEL:-ecnu-plus}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-20}
+      LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.2}
+      LLM_TOP_P: ${LLM_TOP_P:-0.9}
+      LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-1024}
+      LLM_RETRIES: ${LLM_RETRIES:-2}
+    volumes:
+      - ./courseinsight-ai-service/models/bert_model_final:/app/models/bert_model_final:ro
+    healthcheck:
+      start_period: 60s

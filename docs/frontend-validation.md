@@ -1,5 +1,23 @@
 # Vue 前端验收记录
 
+## 2026-10-16 单条分析、登录页与大模型建议
+
+- 单条分析改为原文卡片、摘要与情感概览、建议卡片、维度证据；兼容建议行动类型的 camelCase / snake_case。技术参数和原始返回数据默认折叠；本地兜底与大模型建议明确区分。登录页改为浅紫色双栏布局，手机端使用单栏表单。未修改认证、对象权限和异步轮询流程。
+- `npm run lint`、`npm run typecheck`、`npm run build` 通过；`npm test` 45 项通过，包含结构化建议、缺省字段、非结构化内容与纯文本渲染检查；构建仍有原有大 chunk 提示。
+- Playwright 异常交互测试 12 项通过；本地 BERT / 本地建议完整联调 1 项通过，检查前先断言 `llmConfigured=false`。桌面、390px 手机端登录和单条分析截图已实际查看，未发现横向溢出。
+- 真实 AI 模式默认生成教学建议，由 Compose 自动加载根 `.env`（若存在），再用 `demo.env` 覆盖隔离演示配置；没有把密钥传给前端或输出到日志。`-EnableLlm` / `--enable-llm` 保留兼容。PowerShell / Bash 语法与 Compose 配置校验通过。
+- 用户明确授权后启用配置的 `chat.ecnu.edu.cn / ecnu-plus`。`E2E_ADVICE_SOURCE=llm_api` 的真实浏览器联调 1 项通过（约 46 秒）：单条评价及两行 CSV 均成功，三条结果的教学建议来源全部为 `llm_api`，情感来源为本地 BERT；同时检查建议卡片、技术信息折叠、下载与刷新恢复。
+- 历史结果未重算，测试记录保留在隔离 Demo 数据库；未修改 Java / Python 业务代码，未重跑全部 Java 测试。此次联调验证调用与展示，不评价模型准确率或建议质量。以下为此前同日及 2026-10-11 的验证记录。
+
+## 2026-10-16 真实 AI 联调补充
+
+- `.\scripts\demo.ps1 start -RealAi` / `ready -RealAi` 通过；保留隔离 Demo 数据卷，8002 从 Stub 切换为当前源码的 Python 服务。首次完整镜像构建的依赖下载较慢，本次核对已有镜像的依赖清单、模型与源码哈希后，复用依赖并复制当前源码完成构建；未完成从空缓存构建验证。
+- `/health` 实际返回 `activeBackend=bert`、`bertReady=true`、`llmConfigured=false`。
+- Playwright `tests/e2e/real-ai.spec.ts`：1 项通过（约 35 秒）。网页登录、创建课程、提交单条评价、查看分析、上传两行 CSV、查看详情、CSV 下载及刷新恢复均经过真实 Java / RocketMQ / Python 服务。
+- 单条任务 `SUCCESS`；批次 `COMPLETED`，`totalCount=2`、`successCount=2`、`failedCount=0`；逐条检查持久化情感来源为 BERT（允许原有规则修正），并检查置信度范围、课程维度、关键词、建议及网页来源展示。
+- `npm run lint`、`npm run typecheck`、`npm test`（43 项）、`npm run build` 通过；构建仍有原有大 chunk 提示。Compose 配置校验、PowerShell / Bash 语法检查通过。
+- 测试创建的课程、单条评价和批次保留在隔离 Demo 数据库，便于页面查看。未启用付费 LLM；建议来源为 `local_fallback`，未评价模型准确率、建议质量或性能。本次未修改 Java / Python 业务代码，未重跑全部 Java 测试。下面保留 2026-10-11 的 Stub 验证记录。
+
 日期：2026-10-11。环境：Windows、Node.js 22.17.1、JDK 17、Docker Desktop、Chrome。
 
 ## 已执行检查

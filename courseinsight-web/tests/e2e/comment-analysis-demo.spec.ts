@@ -147,7 +147,9 @@ test('真实 Stub：学生评价 → RocketMQ → 教师逐条分析，含跨课
   ).toBeVisible({ timeout: 45000 })
   await expect(drawer.getByText('中性', { exact: false })).toBeVisible()
   await expect(drawer.getByText(/90.0%/)).toBeVisible()
+  await drawer.getByText('分析与运行信息', { exact: true }).click()
   await expect(drawer.getByText(/情感来源：performance_stub/)).toBeVisible()
+  await drawer.getByText('分析与运行信息', { exact: true }).click()
   await expect(drawer.getByText('教学改进建议', { exact: true })).toBeVisible()
   const finalQueries = analysisQueries
   await page.waitForTimeout(2300)

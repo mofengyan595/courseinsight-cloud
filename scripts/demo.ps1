@@ -2,7 +2,9 @@ param(
     [ValidateSet("start", "ready", "smoke", "stop", "clean")]
     [string]$Action = "start",
     [switch]$ConfirmDeleteData,
-    [switch]$Rebuild
+    [switch]$Rebuild,
+    [switch]$RealAi,
+    [switch]$EnableLlm
 )
 
 Set-StrictMode -Version Latest
@@ -13,13 +15,29 @@ $DemoEnv = Join-Path $RepositoryRoot "demo.env"
 $DemoCompose = Join-Path $RepositoryRoot "compose.demo.yaml"
 $SmokeSource = Join-Path $PSScriptRoot "DemoSmoke.java"
 $DemoAiImage = "courseinsight-demo-ai-service:latest"
+$AiDescription = "deterministic AI Stub"
+$AiContainer = "courseinsight-demo-ai-stub"
 $ComposePrefix = @("compose", "--env-file", $DemoEnv, "-f", $DemoCompose)
+if ($EnableLlm) {
+    $RealAi = $true
+}
+if ($RealAi) {
+    $LlmEnv = Join-Path $RepositoryRoot ".env"
+    if (Test-Path -LiteralPath $LlmEnv) {
+        # Compose loads secrets directly; demo.env keeps the isolated database settings.
+        $ComposePrefix = @("compose", "--env-file", $LlmEnv, "--env-file", $DemoEnv, "-f", $DemoCompose)
+    }
+    $ComposePrefix += @("-f", (Join-Path $RepositoryRoot "compose.demo-ai.yaml"))
+    $DemoAiImage = "courseinsight-demo-real-ai-service:latest"
+    $AiDescription = "real AI service (BERT / TF-IDF / rules)"
+    $AiContainer = "courseinsight-demo-ai-service"
+}
 $HealthyContainers = @(
     "courseinsight-demo-mysql",
     "courseinsight-demo-redis",
     "courseinsight-demo-rocketmq-nameserver",
     "courseinsight-demo-rocketmq-broker",
-    "courseinsight-demo-ai-stub"
+    $AiContainer
 )
 
 function Require-Command([string]$Name, [string]$InstallHint) {
@@ -69,16 +87,16 @@ function Test-DemoAiImageExists {
 
 function Start-DemoDependencies {
     if (-not $Rebuild -and (Test-DemoAiImageExists)) {
-        Write-Host "[INFO] Reusing local deterministic AI Stub image (offline-safe)"
+        Write-Host "[INFO] Reusing local $AiDescription image"
         Invoke-Compose @("up", "--detach", "--no-build", "--wait", "--wait-timeout", "180")
         return
     }
 
-    Write-Host "[INFO] Building deterministic AI Stub; first build requires Docker Hub access"
+    Write-Host "[INFO] Building $AiDescription; first build requires network access"
     try {
         Invoke-Compose @("up", "--detach", "--build", "--wait", "--wait-timeout", "180")
     } catch {
-        throw "AI Stub image is unavailable or rebuild failed. Check Docker access to auth.docker.io and registry-1.docker.io, then retry. $($_.Exception.Message)"
+        throw "$AiDescription image is unavailable or rebuild failed. Check Docker registry and dependency download access, then retry. $($_.Exception.Message)"
     }
 }
 
@@ -96,7 +114,7 @@ function Assert-DependenciesHealthy {
             throw "Demo container '$container' is not healthy (health=$($parts[1]))."
         }
     }
-    Write-Host "[PASS] MySQL, Redis, RocketMQ and deterministic AI Stub are healthy" -ForegroundColor Green
+    Write-Host "[PASS] MySQL, Redis, RocketMQ and $AiDescription are healthy" -ForegroundColor Green
 }
 
 try {

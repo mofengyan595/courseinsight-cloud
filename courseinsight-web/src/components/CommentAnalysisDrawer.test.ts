@@ -129,6 +129,70 @@ afterEach(() => {
 })
 
 describe('按需评价分析抽屉', () => {
+  it('将建议和证据显示为中文卡片，兼容 camelCase 与 snake_case 行动类型', async () => {
+    const value = response(1, 'SUCCESS')
+    value.result!.adviceSource = 'llm_api'
+    value.result!.advice = {
+      summary: '案例清楚，可以补充实践。',
+      problems: [
+        {
+          aspect: '实践',
+          description: '实践机会不足',
+          evidence: '希望增加实践',
+        },
+      ],
+      suggestions: [
+        {
+          aspect: '实践',
+          suggestion: '增加一次课堂练习',
+          evidence: '希望增加实践',
+          actionType: 'improve',
+        },
+        {
+          aspect: '案例',
+          suggestion: '保留案例讲解',
+          evidence: '案例清晰',
+          action_type: 'maintain',
+        },
+      ],
+    }
+    vi.mocked(api.commentAnalysis).mockResolvedValue(value)
+    await mount()
+    expect(host.querySelectorAll('.suggestion-card')).toHaveLength(2)
+    expect(host.querySelector('.overview-card')?.textContent).toContain(
+      '案例清楚，可以补充实践。',
+    )
+    expect(host.querySelector('.suggestion-list')?.textContent).toContain(
+      '建议优化',
+    )
+    expect(host.querySelector('.suggestion-list')?.textContent).toContain(
+      '保持优势',
+    )
+    expect(host.querySelector('.source-badge')?.textContent).toBe('大模型建议')
+    expect(host.querySelector('.technical-details')?.hasAttribute('open')).toBe(
+      false,
+    )
+    expect(host.querySelector('.report-section')?.textContent).not.toMatch(
+      /actionType|action_type|suggestions|source:/,
+    )
+  })
+  it('兼容缺省与非结构化字段，将文本作为纯文本展示', async () => {
+    const value = response(1, 'SUCCESS')
+    value.result!.advice = '<img src=x onerror=alert(1)>'
+    value.result!.topicEvidence = null
+    value.result!.keywords = { unexpected: true }
+    value.result!.topics = null
+    value.result!.confidence = null
+    value.result!.adviceSource = 'local_fallback'
+    vi.mocked(api.commentAnalysis).mockResolvedValue(value)
+    await mount()
+    expect(host.querySelector('.report-section')?.textContent).toContain(
+      '<img src=x onerror=alert(1)>',
+    )
+    expect(host.querySelector('img')).toBeNull()
+    expect(host.textContent).toContain('暂无维度证据')
+    expect(host.textContent).toContain('本次使用本地建议')
+  })
   it('WAITING → PROCESSING → SUCCESS 自动展示结果并在终态停止', async () => {
     vi.mocked(api.commentAnalysis)
       .mockResolvedValueOnce(response(1, 'WAITING'))

@@ -2,20 +2,42 @@
 set -Eeuo pipefail
 
 ACTION="${1:-start}"
-OPTION="${2:-}"
+REAL_AI=false
+REBUILD=false
+CONFIRM_DELETE_DATA=false
+for option in "${@:2}"; do
+  case "${option}" in
+    --real-ai) REAL_AI=true ;;
+    --enable-llm) REAL_AI=true ;;
+    --rebuild) REBUILD=true ;;
+    --confirm-delete-data) CONFIRM_DELETE_DATA=true ;;
+    *) printf '[FAIL] Unknown option: %s\n' "${option}" >&2; exit 1 ;;
+  esac
+done
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPOSITORY_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 DEMO_ENV="${REPOSITORY_ROOT}/demo.env"
 DEMO_COMPOSE="${REPOSITORY_ROOT}/compose.demo.yaml"
 SMOKE_SOURCE="${SCRIPT_DIR}/DemoSmoke.java"
 DEMO_AI_IMAGE="courseinsight-demo-ai-service:latest"
+AI_DESCRIPTION="deterministic AI Stub"
+AI_CONTAINER="courseinsight-demo-ai-stub"
 COMPOSE=(docker compose --env-file "${DEMO_ENV}" -f "${DEMO_COMPOSE}")
+if [[ "${REAL_AI}" == true && -f "${REPOSITORY_ROOT}/.env" ]]; then
+  COMPOSE=(docker compose --env-file "${REPOSITORY_ROOT}/.env" --env-file "${DEMO_ENV}" -f "${DEMO_COMPOSE}")
+fi
+if [[ "${REAL_AI}" == true ]]; then
+  COMPOSE+=(-f "${REPOSITORY_ROOT}/compose.demo-ai.yaml")
+  DEMO_AI_IMAGE="courseinsight-demo-real-ai-service:latest"
+  AI_DESCRIPTION="real AI service (BERT / TF-IDF / rules)"
+  AI_CONTAINER="courseinsight-demo-ai-service"
+fi
 HEALTHY_CONTAINERS=(
   courseinsight-demo-mysql
   courseinsight-demo-redis
   courseinsight-demo-rocketmq-nameserver
   courseinsight-demo-rocketmq-broker
-  courseinsight-demo-ai-stub
+  "${AI_CONTAINER}"
 )
 
 fail() {
@@ -52,19 +74,19 @@ assert_dependencies_healthy() {
     [[ "${health_status}" == "healthy" ]] \
       || fail "Demo container '${container}' is not healthy (health=${health_status})."
   done
-  printf '[PASS] MySQL, Redis, RocketMQ and deterministic AI Stub are healthy\n'
+  printf '[PASS] MySQL, Redis, RocketMQ and %s are healthy\n' "${AI_DESCRIPTION}"
 }
 
 start_demo_dependencies() {
-  if [[ "${OPTION}" != "--rebuild" ]] && docker image inspect "${DEMO_AI_IMAGE}" >/dev/null 2>&1; then
-    printf '[INFO] Reusing local deterministic AI Stub image (offline-safe)\n'
+  if [[ "${REBUILD}" != true ]] && docker image inspect "${DEMO_AI_IMAGE}" >/dev/null 2>&1; then
+    printf '[INFO] Reusing local %s image\n' "${AI_DESCRIPTION}"
     "${COMPOSE[@]}" up --detach --no-build --wait --wait-timeout 180
     return
   fi
 
-  printf '[INFO] Building deterministic AI Stub; first build requires Docker Hub access\n'
+  printf '[INFO] Building %s; first build requires network access\n' "${AI_DESCRIPTION}"
   "${COMPOSE[@]}" up --detach --build --wait --wait-timeout 180 \
-    || fail "AI Stub image is unavailable or rebuild failed. Check Docker access to auth.docker.io and registry-1.docker.io, then retry."
+    || fail "${AI_DESCRIPTION} image is unavailable or rebuild failed. Check Docker registry and dependency download access, then retry."
 }
 
 cd "${REPOSITORY_ROOT}"
@@ -103,12 +125,12 @@ case "${ACTION}" in
     ;;
   clean)
     require_docker
-    [[ "${OPTION}" == "--confirm-delete-data" ]] \
+    [[ "${CONFIRM_DELETE_DATA}" == true ]] \
       || fail "clean deletes demo-only data volumes. Re-run with --confirm-delete-data."
     "${COMPOSE[@]}" down --volumes --remove-orphans
     printf '[PASS] Demo containers and demo-only data volumes removed\n'
     ;;
   *)
-    fail "Usage: scripts/demo.sh {start [--rebuild]|ready|smoke|stop|clean [--confirm-delete-data]}"
+    fail "Usage: scripts/demo.sh {start|ready|smoke|stop|clean} [--real-ai] [--enable-llm] [--rebuild] [--confirm-delete-data]"
     ;;
 esac

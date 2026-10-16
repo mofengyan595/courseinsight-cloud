@@ -79,6 +79,6 @@ GitHub Actions：原 Frontend CI 继续运行 npm ci、lint、typecheck、Vitest
 
 首次真实测试已到达 SUCCESS，但来源断言误写为 `stub` 导致失败；核对现有 Stub 实现后改为 `performance_stub`，随后完整 14 项复跑通过。没有修改 Stub 或降低断言标准。
 
-教师端真实运行截图（隔离测试评价，已通过学生 API 软删除）：
+单条分析界面（2026-10-16 更新，来自隔离 Demo 的 BERT 与大模型建议联调）：
 
 ![教师查看学生评价的分析结果](images/teacher-comment-analysis.png)
