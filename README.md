@@ -4,7 +4,7 @@ CourseInsight Cloud 是一个基于 Spring Boot、Vue 和 Python 的课程评价
 
 学生提交评分与匿名评价，教师查看情感、关键词、课程维度和教学建议，管理员可以跨课程管理。评价通过 RocketMQ 异步分析，支持单条查询和 CSV 批量处理。
 
-## 功能与展示
+## 功能
 
 - 课程管理：搜索、分页，管理员创建、编辑课程并指定授课教师账号。
 - 匿名评价：学生提交评分和反馈、管理本人评价，教师按需查看分析，管理员可维护评价。
@@ -13,17 +13,7 @@ CourseInsight Cloud 是一个基于 Spring Boot、Vue 和 Python 的课程评价
 - 数据看板：课程评价数、平均评分、情感分布、任务状态和风险统计。
 - 角色权限：教师只读查看本人课程的评价与分析，管理员负责课程维护和批量导入；学生不能读取完整分析结果。
 
-批次页面使用 Stub 演示；单条分析页面来自本地 BERT 与大模型建议的实际联调。
-
-批次进度与结果：
-
-![批次分析结果](docs/images/frontend-batch-desktop.png)
-
-单条评价分析：
-
-![教师评价分析](docs/images/teacher-comment-analysis.png)
-
-更多页面见[前端验证记录](docs/frontend-validation.md#截图)，权限与交互说明见[学生反馈与教师分析](docs/teacher-comment-analysis.md)。
+权限与交互说明见[学生反馈与教师分析](docs/teacher-comment-analysis.md)。
 
 ## 技术栈
 
