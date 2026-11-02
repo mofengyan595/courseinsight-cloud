@@ -14,6 +14,7 @@ import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.exception.CourseAccessDeniedException;
+import com.courseinsight.server.exception.CourseNotEmptyException;
 import com.courseinsight.server.mapper.CourseMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -49,6 +50,43 @@ class CourseServiceTests {
 
     @InjectMocks
     private CourseService courseService;
+
+    @Test
+    void shouldDeleteEmptyCourseAndEvictCaches() {
+        given(courseMapper.selectForDeletion(1L)).willReturn(createCourse());
+        given(courseMapper.deleteIfEmpty(1L)).willReturn(1);
+
+        courseService.delete(11L, UserRole.ADMIN, 1L);
+
+        verify(courseMapper).deleteIfEmpty(1L);
+        verify(courseDetailCache).evict(1L);
+        verify(popularityRankingCache).evictAfterCommit();
+    }
+
+    @Test
+    void shouldRejectDeletingMissingCourse() {
+        assertThatThrownBy(() -> courseService.delete(11L, UserRole.ADMIN, 1L))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(courseMapper, org.mockito.Mockito.never()).deleteIfEmpty(1L);
+        verifyNoInteractions(courseDetailCache, popularityRankingCache);
+    }
+
+    @Test
+    void shouldRejectDeletingNonEmptyCourseWithoutEvictingCaches() {
+        given(courseMapper.selectForDeletion(1L)).willReturn(createCourse());
+
+        assertThatThrownBy(() -> courseService.delete(11L, UserRole.ADMIN, 1L))
+                .isInstanceOf(CourseNotEmptyException.class);
+        verifyNoInteractions(courseDetailCache, popularityRankingCache);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = UserRole.class, names = {"STUDENT", "TEACHER"})
+    void shouldRejectNonAdminDeletionBeforeDatabaseAccess(UserRole role) {
+        assertThatThrownBy(() -> courseService.delete(11L, role, 1L))
+                .isInstanceOf(CourseAccessDeniedException.class);
+        verifyNoInteractions(courseMapper, courseDetailCache, popularityRankingCache);
+    }
 
     @Test
     void shouldDenyTeacherCourseCreationAndEditingBeforeWrites() {

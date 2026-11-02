@@ -1,5 +1,8 @@
 package com.courseinsight.server.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.courseinsight.server.common.ApiResponse;
 import com.courseinsight.server.dto.UserLoginRequest;
 import com.courseinsight.server.dto.UserLoginResponse;
@@ -36,6 +39,13 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(operationId = "registerUser", summary = "注册学生账号")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "用户名已存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "429", description = "注册过于频繁",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<UserRegisterResponse> register(
             @Valid @RequestBody UserRegisterRequest request,
             HttpServletRequest servletRequest) {
@@ -46,6 +56,15 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(operationId = "loginUser", summary = "登录并获取 JWT")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "用户名或密码错误",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "用户已停用",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "429", description = "登录过于频繁",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<UserLoginResponse> login(
             @Valid @RequestBody UserLoginRequest request,
             HttpServletRequest servletRequest) {

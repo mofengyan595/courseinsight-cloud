@@ -1,5 +1,8 @@
 package com.courseinsight.server.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import org.springdoc.core.annotations.ParameterObject;
 import com.courseinsight.server.common.ApiResponse;
 import com.courseinsight.server.dto.CoursePopularityRankingItemResponse;
 import com.courseinsight.server.dto.CourseRankingQuery;
@@ -23,8 +26,11 @@ public class CourseRankingController {
     }
 
     @GetMapping("/popular")
+    @Operation(operationId = "listPopularCourses", summary = "学生或管理员查询热门课程")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
     public ApiResponse<List<CoursePopularityRankingItemResponse>> getPopular(
-            @Valid @ModelAttribute CourseRankingQuery query) {
+            @Valid @ParameterObject @ModelAttribute CourseRankingQuery query) {
         return ApiResponse.success(rankingService.getPopular(query));
     }
 }

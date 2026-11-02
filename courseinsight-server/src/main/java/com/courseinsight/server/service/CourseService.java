@@ -13,6 +13,7 @@ import com.courseinsight.server.dto.CourseUpdateRequest;
 import com.courseinsight.server.entity.Course;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.exception.ResourceNotFoundException;
+import com.courseinsight.server.exception.CourseNotEmptyException;
 import com.courseinsight.server.mapper.CourseMapper;
 import com.courseinsight.server.security.WriteAccessPolicy;
 import org.springframework.stereotype.Service;
@@ -94,6 +95,20 @@ public class CourseService {
         evictCacheAfterCommit(id);
         popularityRankingCache.evictAfterCommit();
         return id;
+    }
+
+    @Transactional
+    public void delete(Long currentUserId, UserRole currentRole, Long id) {
+        WriteAccessPolicy.requireAdmin(currentRole);
+        // 与评价、批次创建的共享锁互斥，检查和删除在同一事务内完成。
+        if (courseMapper.selectForDeletion(id) == null) {
+            throw new ResourceNotFoundException("课程不存在");
+        }
+        if (courseMapper.deleteIfEmpty(id) != 1) {
+            throw new CourseNotEmptyException();
+        }
+        evictCacheAfterCommit(id);
+        popularityRankingCache.evictAfterCommit();
     }
 
     public CourseDetailResponse getForUser(Long id, Long currentUserId, UserRole currentRole) {

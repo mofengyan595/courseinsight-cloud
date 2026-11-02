@@ -1,5 +1,6 @@
 package com.courseinsight.server.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -15,6 +16,7 @@ public record UserRegisterRequest(
 
         @NotBlank(message = "密码不能为空")
         @Size(min = 8, max = 64, message = "密码长度必须为8到64个字符")
+        @Schema(format = "password", accessMode = Schema.AccessMode.WRITE_ONLY, description = "密码；UTF-8 编码不超过72字节")
         String password,
 
         @NotBlank(message = "显示名称不能为空")
@@ -22,6 +24,7 @@ public record UserRegisterRequest(
         String displayName
 ) {
     @AssertTrue(message = "密码的 UTF-8 编码不能超过72字节")
+    @Schema(hidden = true)
     public boolean isPasswordWithinByteLimit() {
         return password == null || password.getBytes(StandardCharsets.UTF_8).length <= 72;
     }

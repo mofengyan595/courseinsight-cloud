@@ -6,6 +6,7 @@ import com.courseinsight.server.dto.CoursePageQuery;
 import com.courseinsight.server.exception.GlobalExceptionHandler;
 import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.exception.CourseAccessDeniedException;
+import com.courseinsight.server.exception.CourseNotEmptyException;
 import com.courseinsight.server.entity.UserRole;
 import com.courseinsight.server.service.CourseService;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -62,6 +67,40 @@ class CourseControllerTests {
 
     @MockitoBean
     private CourseService courseService;
+
+    @Test
+    void shouldDeleteCourseWithNoResponseBody() throws Exception {
+        mockMvc.perform(delete("/api/courses/1").principal(authentication(11L, UserRole.ADMIN)))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+        verify(courseService).delete(11L, UserRole.ADMIN, 1L);
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenDeletingMissingCourse() throws Exception {
+        doThrow(new ResourceNotFoundException("课程不存在"))
+                .when(courseService).delete(11L, UserRole.ADMIN, 1L);
+        mockMvc.perform(delete("/api/courses/1").principal(authentication(11L, UserRole.ADMIN)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value(404));
+    }
+
+    @Test
+    void shouldReturnConflictWhenDeletingNonEmptyCourse() throws Exception {
+        doThrow(new CourseNotEmptyException()).when(courseService).delete(11L, UserRole.ADMIN, 1L);
+        mockMvc.perform(delete("/api/courses/1").principal(authentication(11L, UserRole.ADMIN)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value(409))
+                .andExpect(jsonPath("$.message").value("课程有关联评价或分析数据，不能删除"));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"0", "-1", "abc", "9223372036854775808"})
+    void shouldRejectInvalidDeletionId(String id) throws Exception {
+        mockMvc.perform(delete("/api/courses/" + id).principal(authentication(11L, UserRole.ADMIN)))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(courseService);
+    }
 
     @Test
     void shouldCreateCourse() throws Exception {

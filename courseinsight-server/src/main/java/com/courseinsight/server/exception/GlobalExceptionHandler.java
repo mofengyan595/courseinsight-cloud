@@ -18,6 +18,12 @@ import org.springframework.web.multipart.support.MissingServletRequestPartExcept
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(CourseNotEmptyException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleCourseNotEmpty(CourseNotEmptyException exception) {
+        return ApiResponse.error(HttpStatus.CONFLICT.value(), exception.getMessage());
+    }
+
     @ExceptionHandler(HandlerMethodValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleMethodValidation(HandlerMethodValidationException exception) {

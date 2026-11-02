@@ -1,5 +1,8 @@
 package com.courseinsight.server.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.courseinsight.server.common.ApiResponse;
 import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.dto.AnalysisTaskDetailResponse;
@@ -22,6 +25,11 @@ public class AnalysisTaskController {
     }
 
     @GetMapping
+    @Operation(operationId = "getCommentAnalysisTask", summary = "查询可访问评价的分析任务")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "评价或任务不存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<AnalysisTaskDetailResponse> getByCommentId(
             @PathVariable @Positive(message = "ID 必须是正整数") Long commentId,
             Authentication authentication) {

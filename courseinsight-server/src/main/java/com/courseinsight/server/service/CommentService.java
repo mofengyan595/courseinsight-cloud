@@ -69,7 +69,10 @@ public class CommentService {
     public Long create(Long courseId, Long userId, UserRole currentRole, CommentCreateRequest request) {
         WriteAccessPolicy.requireCommentWrite(currentRole);
         rateLimiter.check(RateLimitPolicy.COMMENT_SUBMISSION, userId);
-        requireCourse(courseId);
+        // 在事务内持有课程共享锁，防止课程在评价写入前被删除。
+        if (courseMapper.selectForAssociation(courseId) == null) {
+            throw new ResourceNotFoundException("课程不存在");
+        }
 
         CourseComment comment = new CourseComment();
         comment.setCourseId(courseId);

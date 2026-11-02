@@ -14,6 +14,8 @@ import com.courseinsight.server.mapper.AnalysisBatchMapper;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
+import com.courseinsight.server.mapper.CourseMapper;
+import com.courseinsight.server.exception.ResourceNotFoundException;
 import com.courseinsight.server.message.AnalysisTaskCreatedEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,7 @@ public class AnalysisBatchCreationService {
     private final AnalysisOutboxEventMapper outboxEventMapper;
     private final CourseAnalyticsCache analyticsCache;
     private final CoursePopularityRankingCache rankingCache;
+    private final CourseMapper courseMapper;
 
     public AnalysisBatchCreationService(
             AnalysisBatchMapper batchMapper,
@@ -38,13 +41,15 @@ public class AnalysisBatchCreationService {
             AnalysisTaskMapper taskMapper,
             AnalysisOutboxEventMapper outboxEventMapper,
             CourseAnalyticsCache analyticsCache,
-            CoursePopularityRankingCache rankingCache) {
+            CoursePopularityRankingCache rankingCache,
+            CourseMapper courseMapper) {
         this.batchMapper = batchMapper;
         this.commentMapper = commentMapper;
         this.taskMapper = taskMapper;
         this.outboxEventMapper = outboxEventMapper;
         this.analyticsCache = analyticsCache;
         this.rankingCache = rankingCache;
+        this.courseMapper = courseMapper;
     }
 
     @Transactional
@@ -53,6 +58,10 @@ public class AnalysisBatchCreationService {
             Long createdBy,
             String originalFilename,
             List<AnalysisBatchCommentRow> rows) {
+        // CSV 解析完成后，在实际写入事务内重新检查并锁定课程。
+        if (courseMapper.selectForAssociation(courseId) == null) {
+            throw new ResourceNotFoundException("课程不存在");
+        }
         AnalysisBatch batch = new AnalysisBatch();
         batch.setBatchNo(randomId());
         batch.setCourseId(courseId);

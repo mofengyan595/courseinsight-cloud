@@ -13,6 +13,9 @@ import com.courseinsight.server.mapper.AnalysisBatchMapper;
 import com.courseinsight.server.mapper.AnalysisOutboxEventMapper;
 import com.courseinsight.server.mapper.AnalysisTaskMapper;
 import com.courseinsight.server.mapper.CourseCommentMapper;
+import com.courseinsight.server.mapper.CourseMapper;
+import com.courseinsight.server.entity.Course;
+import com.courseinsight.server.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -24,6 +27,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
@@ -31,6 +36,9 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AnalysisBatchCreationServiceTests {
+
+    @Mock
+    private CourseMapper courseMapper;
 
     @Mock
     private AnalysisBatchMapper batchMapper;
@@ -55,6 +63,7 @@ class AnalysisBatchCreationServiceTests {
 
     @Test
     void shouldCreateBatchCommentsTasksAndOutboxEvents() {
+        given(courseMapper.selectForAssociation(14L)).willReturn(new Course());
         given(batchMapper.insert(any(AnalysisBatch.class))).willAnswer(invocation -> {
             AnalysisBatch batch = invocation.getArgument(0);
             batch.setId(30L);
@@ -120,5 +129,13 @@ class AnalysisBatchCreationServiceTests {
                 });
         verify(analyticsCache).evictAfterCommit(14L);
         verify(rankingCache).evictAfterCommit();
+    }
+
+    @Test
+    void shouldRejectCourseDeletedDuringCsvParsing() {
+        assertThatThrownBy(() -> creationService.create(14L, 11L, "comments.csv",
+                List.of(new AnalysisBatchCommentRow(2, "讲解清晰", 5))))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verifyNoInteractions(batchMapper, commentMapper, taskMapper, outboxEventMapper, analyticsCache, rankingCache);
     }
 }

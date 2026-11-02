@@ -1,5 +1,8 @@
 package com.courseinsight.server.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.courseinsight.server.common.ApiResponse;
 import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.dto.AnalysisExecutionResponse;
@@ -22,6 +25,17 @@ public class AnalysisExecutionController {
     }
 
     @PostMapping("/{taskId}/execute")
+    @Operation(operationId = "executeAnalysisTask", summary = "管理员同步执行分析任务")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "任务不存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "任务状态冲突",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "502", description = "AI 服务调用失败",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "429", description = "操作过于频繁",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<AnalysisExecutionResponse> execute(
             @PathVariable @Positive(message = "ID 必须是正整数") Long taskId,
             Authentication authentication) {

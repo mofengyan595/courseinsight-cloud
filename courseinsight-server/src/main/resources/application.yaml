@@ -83,6 +83,14 @@ courseinsight:
       interval-ms: ${OUTBOX_CLEANUP_INTERVAL_MS:3600000}
       initial-delay-ms: ${OUTBOX_CLEANUP_INITIAL_DELAY_MS:3600000}
 
+springdoc:
+  paths-to-match: /api/**
+  default-produces-media-type: application/json
+  override-with-generic-response: false
+  swagger-ui:
+    persist-authorization: false
+    default-model-rendering: model
+
 management:
   endpoints:
     access:

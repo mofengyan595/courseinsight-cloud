@@ -1,5 +1,9 @@
 package com.courseinsight.server.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import org.springdoc.core.annotations.ParameterObject;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import com.courseinsight.server.common.ApiResponse;
 import jakarta.validation.constraints.Positive;
 import com.courseinsight.server.common.PageResponse;
@@ -56,6 +60,15 @@ public class AnalysisBatchController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     @ResponseStatus(HttpStatus.CREATED)
+    @Operation(operationId = "createAnalysisBatch", summary = "管理员上传 CSV 创建分析批次")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "课程不存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "413", description = "CSV 文件超过大小限制",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "429", description = "上传过于频繁",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<AnalysisBatchCreateResponse> upload(
             @PathVariable @Positive(message = "ID 必须是正整数") Long courseId,
             Authentication authentication,
@@ -70,14 +83,22 @@ public class AnalysisBatchController {
     }
 
     @GetMapping("/analysis-batches")
+    @Operation(operationId = "listAnalysisBatches", summary = "教师或管理员查询可访问的批次")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
     public ApiResponse<PageResponse<AnalysisBatchSummaryResponse>> getBatches(
             Authentication authentication,
-            @Valid @ModelAttribute AnalysisBatchPageQuery query) {
+            @Valid @ParameterObject @ModelAttribute AnalysisBatchPageQuery query) {
         CurrentUser currentUser = CurrentUser.from(authentication);
         return ApiResponse.success(batchService.page(query, currentUser.id(), currentUser.role()));
     }
 
     @GetMapping("/analysis-batches/{batchId}")
+    @Operation(operationId = "getAnalysisBatch", summary = "教师或管理员查询批次进度")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "批次不存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<AnalysisBatchProgressResponse> getProgress(
             @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication) {
@@ -90,10 +111,15 @@ public class AnalysisBatchController {
     }
 
     @GetMapping("/analysis-batches/{batchId}/results")
+    @Operation(operationId = "listAnalysisBatchResults", summary = "教师或管理员分页查询批次结果")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "批次不存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<PageResponse<AnalysisBatchResultItemResponse>> getResults(
             @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication,
-            @Valid @ModelAttribute AnalysisBatchResultPageQuery query) {
+            @Valid @ParameterObject @ModelAttribute AnalysisBatchResultPageQuery query) {
         CurrentUser currentUser = CurrentUser.from(authentication);
         return ApiResponse.success(resultService.page(
                 batchId,
@@ -107,6 +133,11 @@ public class AnalysisBatchController {
             value = "/analysis-batches/{batchId}/export",
             produces = "text/csv"
     )
+    @Operation(operationId = "exportAnalysisBatchResults", summary = "教师或管理员导出批次 CSV")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "批次不存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "CSV 文件",
+            content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary")))
     public void exportResults(
             @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication,
@@ -132,6 +163,11 @@ public class AnalysisBatchController {
 
     @PostMapping("/analysis-batches/{batchId}/retry-failed")
     @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(operationId = "retryAnalysisBatch", summary = "管理员重试批次失败任务")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "202", description = "成功",
+            useReturnTypeSchema = true, content = @Content(mediaType = "application/json"))
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "批次不存在",
+            content = @Content(mediaType = "application/json", schema = @Schema(ref = "#/components/schemas/ApiError")))
     public ApiResponse<AnalysisBatchRetryResponse> retryFailed(
             @PathVariable @Positive(message = "ID 必须是正整数") Long batchId,
             Authentication authentication) {

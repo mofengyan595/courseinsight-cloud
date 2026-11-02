@@ -6,12 +6,13 @@ CourseInsight Cloud 是一个基于 Spring Boot、Vue 和 Python 的课程评价
 
 ## 功能
 
-- 课程管理：搜索、分页，管理员创建、编辑课程并指定授课教师账号。
+- 课程管理：搜索、分页，管理员创建、编辑课程并指定授课教师账号；支持通过 API 删除空课程。
 - 匿名评价：学生提交评分和反馈、管理本人评价，教师按需查看分析，管理员可维护评价。
 - 批量分析：上传 UTF-8 CSV，查看进度、失败原因和逐条结果，下载 CSV；支持从历史任务返回，单次最多 200 条、2 MB。
 - 教学建议：单条与批量详情统一展示摘要、行动建议和原文证据，支持大模型生成与本地兜底。
 - 数据看板：课程评价数、平均评分、情感分布、任务状态和风险统计。
 - 角色权限：教师只读查看本人课程的评价与分析，管理员负责课程维护和批量导入；学生不能读取完整分析结果。
+- 接口文档：Swagger UI / OpenAPI，包含 JWT Bearer 鉴权、固定 `operationId`、请求与响应结构。
 
 权限与交互说明见[学生反馈与教师分析](docs/teacher-comment-analysis.md)。
 
@@ -141,6 +142,20 @@ bash scripts/demo.sh smoke
 
 这里显式使用 Bash 执行 Maven Wrapper，无需修改文件执行权限。
 
+### Swagger 与 API 复测
+
+后端启动后打开 [Swagger UI](http://localhost:8080/swagger-ui.html)，或获取
+[OpenAPI JSON](http://localhost:8080/v3/api-docs) 导入接口测试工具。文档可匿名读取，
+业务接口继续校验 JWT 与角色权限；在 `Authorize` 中填入运行时获取的 JWT，页面不持久保存授权。
+账号、密码和 Token 不写入文档示例或保存的用例，复测时从运行环境注入。
+
+管理员可验证 `createCourse → getCourse → deleteCourse`：使用每轮唯一的课程代码，
+从创建响应的 `data` 提取本轮课程 ID，再查询和删除该课程。`DELETE /api/courses/{id}`
+成功返回 `204`（无响应体），不存在返回 `404`；有关联评价（包括已软删除评价）、分析批次、
+任务或结果时返回 `409`，不级联清理。删除后再次查询或删除均返回 `404`。
+保存步骤、动态 ID 关联和断言后，每次复测从创建步骤开始。完整状态码和并发保护见
+[Swagger / OpenAPI 开发说明](docs/development.md#swagger--openapi)。
+
 ### 启动前端与演示账号
 
 在仓库根目录另开终端，以下命令适用于上述两种环境：
@@ -201,7 +216,9 @@ Java 测试分为无外部服务的单元、MVC/安全与 HTTP/MQ 合约测试�
 
 macOS/Linux 可在 `courseinsight-server` 中分别使用 `bash ./mvnw test '-Dgroups=!integration'`、`bash ./mvnw test '-Dgroups=integration'` 和 `bash ./mvnw test`。测试不读取根目录 `.env`，不启动项目 Compose；默认测试中的 MQ/AI 使用 mock，真实异步链路由 Demo smoke 单独验证。
 
-已有验证记录：2026-10-14 后端 317 项 Java 测试通过；2026-10-16 前端 45 项单元测试、12 项异常交互测试及 BERT / 大模型建议联调通过。详情见[后端审计](docs/backend-audit.md#验证记录)和[前端验证记录](docs/frontend-validation.md)。
+本轮验证（2026-11-02）：完整 Java 测试 365 项通过，0 失败、0 跳过，包含 Swagger 合约、MySQL 空课程删除闭环、关联数据拒绝、事务缓存失效及并发写入测试。
+
+历史验证：2026-10-14 后端 317 项 Java 测试通过；2026-10-16 前端 45 项单元测试、12 项异常交互测试及 BERT / 大模型建议联调通过。详情见[后端审计](docs/backend-audit.md#验证记录)和[前端验证记录](docs/frontend-validation.md)。
 
 前端在 `courseinsight-web` 中运行 `npm run lint`、`npm run typecheck`、`npm test` 和 `npm run build`；Playwright 覆盖真实 Demo 与异常交互，两类验证分别记录。AI 服务测试见[开发文档](docs/development.md#ai-服务测试)，浏览器测试前提及执行方式见[前端 README](courseinsight-web/README.md#测试与构建)。
 

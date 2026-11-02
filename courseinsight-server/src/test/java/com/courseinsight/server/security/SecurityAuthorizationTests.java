@@ -258,6 +258,7 @@ class SecurityAuthorizationTests {
         var writes = List.of(
                 post("/api/courses").contentType(MediaType.APPLICATION_JSON).content(validCourseRequest()),
                 put("/api/courses/1").contentType(MediaType.APPLICATION_JSON).content(validCourseRequest()),
+                delete("/api/courses/1"),
                 post("/api/courses/1/comments").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"content\":\"教师不能提交评价\",\"rating\":5}"),
                 delete("/api/comments/10"),
@@ -427,6 +428,30 @@ class SecurityAuthorizationTests {
                 .andExpect(jsonPath("$.code").value(0));
 
         verify(commentService).delete(10L, 1L, UserRole.STUDENT);
+    }
+
+    @Test
+    void shouldRejectCourseDeletionWithoutToken() throws Exception {
+        mockMvc.perform(delete("/api/courses/1"))
+                .andExpect(status().isUnauthorized());
+        verifyNoInteractions(courseService);
+    }
+
+    @Test
+    void shouldRejectStudentCourseDeletion() throws Exception {
+        given(jwtDecoder.decode("student-token")).willReturn(jwt("student-token", "STUDENT"));
+        mockMvc.perform(delete("/api/courses/1").header("Authorization", "Bearer student-token"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(courseService);
+    }
+
+    @Test
+    void shouldAllowAdminCourseDeletion() throws Exception {
+        given(jwtDecoder.decode("admin-token")).willReturn(jwt("admin-token", "ADMIN"));
+        mockMvc.perform(delete("/api/courses/1").header("Authorization", "Bearer admin-token"))
+                .andExpect(status().isNoContent())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(""));
+        verify(courseService).delete(1L, UserRole.ADMIN, 1L);
     }
 
     private Jwt jwt(String tokenValue, String role) {

@@ -75,7 +75,7 @@ class CommentServiceTests {
     void shouldCreateCommentForExistingCourse() {
         Course course = new Course();
         course.setId(1L);
-        given(courseMapper.selectById(1L)).willReturn(course);
+        given(courseMapper.selectForAssociation(1L)).willReturn(course);
         given(courseCommentMapper.insert(any(CourseComment.class)))
                 .willAnswer(invocation -> {
                     CourseComment comment = invocation.getArgument(0);
@@ -154,7 +154,7 @@ class CommentServiceTests {
 
     @Test
     void shouldRejectCommentForMissingCourse() {
-        given(courseMapper.selectById(999999L)).willReturn(null);
+        given(courseMapper.selectForAssociation(999999L)).willReturn(null);
 
         assertThatThrownBy(() -> commentService.create(
                 999999L,
@@ -171,7 +171,7 @@ class CommentServiceTests {
     void shouldRejectDuplicateCommentForSameCourseAndUser() {
         Course course = new Course();
         course.setId(1L);
-        given(courseMapper.selectById(1L)).willReturn(course);
+        given(courseMapper.selectForAssociation(1L)).willReturn(course);
         given(courseCommentMapper.insert(any(CourseComment.class)))
                 .willThrow(new DuplicateKeyException("duplicate comment"));
 

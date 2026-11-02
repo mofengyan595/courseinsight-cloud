@@ -30,6 +30,52 @@ RocketMQ 和 AI 服务不属于默认测试基础设施。
 .\scripts\test.ps1 -Suite all
 ```
 
+## Swagger / OpenAPI
+
+后端启动后可访问：
+
+- Swagger UI：<http://localhost:8080/swagger-ui.html>
+- OpenAPI JSON：<http://localhost:8080/v3/api-docs>
+- OpenAPI YAML：<http://localhost:8080/v3/api-docs.yaml>
+
+文档入口允许匿名读取，业务接口继续执行现有 JWT 和角色权限校验。Swagger UI 的
+`Authorize` 使用 HTTP Bearer（JWT），只填运行时获取的 JWT；登录、注册和健康检查
+不要求鉴权。页面不持久保存授权信息。不要将账号、密码、Token 写入文档示例、导出的
+用例或版本库；复测时从运行环境注入鉴权信息。
+
+所有业务操作显式固定 `operationId`，避免方法名冲突造成自动编号变化。
+例如课程操作为 `createCourse`、`listCourses`、`getCourse`、`updateCourse`、`deleteCourse`。
+文档描述真实 DTO、`ApiResponse<T>` / `PageResponse<T>`、参数约束、分页默认值、
+multipart CSV 上传和 CSV 下载；错误响应统一为 `{code, message, data}`，其中 `data` 为 null。
+
+### 空课程删除与复测
+
+管理员调用 `DELETE /api/courses/{id}`：
+
+| HTTP 状态 | 行为 |
+| --- | --- |
+| `204` | 空课程已物理删除，无响应体 |
+| `400` | ID 不是有效正整数 |
+| `401` | 未登录或 JWT 无效 |
+| `403` | 非管理员 |
+| `404` | 课程不存在（包括重复删除） |
+| `409` | 存在关联评价、分析批次、任务或结果，拒绝删除 |
+
+已软删除的评价仍属于关联数据，不能通过先隐藏评价再删除课程。此接口不级联删除
+任何评价、批次、任务或结果。评价和批次创建在写入事务内持有课程共享锁，与删除
+课程的排他锁互斥，避免并发写入产生孤立记录。
+
+保存复测用例时，按以下流程关联本轮创建的课程 ID，不使用已有课程的固定 ID：
+
+1. `createCourse`：使用每轮唯一的课程代码，预期 `201`，保存响应的 `data` 为课程 ID。
+2. `getCourse`：查询该 ID，预期 `200`，核对课程字段。
+3. `deleteCourse`：删除同一个 ID，预期 `204`，断言响应体为空。
+4. 再次查询和删除该 ID，均预期 `404`；保存上述关联与断言，后续从创建步骤完整复测。
+
+独立验证：`OpenApiContractTests` 检查生成的文档及 Swagger 入口；
+`CourseDeletionIntegrationTests` 覆盖 MySQL 下的创建、查询、删除、关联数据拒绝、
+事务缓存失效与并发写入，需要 Docker Engine。普通快速测试不依赖这些本地服务。
+
 ## 启动本地应用
 
 先确认 Docker Desktop / Docker Engine 可用。从仓库根目录复制 `.env.example`，填写本地数据库、

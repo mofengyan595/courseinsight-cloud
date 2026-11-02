@@ -1,5 +1,6 @@
 package com.courseinsight.server.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -10,11 +11,11 @@ import java.util.Locale;
 
 public record AdminUserPageQuery(
         @Min(value = 1, message = "页码必须大于等于1")
-        Integer page,
+        @Schema(defaultValue = "1") Integer page,
 
         @Min(value = 1, message = "每页条数必须大于等于1")
         @Max(value = 100, message = "每页条数不能超过100")
-        Integer size,
+        @Schema(defaultValue = "10") Integer size,
 
         @Size(max = 100, message = "搜索关键词不能超过100个字符")
         String keyword,
@@ -30,7 +31,7 @@ public record AdminUserPageQuery(
         Integer status,
         @Positive(message = "用户 ID 必须是正整数") Long userId
 ) {
-    public AdminUserPageQuery(Integer page, Integer size, String keyword, String role, Integer status) {
+    public AdminUserPageQuery(@Schema(defaultValue = "1") Integer page, @Schema(defaultValue = "10") Integer size, String keyword, String role, Integer status) {
         this(page, size, keyword, role, status, null);
     }
 
