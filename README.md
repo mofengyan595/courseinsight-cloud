@@ -1,121 +1,129 @@
 # CourseInsight Cloud
 
-CourseInsight Cloud 是一个基于 Spring Boot、Vue 和 Python 的课程评价与教学分析项目。
+**基于 Spring Boot 的课程评价与教学分析系统：从评价提交、异步 NLP 分析到教学反馈，覆盖完整业务闭环。**
 
-学生提交评分与匿名评价，教师查看情感、关键词、课程维度和教学建议，管理员可以跨课程管理。评价通过 RocketMQ 异步分析，支持单条查询和 CSV 批量处理。
+学生提交课程评分及匿名反馈，教师查看所授课程的分析结果，管理员管理课程、教师归属和 CSV 批量任务。后端使用 **MySQL + Redis + RocketMQ** 承载业务与异步处理，并通过 **Transactional Outbox、任务执行围栏和资源级授权** 处理消息投递、重复消费、超时恢复与权限边界。
 
-## 功能
+> 项目定位：一个可本地运行、具有真实工程约束的 Java 后端项目；AI 分析由独立 Python 服务提供。仓库包含 Vue 工作台、Docker Demo、自动化测试及可追溯的性能实验。不是生产级分布式部署方案。
 
-- 课程管理：搜索、分页，管理员创建、编辑课程并指定授课教师账号；支持通过 API 删除空课程。
-- 匿名评价：学生提交评分和反馈、管理本人评价，教师按需查看分析，管理员可维护评价。
-- 批量分析：上传 UTF-8 CSV，查看进度、失败原因和逐条结果，下载 CSV；支持从历史任务返回，单次最多 200 条、2 MB。
-- 教学建议：单条与批量详情统一展示摘要、行动建议和原文证据，支持大模型生成与本地兜底。
-- 数据看板：课程评价数、平均评分、情感分布、任务状态和风险统计。
-- 角色权限：教师只读查看本人课程的评价与分析，管理员负责课程维护和批量导入；学生不能读取完整分析结果。
-- 接口文档：Swagger UI / OpenAPI，包含 JWT Bearer 鉴权、固定 `operationId`、请求与响应结构。
+## 功能与演示
 
-权限与交互说明见[学生反馈与教师分析](docs/teacher-comment-analysis.md)。
+| 角色 | 主要能力 |
+| --- | --- |
+| 学生 | 浏览课程、提交评分与匿名评价、管理本人评价、查询本人分析任务状态 |
+| 教师 | 查看所授课程的匿名评价、情感与关键词分析、教学建议；只读访问分析结果 |
+| 管理员 | 创建和维护课程、指定授课教师、导入 CSV、查看批次进度与结果、导出 CSV |
+
+- **异步分析**：评价写入后创建分析任务；支持情感、主题、关键词、风险等级和教学建议。优先使用本地 BERT，按条件降级为 TF-IDF / 规则；LLM 建议可选，失败时回退本地模板。
+- **批量任务**：上传 UTF-8 CSV，按任务查询进度、错误与逐条结果，完成后导出 CSV；单文件最多 **2 MB、200 条**。
+- **可观察与复测**：提供 Swagger / OpenAPI、Demo smoke、分层测试、k6 实验及可选 Prometheus / Grafana。
+
+![教师查看单条课程评价的分析结果](docs/images/teacher-comment-analysis.png)
+
+> 截图来自仓库内的真实 Demo 联调。完整交互与权限说明见 [学生反馈与教师分析](docs/teacher-comment-analysis.md)。
 
 ## 技术栈
 
-| 层次 | 主要技术与版本 |
+| 模块 | 技术 |
 | --- | --- |
-| 后端 | Java 17、Spring Boot 3.5.16、Spring Security、JWT |
-| 持久化 | MySQL 8.4、MyBatis-Plus 3.5.17、Flyway |
-| 缓存与消息 | Redis 7.2、RocketMQ 5.3.2 |
-| 前端 | Vue 3、TypeScript 5、Vite 7、Element Plus 2、ECharts 6 |
-| AI 服务 | Python 3.12、FastAPI 0.139.2、BERT / TF-IDF / 规则降级 |
-| 测试与观测 | JUnit 5、Testcontainers、Vitest、Playwright、k6、Prometheus / Grafana |
+| Java 后端 | Java 17、Spring Boot 3.5、Spring MVC、Spring Security、JWT、MyBatis-Plus |
+| 数据与消息 | MySQL 8.4、Flyway、Redis 7.2、RocketMQ 5.3 |
+| AI 分析服务 | Python 3.12、FastAPI、BERT、TF-IDF、规则降级、可选 LLM |
+| Web 前端 | Vue 3、TypeScript、Vite、Element Plus、ECharts |
+| 工程与测试 | Docker Compose、JUnit 5、Testcontainers、Vitest、Playwright、k6、Micrometer |
 
 ## 系统架构
 
 ```mermaid
-flowchart TB
-    Web["Vue 工作台"] -->|REST API / JWT| API
-    subgraph Boot["Spring Boot 业务后端（单体）"]
-        API["认证与业务接口"] --> Service["业务服务与权限校验"]
-        Publisher["Outbox 发布器"]
-        Consumer["分析消费者"]
-    end
-    Service -->|评价、任务、Outbox 同一事务| DB[("MySQL")]
-    Service <-->|缓存、限流、排行榜| Redis[("Redis")]
-    DB -->|待发送事件| Publisher
-    Publisher -->|at-least-once| MQ["RocketMQ"]
-    MQ --> Consumer
-    Consumer -->|HTTP| AI["FastAPI AI 服务 / Demo Stub"]
-    Consumer -->|条件更新任务、保存结果| DB
+flowchart LR
+    Web[Vue 工作台] -->|REST / JWT| API[Spring Boot API]
+    API --> Auth[认证、角色与资源归属校验]
+    Auth --> Biz[课程、评价、批次服务]
+    Biz -->|同一 MySQL 事务| DB[(MySQL\n业务 / 任务 / Outbox)]
+    Biz <-->|Cache-Aside / 限流 / ZSet| Redis[(Redis)]
+    DB --> Pub[Outbox 发布器]
+    Pub -->|at-least-once| MQ[RocketMQ]
+    MQ --> Worker[分析消费者]
+    Worker -->|HTTP| AI[FastAPI 分析服务]
+    Worker -->|条件更新任务与结果| DB
 ```
 
-MySQL 保存业务、任务和结果，Redis 保存缓存与可重建的派生数据。Outbox 发布器和消费者均在 Spring Boot 应用内，RocketMQ 负责传递分析任务；浏览器只访问 Java API，不直接调用 AI 服务。
+Java 服务负责业务数据、授权、任务状态和消息生命周期；Python 服务只负责分析。浏览器不直接访问 AI 服务。Outbox 发布器和消费者运行在 Spring Boot 应用内，当前仓库不是多微服务部署。
 
-情感分析优先使用本地 BERT，不可用时降级到 TF-IDF 或规则。教学建议默认开启；配置 LLM 后调用大模型，未配置或调用失败时使用本地模板。Stub 模式返回固定分析结果，便于检查业务流程。
+## 关键工程设计
 
-## 核心技术实现
+### 1. Transactional Outbox：解决数据库与 MQ 双写窗口
 
-### RocketMQ 与 Transactional Outbox
+直接执行“写 MySQL → 发送 RocketMQ”时，数据库提交后若消息发送失败，就会出现已创建任务却没有消息的情况。
 
-评价落库和消息发送分属数据库与消息系统，直接双写会留下“数据已提交，消息未发出”的窗口。提交评价或上传批次时，系统在一个 MySQL 事务中写入评价、分析任务和 Outbox 事件，再由定时发布器发送到 RocketMQ。
+系统在**同一个 MySQL 事务**中写入评价 / 批次、分析任务与 Outbox 事件，再由后台发布器异步发送。发布器使用独立调度器、固定线程池和有界在途窗口；每次领取事件分配 `publish_token`，迟到的发送结果不能覆盖新一轮发布状态。
 
-Outbox 发布与任务恢复使用独立调度器。发布器通过固定线程池和有界提交窗口限制在途发送数量，状态更新必须匹配本次领取的 `publish_token`，防止旧发送覆盖新的发布尝试。
+这一设计提供**至少一次处理**而非恰好一次：发送成功但 `SENT` 未落库仍可能再次投递，必须由消费端处理重复消息。详情见 [技术设计](docs/development.md#技术设计与可靠性边界)。
 
-`SENT` 事件支持按保留期分批清理，默认关闭；待发送和失败事件保留重试。
+### 2. 任务围栏：避免超时恢复后的旧 Worker 覆盖新结果
 
-消息按 at-least-once（至少一次）处理：Broker 接收后若 `SENT` 未落库，恢复时可能重发。消费端通过状态、事件代次和条件更新处理重复消息。当前本地 RocketMQ 为单节点异步刷盘配置，不保证 Broker 持久化故障下的消息不丢失。
+分析任务使用 `WAITING / PROCESSING / SUCCESS / FAILED` 等状态。消费者执行前通过条件更新领取任务，记录：
 
-### 异步任务状态与并发控制
+- `current_event_id`：当前入队代次，用于区分恢复前后的消息。
+- `execution_token`：本次 Worker 执行身份，用于隔离重复消费和超时接管。
+- 数据库时间和执行租约：判断任务是否过期，并重新创建 Outbox 事件。
 
-上传成功表示任务已创建，不表示分析已完成。单条任务记录 `WAITING / PROCESSING / SUCCESS / FAILED`；批次根据成功和终止失败数量汇总为 `PROCESSING / COMPLETED / PARTIAL_FAILED / FAILED`，等待 MQ 重试的失败任务单独计数。
+写入结果时同时校验任务状态、事件代次与执行令牌；成功状态及结果在同一事务中保存。**旧执行即便最后返回，也不能覆盖已被新执行者接管的任务结果。**
 
-执行前通过条件更新领取任务，`current_event_id` 标识入队代次，`execution_token` 标识本次执行。结果写入必须匹配代次、token 和 `PROCESSING` 状态，成功状态与分析结果在同一事务中保存。
+当前没有租约续期，超长 AI 请求仍可能产生重复执行；本项目通过结果围栏约束最终持久化，而不声称完全避免重复计算。
 
-租约与过期判断使用 MySQL 时钟，恢复器为过期任务创建新代次和 Outbox 事件。前端轮询至终态，失败时退避，离开页面时取消请求。当前没有租约续期，超长 AI 调用仍可能重复执行。
+### 3. Redis 缓存：优化热点读取，同时保留一致性边界
 
-### Redis 缓存
+课程详情和统计采用 Cache-Aside；详情未命中时访问 MySQL 并回填，空值缓存处理同一不存在 ID 的重复访问。TTL 使用随机抖动，降低集中失效风险；Redis 不可用时回源数据库。
 
-课程详情和统计采用 Cache Aside：优先读取 Redis，未命中时查询 MySQL 并回填。课程详情最大 TTL 为 30 分钟，空值和统计缓存最大 TTL 为 5 分钟，并加入 80%–100% 的随机抖动，减少缓存集中失效。
+课程详情的**单实例锁槽 + 二次检查**减少并发回源；课程修改后在事务提交后失效缓存，详情回填与本实例失效共用锁槽，收敛旧值回填竞态。课程热度排行榜通过 Redis ZSet 和 Lua 原子发布就绪标志。
 
-课程详情使用单实例锁槽和二次检查，减少并发重复回源。业务写入在事务提交后失效缓存；详情回填与失效共用锁槽，减少旧数据回填。
+单实例锁槽不保证跨实例强一致，缓存失效失败仍可能短暂读到旧值；因此不把该方案描述为全局一致缓存。
 
-Redis 不可用时回退 MySQL。并发保护限于单实例，跨实例回填或删除失败仍可能留下短暂不一致，依赖后续失效或 TTL 到期收敛。缓存命中路径仍会查询用户状态以校验权限。
+### 4. JWT + RBAC + 资源归属：防止跨用户越权
 
-课程热度排行榜使用 ZSet，Lua 脚本完成数据写入后再设置就绪标记，避免读取半成品。
+Spring Security 验证 JWT 签名、有效期和 issuer 后，按请求查询当前用户状态和角色，避免仅依赖令牌中的旧权限。接口层限制角色，服务层进一步校验课程归属、评价所有权和分析结果可见性。
 
-### Spring Security 与 JWT
+例如：教师只能查看**自己负责课程**的完整分析；学生可以查询本人任务状态，但不能读取教师级分析结果；管理员才可以执行课程维护和 CSV 导入。前端隐藏按钮不作为授权依据。
 
-API 使用无状态 JWT 认证，校验签名、有效期和 issuer 后，再读取数据库中的当前用户角色与启用状态，使禁用账号和角色变更能及时生效。
+**源码阅读入口：**[Outbox 发布器](courseinsight-server/src/main/java/com/courseinsight/server/message/AnalysisOutboxPublisher.java) · [租约恢复调度器](courseinsight-server/src/main/java/com/courseinsight/server/message/AnalysisTaskLeaseRecoveryScheduler.java) · [课程缓存业务逻辑](courseinsight-server/src/main/java/com/courseinsight/server/service/CourseService.java)。
 
-接口层限制角色，服务层继续校验课程归属、写操作权限及评价所有权。学生评价对外匿名展示，教师仅可读取归属课程的完整分析，不能修改课程、评价或分析任务；前端隐藏入口不能替代后端授权。
+## 测试与性能证据
 
-实现入口、重试和恢复细节见[技术设计与可靠性边界](docs/development.md#技术设计与可靠性边界)。
+仓库提供 Java 单元 / MVC / Security / HTTP 合约测试，以及使用真实 MySQL、Redis Testcontainers 的集成测试。RocketMQ + AI 端到端流程通过 Demo smoke / 浏览器联调另行验证。
 
-## 快速启动（Quick Start）
+**仓库记录的历史验证：**2026-11-02 完整 Java 测试 **365 项通过，0 失败、0 跳过**。这一数字对应当时的代码与环境，不代表本 README 修改后重新执行。
 
-默认在宿主机运行 Java 和前端，在 Docker 中运行 MySQL、Redis、RocketMQ 和真实 Python AI 服务，使用隔离的 Demo 数据库和数据卷。启动、检查和停止均不需要额外的 AI 开关。
+| 单机实验 | 指标 | 调整前 | 调整后 |
+| --- | --- | ---: | ---: |
+| 课程详情 Redis 缓存 | HTTP p95 | 14.31 ms | 10.69 ms |
+| 课程详情 Redis 缓存 | 每轮 MySQL `Com_select` | 6,039 | 3,039 |
+| Outbox 发布并发 | 吞吐 | 36.595 tasks/s | 49.468 tasks/s |
+| Outbox 发布并发 | 平均完成时间 | 27.559 s | 20.326 s |
 
-### 环境要求
+- 缓存实验：**100 RPS × 30 s**，相同请求 ID 顺序，miss/hit 交替。
+- Outbox 实验：每轮 **1,000 个任务**，固定 **100 ms AI Stub**，消费者 8 个，对比串行发布与并发数 4；系统默认发布并发数为 2。
+- **边界**：数据来自历史本机实验，不是生产吞吐、真实 BERT / LLM 推理性能，也不能直接归因于后续代码变更。
 
-- JDK 17，确保 `java` 可用；Maven 由仓库中的 Wrapper 提供。
-- 已启动的 Docker Desktop / Docker Engine，包含 Docker Compose v2。
-- Git；启动前端另需 Node.js 22.12+ 和 npm。
-- 默认端口：后端 `8080`、前端 `5173`、MySQL `3307`、Redis `6380`、NameServer `9876`、Broker `10911 / 10909`、MQ 指标 `5557`、AI 服务 `8002`。Demo 与完整本地环境共用部分宿主机端口，不能按默认配置同时启动。
+原始条件与结果：[Cache A/B 报告](performance/results/2026-08-09-phase-3-http-cache-P3_HTTP.md) · [Outbox 并发报告](performance/results/2026-08-10-phase-7-outbox-publisher-P7_OUTBOX.md) · [性能实验索引](performance/README.md)。
 
-首次运行需要下载 Docker 镜像、PyTorch 和 Maven/npm 依赖。BERT 权重放置方式见 [AI 服务说明](courseinsight-ai-service/README.md#bert-权重)，未准备权重时使用 TF-IDF / 规则降级。
+## 快速开始
+
+准备 **JDK 17、Git、Docker Engine / Docker Compose v2**；运行前端另需 **Node.js 22.12+ 和 npm**。首次安装需要下载镜像和依赖。默认演示环境由 Docker 启动 MySQL、Redis、RocketMQ 和真实 Python AI 服务，Java 与前端在宿主机运行。
 
 ### Windows PowerShell
+
+终端 1：
 
 ```powershell
 git clone https://github.com/mofengyan595/courseinsight-cloud.git
 Set-Location courseinsight-cloud
-
-# 启动依赖并等待容器健康
 .\scripts\demo.ps1 start
-
-# 在当前终端启动后端并保持运行
 Set-Location courseinsight-server
 .\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=demo'
 ```
 
-出现 `Started CourseinsightServerApplication` 后，在仓库根目录打开第二个终端：
+后端出现 `Started CourseinsightServerApplication` 后，在**仓库根目录**打开终端 2：
 
 ```powershell
 .\scripts\demo.ps1 ready
@@ -124,140 +132,80 @@ Set-Location courseinsight-server
 
 ### macOS / Linux
 
+终端 1：
+
 ```bash
 git clone https://github.com/mofengyan595/courseinsight-cloud.git
 cd courseinsight-cloud
-
 bash scripts/demo.sh start
 cd courseinsight-server
 bash ./mvnw spring-boot:run -Dspring-boot.run.profiles=demo
 ```
 
-后端启动后，在仓库根目录的第二个终端运行：
+后端启动后，在**仓库根目录**的终端 2：
 
 ```bash
 bash scripts/demo.sh ready
 bash scripts/demo.sh smoke
 ```
 
-这里显式使用 Bash 执行 Maven Wrapper，无需修改文件执行权限。
+`ready` 检查依赖、Java 和 AI 服务；`smoke` 验证登录、课程创建、3 行 CSV 上传、结果计数及分析来源。两者会检查不同条件，`/api/health` 仅代表存活。`smoke` 会保留本次创建的演示数据。
 
-### Swagger 与 API 复测
+### 启动 Web 工作台
 
-后端启动后打开 [Swagger UI](http://localhost:8080/swagger-ui.html)，或获取
-[OpenAPI JSON](http://localhost:8080/v3/api-docs) 导入接口测试工具。文档可匿名读取，
-业务接口继续校验 JWT 与角色权限；在 `Authorize` 中填入运行时获取的 JWT，页面不持久保存授权。
-账号、密码和 Token 不写入文档示例或保存的用例，复测时从运行环境注入。
+另开终端，从仓库根目录执行：
 
-管理员可验证 `createCourse → getCourse → deleteCourse`：使用每轮唯一的课程代码，
-从创建响应的 `data` 提取本轮课程 ID，再查询和删除该课程。`DELETE /api/courses/{id}`
-成功返回 `204`（无响应体），不存在返回 `404`；有关联评价（包括已软删除评价）、分析批次、
-任务或结果时返回 `409`，不级联清理。删除后再次查询或删除均返回 `404`。
-保存步骤、动态 ID 关联和断言后，每次复测从创建步骤开始。完整状态码和并发保护见
-[Swagger / OpenAPI 开发说明](docs/development.md#swagger--openapi)。
-
-### 启动前端与演示账号
-
-在仓库根目录另开终端，以下命令适用于上述两种环境：
-
-```sh
+```bash
 cd courseinsight-web
 npm ci
 npm run dev
 ```
 
-打开 <http://127.0.0.1:5173>：
+- Web：<http://127.0.0.1:5173>
+- Swagger UI：<http://localhost:8080/swagger-ui.html>
+- OpenAPI：<http://localhost:8080/v3/api-docs>
+- **仅限 Demo 环境**的管理员账号：`demo_admin` / `demo-admin-password`。
 
-| 用户名 | 密码 | 角色 |
-| --- | --- | --- |
-| `demo_admin` | `demo-admin-password` | `ADMIN` |
+可体验：**登录 → 创建课程 → 上传 CSV → 观察批次进度 → 查看分析 → 下载结果**。CSV 样例见 [analysis-batch-sample.csv](docs/examples/analysis-batch-sample.csv)，列名为 `content,rating`，评分为 1–5 的整数。
 
-账号仅在 `demo` profile 中初始化。它和 [`demo.env`](demo.env) 中的 JWT 密钥都是公开、本地演示配置，不得用于其他环境。
+未准备本地 BERT 权重时会使用 TF-IDF / 规则降级；LLM 未配置或调用失败时使用本地教学建议。可在未提交的 `.env` 中配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`。演示公开账号和密钥**不得用于其他环境**。
 
-网页演示路径：登录 → 创建课程 → 课程详情 → 批量分析评价 → 上传 CSV → 查看进度和结果 → 下载 CSV → 数据看板。
+只需固定分析结果进行业务联调时，可使用 `start -Stub` / `ready -Stub` / `smoke -Stub`（Bash 为 `--stub`），该模式不是实际 NLP 模型测试。AI 权重与选项见 [AI 服务说明](courseinsight-ai-service/README.md)。
 
-上传页可下载样例，也可使用 [`analysis-batch-sample.csv`](docs/examples/analysis-batch-sample.csv)。文件采用 UTF-8，表头为 `content,rating`，评分为 1–5 的整数。开发服务器将 `/api` 代理到 `http://localhost:8080`。
+### 停止与测试
 
-### 本地模型与大模型建议
-
-`start` 默认启动真实 AI 服务，并自动加载根 `.env`（若存在），再用 `demo.env` 覆盖数据库等演示配置。单条评价和 CSV 分析默认生成教学建议；需要大模型时，在未提交的 `.env` 中配置 `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`，启动命令不变。
-
-大模型会接收评价文本、关键词与维度证据，可能消耗 API 额度。未配置或调用失败时返回本地建议；实际来源可在前端分析详情中查看。历史结果不会自动重算，密钥不得放入前端或提交到仓库。
-
-### 验证运行结果与停止服务
-
-`ready` 检查依赖容器、Java 和真实 AI 服务。`smoke` 验证登录、课程创建、3 行 CSV 上传、成功计数和实际分析来源，并分别报告大模型建议与本地建议数量；失败时返回非零退出码，每次运行都会创建课程与批次并保留记录。
-
-仅需固定结果测试时显式使用 `start -Stub`、`ready -Stub`、`smoke -Stub`（Bash：`--stub`）；该模式不加载根 `.env`。`/api/health` 仅检查存活，完整检查使用 `ready`。浏览器联调命令见[前端说明](courseinsight-web/README.md#测试与构建)。
-
-结束时在前端和 Java 终端按 `Ctrl+C`，再从仓库根目录停止依赖，保留数据卷：
+先在 Java / 前端终端按 `Ctrl+C`，再从仓库根目录停止 Demo 依赖（保留数据卷）：
 
 ```powershell
 # Windows
 .\scripts\demo.ps1 stop
-```
 
-```bash
-# macOS / Linux
-bash scripts/demo.sh stop
-```
-
-独立的 `local` 开发环境、端口和监控配置见[本地开发文档](docs/development.md#启动本地应用)。
-
-## 测试与性能
-
-Java 测试分为无外部服务的单元、MVC/安全与 HTTP/MQ 合约测试，以及使用真实 MySQL、Redis Testcontainers 的集成测试。从仓库根目录运行：
-
-```powershell
+# Java 快速测试 / Testcontainers 集成测试 / 全部测试
 .\scripts\test.ps1 -Suite fast
-.\scripts\test.ps1 -Suite integration  # 需要 Docker Engine
-.\scripts\test.ps1 -Suite all          # 需要 Docker Engine
+.\scripts\test.ps1 -Suite integration
+.\scripts\test.ps1 -Suite all
 ```
 
-macOS/Linux 可在 `courseinsight-server` 中分别使用 `bash ./mvnw test '-Dgroups=!integration'`、`bash ./mvnw test '-Dgroups=integration'` 和 `bash ./mvnw test`。测试不读取根目录 `.env`，不启动项目 Compose；默认测试中的 MQ/AI 使用 mock，真实异步链路由 Demo smoke 单独验证。
+Linux / macOS 可使用 `bash scripts/demo.sh stop`；Java 测试可在 `courseinsight-server` 目录用 `bash ./mvnw test`（完整测试需要 Docker Engine）。前端在 `courseinsight-web` 中运行 `npm run lint`、`npm run typecheck`、`npm test`、`npm run build`。
 
-本轮验证（2026-11-02）：完整 Java 测试 365 项通过，0 失败、0 跳过，包含 Swagger 合约、MySQL 空课程删除闭环、关联数据拒绝、事务缓存失效及并发写入测试。
-
-历史验证：2026-10-14 后端 317 项 Java 测试通过；2026-10-16 前端 45 项单元测试、12 项异常交互测试及 BERT / 大模型建议联调通过。详情见[后端审计](docs/backend-audit.md#验证记录)和[前端验证记录](docs/frontend-validation.md)。
-
-前端在 `courseinsight-web` 中运行 `npm run lint`、`npm run typecheck`、`npm test` 和 `npm run build`；Playwright 覆盖真实 Demo 与异常交互，两类验证分别记录。AI 服务测试见[开发文档](docs/development.md#ai-服务测试)，浏览器测试前提及执行方式见[前端 README](courseinsight-web/README.md#测试与构建)。
-
-仓库保留了 k6 与指标采集报告，以下为历史本机实验中的代表性结果，均为每组 3 次：
-
-| 实验 | 指标 | 调整前 | 调整后 |
-| --- | --- | --- | --- |
-| Redis 课程详情缓存 | p95 | 14.31 ms | 10.69 ms |
-| Redis 课程详情缓存 | 每轮 MySQL `Com_select` | 6039 | 3039 |
-| Outbox 发布并发 | 吞吐 | 36.595 tasks/s | 49.468 tasks/s |
-| Outbox 发布并发 | 平均完成时间 | 27.559 s | 20.326 s |
-
-- 缓存实验：100 RPS × 30 秒，相同 ID 顺序，miss/hit 交替。
-- Outbox 实验：每轮 1000 任务、100 ms AI Stub，消费者 8，发布批次 100、间隔 1000 ms；对比串行与并发 4。
-
-这些是历史单机实验结果，不代表生产性能或 BERT/LLM 推理吞吐，也不代表近期改动的性能增益。应用默认发布并发为 2；缓存命中路径仍有用户状态查询。
-
-测试环境、复现命令与原始结果见 [Cache A/B 报告](performance/results/2026-08-09-phase-3-http-cache-P3_HTTP.md)、[Outbox 并发报告](performance/results/2026-08-10-phase-7-outbox-publisher-P7_OUTBOX.md)及[性能实验入口](performance/README.md)。Demo 与浏览器历史验证见[验收记录](docs/teacher-comment-analysis.md)。
-
-## 项目结构与相关文档
+## 项目结构与文档
 
 ```text
 courseinsight-cloud/
-├─ courseinsight-server/       Spring Boot 业务 API、权限、任务与 Outbox
-├─ courseinsight-web/          Vue 工作台与前端测试
-├─ courseinsight-ai-service/   FastAPI 与 NLP 分析
-├─ scripts/                   Demo 启停、smoke 与 Java 分层测试
-├─ docs/                      开发说明、功能设计、截图与 CSV 样例
-├─ performance/               AI Stub、k6 脚本与实验报告
-├─ deploy/observability/      Prometheus / Grafana 配置
-├─ compose.demo.yaml          隔离 Demo 依赖
-├─ compose.demo-ai.yaml       Demo 的真实 AI 服务配置
-└─ compose.yaml               完整本地依赖与可选监控
+├── courseinsight-server/       Spring Boot API、鉴权、缓存、任务与 Outbox
+├── courseinsight-web/          Vue 工作台
+├── courseinsight-ai-service/   FastAPI / NLP / LLM 适配
+├── scripts/                   Demo、健康检查与测试脚本
+├── docs/                      设计、审计、截图与 CSV 样例
+├── performance/               k6、Stub 与历史实验报告
+├── deploy/observability/      Prometheus / Grafana
+├── compose.demo.yaml
+└── compose.yaml
 ```
 
-- [本地开发与测试](docs/development.md)：环境配置、测试、服务启停、监控和排错。
-- [技术设计与可靠性边界](docs/development.md#技术设计与可靠性边界)：Outbox、执行租约、条件更新、缓存一致性及源码入口。
-- [后端工程审计](docs/backend-audit.md)：缓存并发、Outbox 调度、输入校验、安全边界及测试记录。
-- [学生反馈与教师分析](docs/teacher-comment-analysis.md)：接口、权限、按需查询和验证边界。
-- [前端说明](courseinsight-web/README.md)与[页面验收记录](docs/frontend-validation.md)：API 对接、异步交互、构建和截图。
-- [AI 服务说明](courseinsight-ai-service/README.md)：分析接口、降级与模型权重。
-- [性能实验](performance/README.md)与[报告索引](performance/results/README.md)：负载、方法、结果与限制。
+- [开发与运行细节](docs/development.md)：完整本地环境、监控、任务恢复和排障。
+- [后端工程审计](docs/backend-audit.md)：源码位置、并发问题、修复及剩余风险。
+- [权限与前端交互](docs/teacher-comment-analysis.md)：学生、教师和管理员的行为边界。
+- [前端说明](courseinsight-web/README.md) · [AI 服务说明](courseinsight-ai-service/README.md) · [性能实验](performance/README.md)。
+
+**已知边界**：当前 MQ 为单节点本地配置，异步刷盘下不承诺 Broker 故障零丢失；采用 at-least-once 而非 exactly-once；任务租约无续期；缓存并发控制主要针对单实例。上述行为与本地 Demo 的实测范围不等同于生产 SLA。
